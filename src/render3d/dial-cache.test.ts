@@ -5,6 +5,28 @@ import { defaultConfig } from '../core/config/defaults';
 import { PartRenderer3D } from './part-renderer';
 import type { PartRequest } from '../render/types';
 
+it('keeps thumbnails stable while the ring turns, and refreshes the insert colour', () => {
+  const catalog = parseCatalog(rawCatalog),
+    renderer = new PartRenderer3D(catalog);
+  const config = defaultConfig();
+  config.bezel.type = 'rotating';
+  const row = catalog.rows.find((r) => r.id === 'bezel-scale')!;
+  const request: PartRequest = {
+    rowId: row.id,
+    variantId: '24h',
+    context: row.previewContext,
+    config,
+    sizePx: 160,
+    pixelRatio: 1,
+  };
+  const key = renderer.cacheKey(request);
+  config.bezel.angleDeg = 90;
+  expect(renderer.cacheKey(request)).toBe(key);
+  config.bezel.color = '#FEDCBA';
+  expect(renderer.cacheKey(request)).not.toBe(key);
+  renderer.dispose();
+});
+
 it('refreshes dependent previews for the aperture, without invalidating hands for dial colour', () => {
   const catalog = parseCatalog(rawCatalog);
   const renderer = new PartRenderer3D(catalog);

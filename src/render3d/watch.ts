@@ -18,6 +18,7 @@ import { buildDial } from './parts/dial';
 import { buildHands } from './parts/hands';
 import { buildLugs } from './parts/lugs';
 import { decorateRehaut } from './parts/rehaut';
+import { buildRotatingBezel } from './parts/rotating-bezel';
 
 export const LAYERS = [
   'case',
@@ -40,6 +41,7 @@ export interface WatchModel {
   /** Résolue quand toutes les textures sont prêtes (à attendre avant un instantané). */
   ready: Promise<void>;
   setAngles(angles: HandAngles): void;
+  setBezelAngle(angle: number): void;
   /** N'affiche que certains calques (null = tous). */
   showOnly(layers: readonly Layer[] | null): void;
   dispose(): void;
@@ -77,6 +79,11 @@ export function buildWatch(
     wanted('dial') || wanted('print') || wanted('indices')
       ? buildDial(config, d, lib, { print: wanted('print'), printSize: options.printSize ?? 2048 })
       : null;
+  const rotatingBezel =
+    config.bezel.type === 'rotating' && caseParts && wanted('case')
+      ? buildRotatingBezel(config, d, lib, options.printSize)
+      : null;
+  if (rotatingBezel) caseParts!.case.add(rotatingBezel.group);
   const detailedHands = options.handDetail
     ? options.handDetail === 'refined'
     : options.refinement !== 'legacy';
@@ -125,8 +132,9 @@ export function buildWatch(
     root,
     layers,
     dimensions: d,
-    ready: Promise.all([dialParts?.ready, rehautPrint?.ready]).then(() => {}),
+    ready: Promise.all([dialParts?.ready, rehautPrint?.ready, rotatingBezel?.ready]).then(() => {}),
     setAngles: hands.setAngles,
+    setBezelAngle: (angle) => rotatingBezel?.setAngle(angle),
     showOnly(visible) {
       for (const layer of LAYERS) layers[layer].visible = !visible || visible.includes(layer);
     },
@@ -136,6 +144,7 @@ export function buildWatch(
       disposeGeometries(root);
       for (const resource of dialParts?.owned ?? []) resource.dispose();
       for (const resource of rehautPrint?.owned ?? []) resource.dispose();
+      for (const resource of rotatingBezel?.owned ?? []) resource.dispose();
       root.removeFromParent();
     },
   };

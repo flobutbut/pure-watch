@@ -2,7 +2,7 @@ import { effectiveDialColor } from './dial';
 import { rehautColor } from './rehaut';
 import type { HexColor, WatchConfig } from './types';
 
-export type ColorTarget = 'dial' | 'hands' | 'seconds' | 'rehaut';
+export type ColorTarget = 'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel';
 export interface ColorChoice {
   color: HexColor | 'match';
   finish: string;
@@ -31,6 +31,7 @@ export function handColor(config: WatchConfig): HexColor {
 }
 
 export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  if (target === 'bezel') return { color: config.bezel.color, finish: 'ceramic' };
   if (target === 'rehaut') return { color: config.rehaut.color, finish: config.rehaut.finish };
   return {
     color:
@@ -49,6 +50,13 @@ export function withColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  if (target === 'bezel')
+    return choice.color === 'match'
+      ? config
+      : {
+          ...config,
+          bezel: { ...config.bezel, color: choice.color },
+        };
   if (target === 'rehaut')
     return {
       ...config,
@@ -77,6 +85,7 @@ export function withColorChoice(
 }
 
 export function targetColor(config: WatchConfig, target: ColorTarget): string {
+  if (target === 'bezel') return config.bezel.color;
   if (target === 'rehaut') return rehautColor(config);
   if (target === 'dial') return effectiveDialColor(config.dial);
   if (target === 'hands' || config.hands.second.color === 'match') return handColor(config);

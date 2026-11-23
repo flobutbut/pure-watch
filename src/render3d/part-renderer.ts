@@ -17,13 +17,13 @@ const LAYER_DEPENDENCIES: Record<
   Layer,
   readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size')[]
 > = {
-  case: ['case', 'crystal', 'dial.shape', 'bezel.type', 'dial.size'],
-  rehaut: ['case', 'crystal', 'dial', 'rehaut'],
+  case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
+  rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut'],
   lugs: ['case', 'crystal'],
   crown: ['crown', 'case', 'crystal'],
-  dial: ['dial', 'case', 'rehaut.profile'],
-  print: ['dial', 'case', 'rehaut.profile'],
-  indices: ['dial', 'case', 'rehaut.profile'],
+  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile'],
+  print: ['dial', 'case', 'dial.shape', 'rehaut.profile'],
+  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile'],
   hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
   seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
   crystal: ['crystal', 'case', 'dial.shape', 'dial.size'],
@@ -39,7 +39,9 @@ function relevantConfig(
   >();
   for (const layer of layers ?? LAYERS) for (const key of LAYER_DEPENDENCIES[layer]) keys.add(key);
   const out: Record<string, unknown> = {};
-  for (const key of [...keys].sort()) out[key] = getAtPath(config, key);
+  for (const key of [...keys].sort())
+    out[key] =
+      key === 'dial.shape' && config.bezel.type === 'rotating' ? 'round' : getAtPath(config, key);
   return out;
 }
 
@@ -140,6 +142,11 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     context: neutralDial,
     frame: headFrame,
   },
+  'bezel-scale': {
+    layers: ['case', 'rehaut', 'dial'],
+    context: neutralDial,
+    frame: headFrame,
+  },
   // Cristal : le galbe ne se lit que de profil.
   crystal: {
     layers: ['case', 'crystal', 'rehaut', 'dial'],
@@ -186,7 +193,12 @@ export class PartRenderer3D implements PartRenderer {
     const row = this.rows.get(request.rowId);
     if (!row) throw new Error(`Ligne inconnue : ${request.rowId}`);
     const index = row.variants.findIndex((v) => v.id === request.variantId);
-    const applied = applyVariant(request.config, row, Math.max(0, index));
+    // Thumbnails show the zero position; dragging the live ring does not rebuild every tile.
+    const applied = applyVariant(
+      { ...request.config, bezel: { ...request.config.bezel, angleDeg: 0 } },
+      row,
+      Math.max(0, index),
+    );
     const spec: PreviewSpec = PREVIEWS[row.id] ?? { layers: null, frame: headFrame };
     return { config: spec.context ? spec.context(applied) : applied, spec };
   }
@@ -228,6 +240,7 @@ export class PartRenderer3D implements PartRenderer {
       view: (index) => stage.view(index),
       rotate: (dAz, dEl) => stage.rotate(dAz, dEl),
       togglePause: () => stage.togglePause(),
+      setBezelControl: (enabled, onchange) => stage.setBezelControl(enabled, onchange),
       setDisplayScale: (scale) => stage.setDisplayScale(scale),
       destroy: () => {
         if (this.stage === stage) this.stage = null;

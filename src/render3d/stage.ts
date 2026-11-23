@@ -8,6 +8,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { handAngles, POSTER_TIME, timeOfDay, type HandAngles } from '../core/clock/angles';
 import { isBlackTonneau } from '../core/config/instrument';
 import type { WatchConfig } from '../core/config/types';
+import { bezelAngle, bezelScale } from '../core/config/bezel';
 import { movementStepsPerSecond } from '../core/movement/movements';
 import { MaterialLibrary, type CrystalQuality } from './materials';
 import { studioEnvironment } from './environment';
@@ -193,6 +194,95 @@ export class Stage {
   private lastFrame = performance.now();
   private mode: LiveMode = 'grid';
   private cameraGoal: CameraGoal | null = null;
+  private liveConfigKey = '';
+  private liveConfig: WatchConfig | null = null;
+  private bezelEditing = false;
+  private onBezelChange: ((angle: number) => void) | null = null;
+  private bezelDrag: { id: number; angle: number; remainder: number } | null = null;
+  private readonly bezelRay = new THREE.Raycaster();
+
+  setBezelControl(enabled: boolean, onchange: (angle: number) => void): void {
+    this.bezelEditing = enabled;
+    this.onBezelChange = onchange;
+    if (!enabled && this.bezelDrag) {
+      const id = this.bezelDrag.id;
+      this.bezelDrag = null;
+      if (this.renderer.domElement.hasPointerCapture(id))
+        this.renderer.domElement.releasePointerCapture(id);
+    }
+    this.controls.enabled = this.mode === 'inspect' && !this.cameraGoal && !enabled;
+    this.renderer.domElement.style.cursor = enabled ? (this.bezelDrag ? 'grabbing' : 'grab') : '';
+  }
+
+  private bezelPointerAngle(event: PointerEvent, hitTest = false): number | null {
+    const ring = this.live?.root.getObjectByName('rotating-bezel');
+    if (!ring || !this.live) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const pointer = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      (-(event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.floating.updateWorldMatrix(true, true);
+    this.bezelRay.setFromCamera(pointer, this.camera);
+    if (hitTest) {
+      // A rear view must not let the user grab the hidden ring through the caseback.
+      let object: THREE.Object3D | null =
+        this.bezelRay.intersectObject(this.live.root, true)[0]?.object ?? null;
+      while (object && object !== ring) object = object.parent;
+      if (!object) return null;
+    }
+    const normal = new THREE.Vector3(0, 0, 1).transformDirection(ring.matrixWorld);
+    const origin = new THREE.Vector3(0, 0, this.live.dimensions.z.bezelTop - 0.045).applyMatrix4(
+      ring.matrixWorld,
+    );
+    const point = this.bezelRay.ray.intersectPlane(
+      new THREE.Plane().setFromNormalAndCoplanarPoint(normal, origin),
+      new THREE.Vector3(),
+    );
+    if (!point) return null;
+    this.live.root.worldToLocal(point);
+    if (Math.hypot(point.x, point.y) < this.live.dimensions.openingRadius * 0.3) return null;
+    return Math.atan2(point.y, point.x);
+  }
+
+  private bezelPointerDown = (event: PointerEvent): void => {
+    if (!this.bezelEditing || this.mode !== 'inspect' || event.button !== 0 || this.bezelDrag)
+      return;
+    const angle = this.bezelPointerAngle(event, true);
+    if (angle === null) return;
+    this.bezelDrag = { id: event.pointerId, angle, remainder: 0 };
+    this.renderer.domElement.setPointerCapture(event.pointerId);
+    this.renderer.domElement.style.cursor = 'grabbing';
+    event.preventDefault();
+  };
+
+  private bezelPointerMove = (event: PointerEvent): void => {
+    const drag = this.bezelDrag,
+      config = this.liveConfig;
+    if (!drag || drag.id !== event.pointerId || !config) return;
+    const angle = this.bezelPointerAngle(event);
+    if (angle === null) return;
+    const delta = -Math.atan2(Math.sin(angle - drag.angle), Math.cos(angle - drag.angle)) / DEG;
+    drag.angle = angle;
+    drag.remainder += bezelScale(config) === 'dive-60' ? Math.min(0, delta) : delta;
+    const step = Math.trunc(drag.remainder / 3) * 3;
+    if (!step) return;
+    drag.remainder -= step;
+    const next = bezelAngle(config.bezel.angleDeg + step);
+    this.liveConfig = { ...config, bezel: { ...config.bezel, angleDeg: next } };
+    this.live?.setBezelAngle(next);
+    this.dirty = true;
+    this.onBezelChange?.(next);
+    event.preventDefault();
+  };
+
+  private bezelPointerUp = (event: PointerEvent): void => {
+    if (this.bezelDrag?.id !== event.pointerId) return;
+    this.bezelDrag = null;
+    if (this.renderer.domElement.hasPointerCapture(event.pointerId))
+      this.renderer.domElement.releasePointerCapture(event.pointerId);
+    this.renderer.domElement.style.cursor = this.bezelEditing ? 'grab' : '';
+  };
 
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -242,6 +332,11 @@ export class Stage {
     this.controls.addEventListener('start', () => (this.interacting = true));
     this.controls.addEventListener('end', () => (this.interacting = false));
     this.controls.enabled = false;
+    this.renderer.domElement.addEventListener('pointerdown', this.bezelPointerDown);
+    this.renderer.domElement.addEventListener('pointermove', this.bezelPointerMove);
+    this.renderer.domElement.addEventListener('pointerup', this.bezelPointerUp);
+    this.renderer.domElement.addEventListener('pointercancel', this.bezelPointerUp);
+    this.renderer.domElement.addEventListener('lostpointercapture', this.bezelPointerUp);
     this.controls.minPolarAngle = Math.PI / 2 - MAX_EL;
     this.controls.maxPolarAngle = Math.PI / 2 - MIN_EL;
     this.placeCamera(VIEWS.grid);
@@ -263,6 +358,14 @@ export class Stage {
 
   /** Remplace la montre centrale ; l'ancienne reste affichée jusqu'à ce que la nouvelle soit prête. */
   async setConfig(config: WatchConfig, transient = false): Promise<void> {
+    const key = JSON.stringify({ ...config, bezel: { ...config.bezel, angleDeg: 0 } });
+    if (!transient && !this.liveMaterials && this.live && key === this.liveConfigKey) {
+      ++this.liveVersion; // Cancel an in-flight build if the user returned to this configuration.
+      this.liveConfig = config;
+      this.live.setBezelAngle(config.bezel.angleDeg);
+      this.dirty = true;
+      return;
+    }
     const version = ++this.liveVersion;
     const materials = transient
       ? new MaterialLibrary(this.refinement === 'refined')
@@ -293,6 +396,8 @@ export class Stage {
     this.liveMaterials?.dispose();
     this.liveMaterials = transient ? materials : null;
     this.live = model;
+    this.liveConfigKey = key;
+    this.liveConfig = config;
     this.liveSteps = movementStepsPerSecond(config.movement);
     this.pilotFixedTime =
       (config.case.shape === 'cushion' || isBlackTonneau(config)) && config.view.time === 'fixed';
@@ -494,7 +599,7 @@ export class Stage {
     if (Math.abs(dAz) < 0.002 && Math.abs(goal.el - nextEl) < 0.002) {
       this.placeCamera(goal);
       this.cameraGoal = null;
-      this.controls.enabled = this.mode === 'inspect';
+      this.controls.enabled = this.mode === 'inspect' && !this.bezelEditing;
     }
   }
 
@@ -638,7 +743,10 @@ export class Stage {
         dirty = true;
       }
       // « Respiration » : rotation très lente qui fait jouer les reflets.
-      const breathe = this.interacting || this.pilotFixedTime || this.reducedMotion.matches ? 0 : 1;
+      const breathe =
+        this.interacting || this.bezelEditing || this.pilotFixedTime || this.reducedMotion.matches
+          ? 0
+          : 1;
       const rotation = this.floating.rotation;
       const dy = (Math.sin(t * 0.35) * 0.05 * breathe - rotation.y) * 0.05;
       const dx = (Math.cos(t * 0.27) * 0.025 * breathe - rotation.x) * 0.05;
@@ -735,6 +843,11 @@ export class Stage {
     }
     this.live?.dispose();
     this.liveMaterials?.dispose();
+    this.renderer.domElement.removeEventListener('pointerdown', this.bezelPointerDown);
+    this.renderer.domElement.removeEventListener('pointermove', this.bezelPointerMove);
+    this.renderer.domElement.removeEventListener('pointerup', this.bezelPointerUp);
+    this.renderer.domElement.removeEventListener('pointercancel', this.bezelPointerUp);
+    this.renderer.domElement.removeEventListener('lostpointercapture', this.bezelPointerUp);
     this.controls.dispose();
     this.shadow.geometry.dispose();
     this.backdrop.geometry.dispose();

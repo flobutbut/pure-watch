@@ -3,9 +3,11 @@
   import type { WatchConfig } from '../../core/config/types';
   import { targetColor, type ColorTarget } from '../../core/config/colors';
   import { hasIntrinsicColor } from '../../core/config/dial';
+  import { turnBezel } from '../../core/config/bezel';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
   import type { LiveWatch as LiveHandle, PartRenderer } from '../../render/types';
   import LiveWatch from '../view3d/LiveWatch.svelte';
+  import BezelControl from '../view3d/BezelControl.svelte';
   import Cell from './Cell.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
   import { commandFromKey } from './keyboard';
@@ -31,6 +33,7 @@
     onopen: () => void;
     onclose: () => void;
     oncolor: (target: ColorTarget) => void;
+    onbezel: (angle: number) => void;
   }
 
   let {
@@ -45,6 +48,7 @@
     onopen,
     onclose,
     oncolor,
+    onbezel,
   }: Props = $props();
 
   let width = $state(0);
@@ -217,9 +221,24 @@
 
   let live = $state.raw<LiveHandle | null>(null);
   let paused = $state(false);
+  let bezelEditing = $state(false);
+  $effect(() =>
+    live?.setBezelControl(open && config.bezel.type === 'rotating' && bezelEditing, onbezel),
+  );
 
   /** Vue 3D (spec §3.3) : flèches = pas de 15°, 1 à 5 = vues prédéfinies, P = pause, Espace / Entrée / Échap = fermer. */
   function inspectKey(event: KeyboardEvent): boolean {
+    if (config.bezel.type === 'rotating') {
+      if (event.key.toLowerCase() === 'b') {
+        bezelEditing = !bezelEditing;
+        if (bezelEditing) live?.view(0);
+        return true;
+      }
+      if (bezelEditing && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+        onbezel(turnBezel(config, event.key === 'ArrowLeft' ? -3 : 3));
+        return true;
+      }
+    }
     const rotations: Record<string, [number, number]> = {
       ArrowLeft: [-15, 0],
       ArrowRight: [15, 0],
@@ -308,15 +327,17 @@
   );
 
   const colorForRow = (id: string): ColorTarget | null =>
-    id === 'dial-finish'
-      ? 'dial'
-      : id === 'hands'
-        ? 'hands'
-        : id === 'seconds'
-          ? 'seconds'
-          : id === 'rehaut'
-            ? 'rehaut'
-            : null;
+    id === 'bezel' && config.bezel.type === 'rotating'
+      ? 'bezel'
+      : id === 'dial-finish'
+        ? 'dial'
+        : id === 'hands'
+          ? 'hands'
+          : id === 'seconds'
+            ? 'seconds'
+            : id === 'rehaut'
+              ? 'rehaut'
+              : null;
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -438,11 +459,13 @@
               tabindex={dRow === 0 ? 0 : -1}
               aria-label={target === 'dial'
                 ? 'Couleur du cadran'
-                : target === 'hands'
-                  ? 'Matière et couleur des aiguilles'
-                  : target === 'rehaut'
-                    ? 'Matière et couleur du réhaut'
-                    : 'Couleur de la trotteuse'}
+                : target === 'bezel'
+                  ? 'Couleur de la lunette'
+                  : target === 'hands'
+                    ? 'Matière et couleur des aiguilles'
+                    : target === 'rehaut'
+                      ? 'Matière et couleur du réhaut'
+                      : 'Couleur de la trotteuse'}
               title={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
@@ -469,6 +492,14 @@
   <div class="focus-veil" aria-hidden="true"></div>
 
   {#if open}
+    {#if config.bezel.type === 'rotating'}
+      <BezelControl
+        {config}
+        bind:editing={bezelEditing}
+        onchange={onbezel}
+        onedit={() => live?.view(0)}
+      />
+    {/if}
     <button class="backdrop" aria-label="Fermer la vue 3D" onclick={onclose}></button>
     <div class="tools">
       <button
