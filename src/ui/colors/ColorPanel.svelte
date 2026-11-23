@@ -401,6 +401,9 @@
   dialog {
     --ink: light-dark(#20242b, #f4f3ef);
     --veil: light-dark(#faf9f6, #25282c);
+    /* Outlined controls need a filled surface to read as buttons on the pale veil. */
+    --control: color-mix(in srgb, var(--ink) 5%, transparent);
+    --control-line: color-mix(in srgb, var(--ink) 28%, transparent);
     position: fixed;
     inset: 50% 24px auto auto;
     translate: 0 -50%;
@@ -495,10 +498,10 @@
   }
   .finishes button,
   .links button {
-    border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    border: 1px solid var(--control-line);
     border-radius: 10px;
     min-height: 40px;
-    background: transparent;
+    background: var(--control);
     padding: 8px 10px;
     display: inline-flex;
     align-items: center;
@@ -508,7 +511,8 @@
   .finishes .chosen,
   .links .chosen {
     border-color: var(--ink);
-    background: color-mix(in srgb, var(--ink) 8%, transparent);
+    background: color-mix(in srgb, var(--ink) 12%, transparent);
+    box-shadow: inset 0 0 0 1px var(--ink);
   }
   .dot {
     width: 13px;
@@ -619,7 +623,7 @@
     display: flex;
     gap: 10px;
     align-items: center;
-    border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+    border: 1px solid var(--control-line);
     border-radius: 9px;
     padding: 8px 10px;
     font-size: 11px;
@@ -666,8 +670,8 @@
     border-radius: 10px;
     padding: 10px 16px;
     font-size: 12px;
-    border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-    background: transparent;
+    border: 1px solid var(--control-line);
+    background: var(--control);
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -677,7 +681,7 @@
     line-height: 1;
   }
   .restore:disabled {
-    opacity: 0.35;
+    opacity: 0.45;
     cursor: default;
   }
   @media (max-width: 759px) {
