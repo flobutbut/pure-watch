@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { handAngles, POSTER_TIME, timeOfDay } from '../core/clock/angles';
+import { handAngles, POSTER_TIME, timeOfDay, type HandAngles } from '../core/clock/angles';
 import { isBlackTonneau } from '../core/config/instrument';
 import type { WatchConfig } from '../core/config/types';
 import { movementStepsPerSecond } from '../core/movement/movements';
@@ -66,12 +66,45 @@ const MAX_EL = 89 * DEG;
 
 interface QueuedJob {
   job: SnapshotJob;
-  model: WatchModel;
+  /**
+   * pending : en file, pas encore construit ; building : modèle construit, textures et
+   * shaders en préparation ; prepared : prêt à dessiner ; done : rendu, annulé ou en échec.
+   */
+  state: 'pending' | 'building' | 'prepared' | 'done';
+  model: WatchModel | null;
   resolve: (bitmap: ImageBitmap) => void;
   reject: (error: unknown) => void;
 }
 
-const SNAPSHOTS_PER_FRAME = 2;
+/**
+ * Temps consacré aux instantanés à chaque image (ms) : au-delà, la suite attend l'image
+ * suivante, et la montre en direct garde sa cadence.
+ */
+const SNAPSHOT_BUDGET_MS = 8;
+/**
+ * Modèles construits en même temps (en préparation ou prêts à dessiner). Les autres
+ * attendent sous forme de simple demande : ni géométrie ni texture en mémoire.
+ */
+const MAX_IN_FLIGHT = 6;
+/** En deçà (radians), la « respiration » ne bouge plus rien à l'écran. */
+const STILL = 1e-5;
+
+const abortError = (message = 'Annulé') => new DOMException(message, 'AbortError');
+
+/** File triée par priorité : les cellules proches du centre d'abord. */
+function insertByPriority(list: QueuedJob[], entry: QueuedJob): void {
+  const p = entry.job.priority ?? 0;
+  const at = list.findIndex((other) => (other.job.priority ?? 0) > p);
+  list.splice(at === -1 ? list.length : at, 0, entry);
+}
+
+function removeFrom(list: QueuedJob[], entry: QueuedJob): void {
+  const i = list.indexOf(entry);
+  if (i >= 0) list.splice(i, 1);
+}
+
+const sameAngles = (a: HandAngles | null, b: HandAngles) =>
+  a !== null && a.hour === b.hour && a.minute === b.minute && a.second === b.second;
 
 /** Contour approché d'une montre : bords avant et arrière du boîtier, bouts des cornes, couronne. */
 function outlinePoints(model: WatchModel): THREE.Vector3[] {
@@ -91,8 +124,6 @@ function outlinePoints(model: WatchModel): THREE.Vector3[] {
   points.push(new THREE.Vector3(d.caseRadius + d.crown.length + 1, 0, d.z.back / 2));
   return points;
 }
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 export function detectCrystalQuality(): CrystalQuality {
   const coarse = matchMedia('(pointer: coarse)').matches;
   return navigator.hardwareConcurrency > 4 && !coarse ? 'transmission' : 'fallback';
@@ -115,7 +146,19 @@ export class Stage {
   private readonly backdrop: THREE.Mesh;
   private readonly floating = new THREE.Group();
   private readonly resizeObserver: ResizeObserver;
-  private readonly queue: QueuedJob[] = [];
+  private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  /** Demandes d'instantanés pas encore construites. */
+  private readonly pending: QueuedJob[] = [];
+  /** Instantanés construits, textures et shaders prêts : il ne reste qu'à les dessiner. */
+  private readonly prepared: QueuedJob[] = [];
+  /** Instantanés dont les textures et les shaders sont en préparation. */
+  private readonly building = new Set<QueuedJob>();
+  /** Taille CSS du conteneur, relevée par le ResizeObserver (pas de lecture de mise en page par image). */
+  private width = 0;
+  private height = 0;
+  /** Vrai quand l'image en direct doit être redessinée à la prochaine image. */
+  private dirty = true;
+  private lastAngles: HandAngles | null = null;
   private live: WatchModel | null = null;
   /** Transient palettes must not accumulate every dragged colour in the shared cache. */
   private liveMaterials: MaterialLibrary | null = null;
@@ -125,6 +168,8 @@ export class Stage {
   private liveShadow = { depth: 0, drop: 0 };
   /** Points du contour de la montre centrale, dans son propre repère (pour l'ombre). */
   private liveOutline: THREE.Vector3[] = [];
+  /** Leur projection à l'écran (x, y entrelacés), réutilisée d'une image à l'autre. */
+  private outlineScreen = new Float32Array(0);
   private readonly shadowCorner = new THREE.Vector3();
   private readonly shadowRight = new THREE.Vector3();
   private readonly shadowDir = new THREE.Vector3();
@@ -179,6 +224,7 @@ export class Stage {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.enablePan = false;
+    this.controls.addEventListener('change', () => (this.dirty = true));
     this.controls.addEventListener('start', () => (this.interacting = true));
     this.controls.addEventListener('end', () => (this.interacting = false));
     this.controls.enabled = false;
@@ -205,6 +251,11 @@ export class Stage {
     });
     try {
       await model.ready;
+      // Shaders compilés en parallèle (KHR_parallel_shader_compile) avant le premier
+      // affichage : la première image ne fige plus la page.
+      if (version === this.liveVersion) {
+        await this.renderer.compileAsync(model.root, this.camera, this.scene);
+      }
     } catch (error) {
       model.dispose();
       if (transient) materials.dispose();
@@ -223,6 +274,9 @@ export class Stage {
     this.pilotFixedTime =
       (config.case.shape === 'cushion' || isBlackTonneau(config)) && config.view.time === 'fixed';
     this.liveOutline = outlinePoints(model);
+    this.outlineScreen = new Float32Array(this.liveOutline.length * 2);
+    this.lastAngles = null;
+    this.dirty = true;
     this.floating.add(model.root);
     const d = model.dimensions;
     const reach = Math.max(d.lugToLug / 2, d.caseRadius + d.crown.length, d.caseThickness);
@@ -280,7 +334,26 @@ export class Stage {
   /** Produit l'instantané d'une pièce (rendu une fois, gardé comme image). */
   snapshot(job: SnapshotJob): Promise<ImageBitmap> {
     return new Promise((resolve, reject) => {
-      const model = buildWatch(job.config, this.materials, {
+      if (job.signal?.aborted) {
+        reject(abortError());
+        return;
+      }
+      // Simple demande pour l'instant : le modèle n'est construit qu'à son tour (frame),
+      // pour ne pas assembler toutes les cellules de la grille dans la même tâche.
+      const entry: QueuedJob = { job, state: 'pending', model: null, resolve, reject };
+      job.signal?.addEventListener('abort', () => this.cancel(entry, abortError()), {
+        once: true,
+      });
+      insertByPriority(this.pending, entry);
+    });
+  }
+
+  /** Construit le modèle d'un instantané, puis prépare ses textures et ses shaders. */
+  private prepare(entry: QueuedJob): void {
+    const { job } = entry;
+    let model: WatchModel;
+    try {
+      model = buildWatch(job.config, this.materials, {
         quality: this.quality,
         refinement: this.refinement,
         layers: job.layers,
@@ -288,27 +361,53 @@ export class Stage {
       });
       model.showOnly(job.layers);
       model.setAngles(handAngles(POSTER_TIME, 0));
-      const entry: QueuedJob = { job, model, resolve, reject };
-      job.signal?.addEventListener('abort', () => {
-        const i = this.queue.indexOf(entry);
-        if (i >= 0) this.queue.splice(i, 1);
-        model.dispose();
-        reject(new DOMException('Annulé', 'AbortError'));
-      });
-      model.ready.then(
+    } catch (error) {
+      entry.state = 'done';
+      entry.reject(error);
+      return;
+    }
+    entry.state = 'building';
+    entry.model = model;
+    this.building.add(entry);
+    model.ready
+      .then(() =>
+        entry.state === 'done'
+          ? undefined
+          : this.renderer.compileAsync(model.root, this.snapCamera, this.snapScene),
+      )
+      .then(
         () => {
-          if (job.signal?.aborted) return;
-          // File triée par priorité : les cellules proches du centre d'abord.
-          const p = job.priority ?? 0;
-          const at = this.queue.findIndex((other) => (other.job.priority ?? 0) > p);
-          this.queue.splice(at === -1 ? this.queue.length : at, 0, entry);
+          this.building.delete(entry);
+          // Annulé pendant la préparation : le modèle est libéré ici.
+          if (entry.state === 'done') {
+            model.dispose();
+            return;
+          }
+          entry.state = 'prepared';
+          insertByPriority(this.prepared, entry);
         },
-        (error) => {
+        (error: unknown) => {
+          this.building.delete(entry);
           model.dispose();
-          reject(error);
+          if (entry.state === 'done') return;
+          entry.state = 'done';
+          entry.reject(error);
         },
       );
-    });
+  }
+
+  /** Retire un instantané de la file, quel que soit son avancement. */
+  private cancel(entry: QueuedJob, error: unknown): void {
+    const state = entry.state;
+    if (state === 'done') return;
+    entry.state = 'done';
+    if (state === 'pending') removeFrom(this.pending, entry);
+    if (state === 'prepared') {
+      removeFrom(this.prepared, entry);
+      entry.model?.dispose();
+    }
+    // building : prepare() libère le modèle quand sa préparation se termine.
+    entry.reject(error);
   }
 
   private distance(): number {
@@ -374,37 +473,44 @@ export class Stage {
     // Silhouette : points du contour de la montre (dans son propre repère, donc tournés
     // avec elle), projetés sur le plan de l'écran, puis résumés par une ellipse orientée
     // selon leurs axes principaux.
+    // Matrice à jour : l'image n'est plus redessinée à chaque frame, celle du rendu
+    // précédent pourrait dater.
+    this.live.root.updateWorldMatrix(true, false);
     const matrix = this.live.root.matrixWorld;
     const outline = this.liveOutline;
-    const points: [number, number][] = [];
+    const points = this.outlineScreen;
+    const n = outline.length;
     let mx = 0;
     let my = 0;
-    for (const local of outline) {
-      this.shadowCorner.copy(local).applyMatrix4(matrix).sub(target);
-      const p: [number, number] = [
-        this.shadowCorner.dot(this.shadowRight),
-        this.shadowCorner.dot(this.shadowUp),
-      ];
-      points.push(p);
-      mx += p[0] / outline.length;
-      my += p[1] / outline.length;
+    for (let i = 0; i < n; i++) {
+      this.shadowCorner.copy(outline[i]!).applyMatrix4(matrix).sub(target);
+      const x = this.shadowCorner.dot(this.shadowRight);
+      const y = this.shadowCorner.dot(this.shadowUp);
+      points[2 * i] = x;
+      points[2 * i + 1] = y;
+      mx += x / n;
+      my += y / n;
     }
     let sxx = 0;
     let sxy = 0;
     let syy = 0;
-    for (const [x, y] of points) {
-      sxx += (x - mx) ** 2;
-      sxy += (x - mx) * (y - my);
-      syy += (y - my) ** 2;
+    for (let i = 0; i < n; i++) {
+      const x = points[2 * i]! - mx;
+      const y = points[2 * i + 1]! - my;
+      sxx += x * x;
+      sxy += x * y;
+      syy += y * y;
     }
     const angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
     const ax = Math.cos(angle);
     const ay = Math.sin(angle);
     let major = 0;
     let minor = 0;
-    for (const [x, y] of points) {
-      major = Math.max(major, Math.abs((x - mx) * ax + (y - my) * ay));
-      minor = Math.max(minor, Math.abs(-(x - mx) * ay + (y - my) * ax));
+    for (let i = 0; i < n; i++) {
+      const x = points[2 * i]! - mx;
+      const y = points[2 * i + 1]! - my;
+      major = Math.max(major, Math.abs(x * ax + y * ay));
+      minor = Math.max(minor, Math.abs(-x * ay + y * ax));
     }
 
     const distance = camera.position.distanceTo(target);
@@ -425,48 +531,88 @@ export class Stage {
   private resize(): void {
     const { clientWidth: w, clientHeight: h } = this.container;
     if (w === 0 || h === 0) return;
+    this.width = w;
+    this.height = h;
+    this.dirty = true;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
 
+  /**
+   * Boucle d'images. L'image en direct n'est redessinée que si quelque chose a bougé :
+   * aiguilles, respiration, caméra, configuration, taille, ou instantané dessiné dans le
+   * même canvas. Sinon le navigateur garde l'image précédente et le GPU se repose.
+   */
   private readonly frame = () => {
     this.frameHandle = requestAnimationFrame(this.frame);
     if (document.hidden) return;
-
-    // Instantanés d'abord : ils sont dessinés dans le même canvas, puis recouverts par
-    // l'image en direct avant que le navigateur n'affiche la frame.
-    for (let i = 0; i < SNAPSHOTS_PER_FRAME && this.queue.length > 0; i++) {
-      this.renderSnapshot(this.queue.shift()!);
-    }
 
     const now = performance.now();
     const dt = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     const t = (now - this.startTime) / 1000;
-    if (this.live) {
-      this.live.setAngles(
-        handAngles(
-          this.pilotFixedTime ? POSTER_TIME : timeOfDay(this.pausedAt ?? new Date()),
-          this.liveSteps,
-        ),
-      );
-      // « Respiration » : rotation très lente qui fait jouer les reflets.
-      const breathe = this.interacting || this.pilotFixedTime || reducedMotion() ? 0 : 1;
-      this.floating.rotation.y +=
-        (Math.sin(t * 0.35) * 0.05 * breathe - this.floating.rotation.y) * 0.05;
-      this.floating.rotation.x +=
-        (Math.cos(t * 0.27) * 0.025 * breathe - this.floating.rotation.x) * 0.05;
+
+    // Instantanés d'abord : ils sont dessinés dans le même canvas, puis recouverts par
+    // l'image en direct avant que le navigateur n'affiche la frame. Budget de temps par
+    // image ; au moins un modèle mis en préparation pour que la file avance toujours.
+    const deadline = now + SNAPSHOT_BUDGET_MS;
+    let drewSnapshot = false;
+    while (this.prepared.length > 0 && performance.now() < deadline) {
+      this.renderSnapshot(this.prepared.shift()!);
+      drewSnapshot = true;
     }
-    if (this.cameraGoal) this.tweenCamera(dt);
-    else if (this.controls.enabled) this.controls.update();
+    let started = 0;
+    while (
+      this.pending.length > 0 &&
+      this.building.size + this.prepared.length < MAX_IN_FLIGHT &&
+      (started === 0 || performance.now() < deadline)
+    ) {
+      this.prepare(this.pending.shift()!);
+      started++;
+    }
+
+    let dirty = this.dirty || drewSnapshot;
+    this.dirty = false;
+    if (this.live) {
+      const angles = handAngles(
+        this.pilotFixedTime ? POSTER_TIME : timeOfDay(this.pausedAt ?? new Date()),
+        this.liveSteps,
+      );
+      if (!sameAngles(this.lastAngles, angles)) {
+        this.live.setAngles(angles);
+        this.lastAngles = angles;
+        dirty = true;
+      }
+      // « Respiration » : rotation très lente qui fait jouer les reflets.
+      const breathe = this.interacting || this.pilotFixedTime || this.reducedMotion.matches ? 0 : 1;
+      const rotation = this.floating.rotation;
+      const dy = (Math.sin(t * 0.35) * 0.05 * breathe - rotation.y) * 0.05;
+      const dx = (Math.cos(t * 0.27) * 0.025 * breathe - rotation.x) * 0.05;
+      if (Math.abs(dy) > STILL || Math.abs(dx) > STILL) {
+        rotation.y += dy;
+        rotation.x += dx;
+        dirty = true;
+      }
+    }
+    if (this.cameraGoal) {
+      this.tweenCamera(dt);
+      dirty = true;
+    } else if (this.controls.enabled && this.controls.update()) {
+      dirty = true;
+    }
+    if (!dirty) return;
+
     this.updateLiveShadow();
     this.renderer.setScissorTest(false);
-    this.renderer.setViewport(0, 0, this.container.clientWidth, this.container.clientHeight);
+    this.renderer.setViewport(0, 0, this.width, this.height);
     this.renderer.render(this.scene, this.camera);
   };
 
-  private renderSnapshot({ job, model, resolve, reject }: QueuedJob): void {
+  private renderSnapshot(entry: QueuedJob): void {
+    const { job, resolve, reject } = entry;
+    const model = entry.model!;
+    entry.state = 'done';
     try {
       const canvas = this.renderer.domElement;
       const ratio = this.renderer.getPixelRatio();
@@ -530,11 +676,9 @@ export class Stage {
     ++this.liveVersion;
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver.disconnect();
-    for (const entry of this.queue) {
-      entry.model.dispose();
-      entry.reject(new DOMException('Scène fermée', 'AbortError'));
+    for (const entry of [...this.pending, ...this.building, ...this.prepared]) {
+      this.cancel(entry, abortError('Scène fermée'));
     }
-    this.queue.length = 0;
     this.live?.dispose();
     this.liveMaterials?.dispose();
     this.controls.dispose();
