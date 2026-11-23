@@ -117,6 +117,7 @@
                       style:--swatch={trait.swatch}
                     ></span>{/if}{trait.value}
                 </dd>
+                {#if trait.reference}<p class="ref">{trait.reference}</p>{/if}
               </div>
             {/each}
           </dl>
@@ -155,9 +156,10 @@
   }
   dl div {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    gap: 16px;
+    gap: 2px 16px;
     padding: 7px 0;
     border-bottom: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
     font-size: 12px;
@@ -167,6 +169,13 @@
   }
   dt {
     opacity: 0.6;
+  }
+  .ref {
+    flex-basis: 100%;
+    margin: 0;
+    text-align: right;
+    font-size: 11px;
+    opacity: 0.55;
   }
   dd {
     margin: 0;

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { hexField } from './hex';
 test.setTimeout(90_000);
 const hash = (payload: object) =>
   `/#v1.${Buffer.from(JSON.stringify(payload)).toString('base64url')}`;
@@ -38,7 +39,7 @@ test('les six finitions conservent couleur, forme et lien partagé', async ({ pa
     );
     await expect(
       page.getByRole('button', { name: 'Couleur du cadran', exact: true }),
-    ).toHaveAttribute('title', '#123ABC');
+    ).toHaveAttribute('data-color', '#123ABC');
     expect(payload(page)).toMatchObject({ a: 5, aa: 5, x: '#123ABC', w: id });
   }
   const saved = page.url();
@@ -67,13 +68,13 @@ test('la couleur libre du lin se prévisualise et survit au passage par une tein
   const trigger = page.getByRole('button', { name: 'Couleur du cadran', exact: true });
   const saved = page.url();
   await trigger.click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#DAB988');
+  await (await hexField(page)).fill('#DAB988');
   expect(page.url()).toBe(saved);
   await page.getByRole('button', { name: 'Rétablir' }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(page.url()).toBe(saved);
   await trigger.click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#DAB988');
+  await (await hexField(page)).fill('#DAB988');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({ w: 11, x: '#DAB988' });
   await page.getByRole('grid').focus();
@@ -86,5 +87,5 @@ test('la couleur libre du lin se prévisualise et survit au passage par une tein
     'aria-activedescendant',
     'cell-dial-finish-guilloche',
   );
-  await expect(trigger).toHaveAttribute('title', '#DAB988');
+  await expect(trigger).toHaveAttribute('data-color', '#DAB988');
 });

@@ -20,7 +20,11 @@ describe('fiche d’identité', () => {
       value: 'Acier',
       metal: true,
     });
-    expect(all.find((t) => t.label === 'Couleur du cadran')?.value).toBe('#111317');
+    expect(all.find((t) => t.label === 'Couleur du cadran')).toMatchObject({
+      value: 'Noir',
+      swatch: '#111317',
+      reference: '≈ RAL 9005 Noir foncé',
+    });
   });
 
   it('donne la valeur réellement portée par la montre', () => {
@@ -36,16 +40,31 @@ describe('fiche d’identité', () => {
     if (shape) expect(shape.value).toBe('Rond');
   });
 
+  it('ne donne pas de RAL pour une teinte de finition', () => {
+    const config = defaultConfig();
+    config.dial.finish = 'sunburst';
+    config.dial.color = '#1E3A6B';
+    const all = identitySections(visibleRows(catalog.rows, config), config).flatMap(
+      (s) => s.traits,
+    );
+    expect(all.find((t) => t.label === 'Couleur du cadran')).toMatchObject({
+      value: 'Bleu nuit',
+      reference: 'Teinte de finition, à valider sur échantillon',
+    });
+  });
+
   it('montre la couleur libre de la trotteuse et une valeur hors catalogue', () => {
     const config = defaultConfig();
     config.hands.second.color = '#2255AA';
     config.case.diameterMm = 41;
     const sections = identitySections(visibleRows(catalog.rows, config), config);
     const all = sections.flatMap((s) => s.traits);
-    expect(all.find((t) => t.label === 'Couleur de la trotteuse')).toMatchObject({
-      value: '#2255AA',
+    const seconds = all.find((t) => t.label === 'Couleur de la trotteuse');
+    expect(seconds).toMatchObject({
       swatch: '#2255AA',
+      reference: expect.stringMatching(/^≈ RAL 5\d{3}/),
     });
+    expect(seconds?.value).not.toMatch(/#/);
     expect(all.find((t) => t.label === 'Diamètre')?.value).toBe('41 mm');
   });
 });
