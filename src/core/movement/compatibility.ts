@@ -5,6 +5,7 @@
  * adapter pour monter le calibre dans ce boîtier, sans prétendre à un plan d'usinage.
  */
 import { dateComplication } from '../config/date';
+import { powerReserve } from '../config/power-reserve';
 import { smallSeconds } from '../config/small-seconds';
 import type { WatchConfig } from '../config/types';
 import { contourExtents } from '../geometry/dial-shape';
@@ -45,6 +46,12 @@ function hasDateWindow(config: WatchConfig): boolean {
 }
 
 export function movementFit(config: WatchConfig, movement: MovementSpec): MovementFit {
+  if (movement.kind === 'quartz' && powerReserve(config))
+    return {
+      movement,
+      fit: 'no',
+      notes: ['Un quartz n’a pas de réserve de marche à indiquer : il tourne sur sa pile.'],
+    };
   if (movement.kind === 'quartz' || movement.heightMm === undefined)
     return { movement, fit: 'check', notes: ['Cotes et fonctions selon le calibre choisi.'] };
 
@@ -78,6 +85,10 @@ export function movementFit(config: WatchConfig, movement: MovementSpec): Moveme
   if (smallSeconds(config))
     blocking.push(
       `Trotteuse au centre sur le ${movement.name} : la petite seconde demande un calibre qui la porte.`,
+    );
+  if (powerReserve(config))
+    blocking.push(
+      `Pas d’indicateur de réserve sur le ${movement.name} : il faut un calibre qui le porte.`,
     );
   const window = hasDateWindow(config);
   if (window && movement.calendar === 'none')

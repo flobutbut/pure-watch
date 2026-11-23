@@ -14,6 +14,7 @@ import { latheZ } from '../lathe';
 import { profileGeometry, type Sample } from './profile';
 import { buildDate, dateWindowRect, roundedRect } from './date';
 import { buildSubdial, circleOutline, subdialOf } from './subdial';
+import { buildReservePrint } from './power-reserve';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 
@@ -79,6 +80,11 @@ export function buildDial(
   if (!options.print) {
     return { dial, print, indices, loupe, ready: dateReady, owned };
   }
+  const reserve = buildReservePrint(config, d, fontCss);
+  if (reserve) {
+    print.add(reserve.print);
+    owned.push(...reserve.owned);
+  }
 
   // Impression : texture transparente posée juste au-dessus du disque, pour que la
   // matière du cadran (iridescence, soleillé) reste visible dessous.
@@ -119,7 +125,7 @@ export function buildDial(
     print,
     indices,
     loupe,
-    ready: Promise.all([ready, dateReady]).then(() => {}),
+    ready: Promise.all([ready, dateReady, reserve?.ready]).then(() => {}),
     owned: [texture, printMaterial, ...owned],
   };
 }

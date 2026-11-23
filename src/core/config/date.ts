@@ -18,10 +18,14 @@ export interface DateComplication {
   disc: DateDisc;
 }
 
-/** Centre du guichet, en fraction du rayon (§8.3). */
+/**
+ * Centre du guichet, en fraction du rayon (§8.3). À 4 h 30, la valeur de la spec
+ * (0,58 ; 0,58) mettait le coin du guichet à 0,95 R, sur la piste des minutes et les
+ * chiffres 4 et 5 : il est rapproché du centre.
+ */
 export const DATE_POSITIONS: Readonly<Record<string, readonly [number, number]>> = {
   '3h': [0.72, 0],
-  '4h30': [0.58, -0.58],
+  '4h30': [0.47, -0.47],
   '6h': [0, -0.72],
   '12h': [0, 0.72],
 };

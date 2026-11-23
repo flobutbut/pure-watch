@@ -13,6 +13,7 @@ import { Stage, type SnapshotJob } from './stage';
 import { LAYERS, type Layer } from './watch';
 import { dateWindowRect } from './parts/date';
 import { subdialCircle } from '../core/config/small-seconds';
+import { reserveGauge } from '../core/config/power-reserve';
 
 /** Parties de la configuration dont dépend chaque calque (pour la clé de cache). */
 const LAYER_DEPENDENCIES: Record<
@@ -26,7 +27,7 @@ const LAYER_DEPENDENCIES: Record<
   dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
-  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
+  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications'],
   seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications'],
   crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications'],
 };
@@ -97,6 +98,12 @@ const dateFrame = (config: WatchConfig) => {
 const subdialFrame = (config: WatchConfig) => {
   const c = subdialCircle(config, watchDimensions(config).dialSafeRadius);
   return c ? { x: c.x, y: c.y, half: c.r * 1.25 } : null;
+};
+
+/** Gros plan sur l'éventail de la réserve de marche, s'il y en a un. */
+const reserveFrame = (config: WatchConfig) => {
+  const g = reserveGauge(config, watchDimensions(config).dialSafeRadius);
+  return g ? { x: g.x, y: g.y + g.r * 0.45, half: g.r * 1.05 } : null;
 };
 
 /** Quelles pièces montrer, et comment cadrer, pour chaque ligne (règles R1 à R4). */
@@ -201,6 +208,12 @@ const PREVIEWS: Record<string, PreviewSpec> = {
   'date-loupe': { layers: ['dial', 'print', 'indices', 'crystal'], frame: dateFrame },
   // Petite seconde : position sur le cadran entier, style en gros plan sur le sous-cadran.
   'small-seconds': { layers: ['dial', 'print', 'indices', 'seconds'], frame: dialFrame },
+  // Réserve de marche : position sur le cadran entier, échelle en gros plan.
+  'power-reserve': { layers: ['dial', 'print', 'indices', 'hands'], frame: dialFrame },
+  'power-reserve-style': {
+    layers: ['dial', 'print', 'indices', 'hands'],
+    frame: (c) => reserveFrame(c) ?? dialFrame(c),
+  },
   'small-seconds-style': {
     layers: ['dial', 'print', 'indices', 'seconds'],
     frame: (c) => subdialFrame(c) ?? dialFrame(c),

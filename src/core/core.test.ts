@@ -40,6 +40,8 @@ describe('catalogue', () => {
       'date-loupe',
       'small-seconds',
       'small-seconds-style',
+      'power-reserve',
+      'power-reserve-style',
     ]);
   });
 

@@ -3,22 +3,29 @@
  * emplacements (spec §4.5, règle « layout » : deux complications ne prennent pas la même
  * position).
  */
-import { DATE_POSITIONS, dateComplication } from './date';
-import { SMALL_SECONDS_POSITIONS, smallSeconds } from './small-seconds';
+import { DATE_POSITIONS } from './date';
+import { POWER_RESERVE_POSITIONS } from './power-reserve';
+import { SMALL_SECONDS_POSITIONS } from './small-seconds';
 import type { ComplicationConfig, WatchConfig } from './types';
 
 /** Positions possibles de chaque complication, dans l'ordre de préférence. */
 export const COMPLICATION_POSITIONS: Readonly<Record<string, readonly string[]>> = {
   date: Object.keys(DATE_POSITIONS),
   'small-seconds': Object.keys(SMALL_SECONDS_POSITIONS),
+  'power-reserve': Object.keys(POWER_RESERVE_POSITIONS),
 };
 
 const HOURS: Readonly<Record<string, number>> = { '12h': 0, '3h': 3, '6h': 6, '9h': 9 };
 
 /** Heures (0 = 12 h) dont l'index et le chiffre cèdent la place à une complication. */
 export function complicationHours(config: WatchConfig): number[] {
-  const positions = [dateComplication(config)?.position, smallSeconds(config)?.position];
-  return [...new Set(positions.flatMap((p) => (p && p in HOURS ? [HOURS[p]!] : [])))];
+  const hours = config.complications.flatMap((c) =>
+    // Seules les complications connues, à une position qu'elles acceptent, occupent le cadran.
+    COMPLICATION_POSITIONS[c.type]?.includes(c.position) && c.position in HOURS
+      ? [HOURS[c.position]!]
+      : [],
+  );
+  return [...new Set(hours)];
 }
 
 /**

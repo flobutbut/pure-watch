@@ -16,6 +16,7 @@ import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { subdialCircle } from '../../core/config/small-seconds';
 import type { MaterialLibrary } from '../materials';
 import { subdialFloor } from './subdial';
+import { buildReserveHand } from './power-reserve';
 import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
 
@@ -454,6 +455,8 @@ export function buildHands(
   const group = new THREE.Group();
   group.name = 'hands';
   group.add(pivots.hour, pivots.minute, cap);
+  const reserve = buildReserveHand(config, d, steel);
+  if (reserve) group.add(reserve);
   const seconds = new THREE.Group();
   seconds.name = 'seconds';
   seconds.add(pivots.second);

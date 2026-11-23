@@ -2103,6 +2103,110 @@
           }
         }
       ]
+    },
+    {
+      "id": "power-reserve",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.power-reserve",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Réserve de marche"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": null,
+          "preview": "power-reserve/none.svg",
+          "i18n": {
+            "name": "Sans indicateur"
+          }
+        },
+        {
+          "id": "12h",
+          "value": {
+            "position": "12h"
+          },
+          "preview": "power-reserve/12h.svg",
+          "i18n": {
+            "name": "À 12 h"
+          }
+        },
+        {
+          "id": "9h",
+          "value": {
+            "position": "9h"
+          },
+          "preview": "power-reserve/9h.svg",
+          "i18n": {
+            "name": "À 9 h"
+          }
+        },
+        {
+          "id": "3h",
+          "value": {
+            "position": "3h"
+          },
+          "preview": "power-reserve/3h.svg",
+          "i18n": {
+            "name": "À 3 h"
+          }
+        },
+        {
+          "id": "6h",
+          "value": {
+            "position": "6h"
+          },
+          "preview": "power-reserve/6h.svg",
+          "i18n": {
+            "name": "À 6 h"
+          }
+        }
+      ]
+    },
+    {
+      "id": "power-reserve-style",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.power-reserve.style",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Échelle de réserve"
+      },
+      "visibleWhen": {
+        "path": "complications.power-reserve",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "arc",
+          "value": "arc",
+          "preview": "power-reserve-style/arc.svg",
+          "i18n": {
+            "name": "Heures (0 à 40 h)"
+          }
+        },
+        {
+          "id": "segments",
+          "value": "segments",
+          "preview": "power-reserve-style/segments.svg",
+          "i18n": {
+            "name": "Segments haut / bas"
+          }
+        },
+        {
+          "id": "fuel",
+          "value": "fuel",
+          "preview": "power-reserve-style/fuel.svg",
+          "i18n": {
+            "name": "Jauge E – F"
+          }
+        }
+      ]
     }
   ]
 }
