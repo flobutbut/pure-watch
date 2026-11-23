@@ -19,6 +19,7 @@
   import Grid from './ui/grid/Grid.svelte';
   import Ambience from './ui/Ambience.svelte';
   import ColorPanel from './ui/colors/ColorPanel.svelte';
+  import AppChrome from './ui/AppChrome.svelte';
   import { ambienceFor } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
 
@@ -198,6 +199,11 @@
 
 <main style:--ink={ambience.ink} style:--veil={ambience.veil}>
   <Ambience {ambience} />
+  <AppChrome
+    url={configUrl(config, new URL(location.href)).href}
+    inspecting={nav.mode === 'view3d' || nav.mode === 'opening3d'}
+    colorEditing={colorTarget !== null}
+  />
   <Grid
     {rows}
     {nav}
@@ -229,6 +235,8 @@
 
 <style>
   main {
+    --chrome-gutter: clamp(20px, 3vw, 40px);
+    --chrome-top: calc(84px + env(safe-area-inset-top));
     color: var(--ink);
     transition: color 600ms var(--ease-out);
   }
@@ -236,7 +244,7 @@
   .link-notice {
     position: fixed;
     left: 50%;
-    bottom: 1rem;
+    bottom: calc(64px + env(safe-area-inset-bottom));
     transform: translateX(-50%);
     z-index: 20;
     max-width: min(36rem, calc(100vw - 2rem));

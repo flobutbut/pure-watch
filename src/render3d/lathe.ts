@@ -50,12 +50,15 @@ export function arc(from: P2, to: P2, bulge: number, steps = 6): P2[] {
 export function buildRuns<K extends string>(
   runs: readonly ProfileRun<K>[],
   materialFor: (surface: K) => THREE.Material,
-  segments = 192,
+  segments: number | ((run: ProfileRun<K>) => number) = 192,
 ): THREE.Mesh[] {
   return runs
     .filter((run) => run.points.length >= 2)
     .map((run) => {
-      const mesh = new THREE.Mesh(latheZ(run.points, segments), materialFor(run.surface));
+      const mesh = new THREE.Mesh(
+        latheZ(run.points, typeof segments === 'number' ? segments : segments(run)),
+        materialFor(run.surface),
+      );
       mesh.name = run.surface;
       return mesh;
     });

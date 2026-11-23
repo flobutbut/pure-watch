@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.9.1",
+  "catalogVersion": "0.11.0",
   "rows": [
     {
       "id": "case-shape",
@@ -583,6 +583,80 @@
       ]
     },
     {
+      "id": "bezel",
+      "group": "case",
+      "kind": "enum",
+      "path": "bezel.type",
+      "previewContext": "case-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Lunette"
+      },
+      "variants": [
+        {
+          "id": "smooth",
+          "value": "smooth",
+          "preview": "bezel/smooth.svg",
+          "i18n": {
+            "name": "Lisse"
+          }
+        },
+        {
+          "id": "rounded",
+          "value": "rounded",
+          "preview": "bezel/rounded.svg",
+          "i18n": {
+            "name": "Bombée"
+          }
+        },
+        {
+          "id": "stepped",
+          "value": "stepped",
+          "preview": "bezel/stepped.svg",
+          "i18n": {
+            "name": "Double filet"
+          }
+        },
+        {
+          "id": "fluted",
+          "value": "fluted",
+          "preview": "bezel/fluted.svg",
+          "i18n": {
+            "name": "Cannelée"
+          }
+        },
+        {
+          "id": "coin",
+          "value": "coin",
+          "preview": "bezel/coin.svg",
+          "i18n": {
+            "name": "Moletée"
+          }
+        },
+        {
+          "id": "notched",
+          "value": "notched",
+          "preview": "bezel/notched.svg",
+          "i18n": {
+            "name": "Crantée"
+          }
+        }
+      ],
+      "visibleWhen": {
+        "any": [
+          {
+            "path": "case.shape",
+            "notEquals": "rectangle"
+          },
+          {
+            "path": "dial.shape",
+            "notEquals": "round"
+          }
+        ]
+      }
+    },
+    {
       "id": "crystal",
       "group": "case",
       "kind": "enum",
@@ -624,6 +698,138 @@
           "preview": "crystal/acrylic.svg",
           "i18n": {
             "name": "Acrylique (hésalite)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rehaut",
+      "group": "face",
+      "kind": "enum",
+      "path": "rehaut.profile",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Réhaut"
+      },
+      "visibleWhen": {
+        "any": [
+          {
+            "path": "case.shape",
+            "notEquals": "rectangle"
+          },
+          {
+            "path": "dial.shape",
+            "notEquals": "round"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "id": "classic",
+          "value": "classic",
+          "preview": "rehaut/classic.svg",
+          "i18n": {
+            "name": "Fin"
+          }
+        },
+        {
+          "id": "sloped",
+          "value": "sloped",
+          "preview": "rehaut/sloped.svg",
+          "i18n": {
+            "name": "Biseauté"
+          }
+        },
+        {
+          "id": "concave",
+          "value": "concave",
+          "preview": "rehaut/concave.svg",
+          "i18n": {
+            "name": "Concave"
+          }
+        },
+        {
+          "id": "stepped",
+          "value": "stepped",
+          "preview": "rehaut/stepped.svg",
+          "i18n": {
+            "name": "À palier"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rehaut-scale",
+      "group": "face",
+      "kind": "enum",
+      "path": "rehaut.scale",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Graduations du réhaut"
+      },
+      "visibleWhen": {
+        "all": [
+          {
+            "any": [
+              {
+                "path": "case.shape",
+                "notEquals": "rectangle"
+              },
+              {
+                "path": "dial.shape",
+                "notEquals": "round"
+              }
+            ]
+          },
+          {
+            "path": "rehaut.profile",
+            "notEquals": "classic"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": "none",
+          "preview": "rehaut-scale/none.svg",
+          "i18n": {
+            "name": "Sans graduations"
+          }
+        },
+        {
+          "id": "minutes",
+          "value": "minutes",
+          "preview": "rehaut-scale/minutes.svg",
+          "i18n": {
+            "name": "Minutes"
+          }
+        },
+        {
+          "id": "five-minute",
+          "value": "five-minute",
+          "preview": "rehaut-scale/five-minute.svg",
+          "i18n": {
+            "name": "Minutes chiffrées"
+          }
+        },
+        {
+          "id": "24h",
+          "value": "24h",
+          "preview": "rehaut-scale/24h.svg",
+          "i18n": {
+            "name": "24 heures"
+          }
+        },
+        {
+          "id": "tachymeter",
+          "value": "tachymeter",
+          "preview": "rehaut-scale/tachymeter.svg",
+          "i18n": {
+            "name": "Tachymètre"
           }
         }
       ]

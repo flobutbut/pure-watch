@@ -8,6 +8,10 @@ import type { MaterialLibrary } from '../materials';
 import { caseLevels, metricLatheUV, shapeAperture, shapeLathe } from './levels';
 import { applyOcclusion, caseOcclusion } from './occlusion';
 import type { CaseParts } from './case';
+import { bezelTypeForConfig } from '../../core/config/bezel';
+import { bezelProfile, bezelSegments, machineBezel } from './bezel';
+import { effectiveRehautProfile } from '../../core/config/rehaut';
+import { buildWideRehaut } from './rehaut';
 
 type Surface = 'brushed' | 'polished' | 'joint';
 
@@ -121,17 +125,21 @@ export function buildCushionCase(
     },
   ];
   const group = new THREE.Group();
+  const bezelType = bezelTypeForConfig(config);
+  const customBezel = bezelProfile(bezelType, d, [R - c * 1.05, flankTop]);
+  if (customBezel) runs.splice(7, runs.length - 7, ...customBezel);
   group.name = 'case';
   const occlusion = caseOcclusion(config, d);
   const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
   for (const mesh of buildRuns(
     runs,
     (s) => (s === 'joint' ? lib.matte('#303238') : lib.caseMetal(config, s, true)),
-    192,
+    (run) => bezelSegments(bezelType, run.points, d),
   )) {
-    shapeLathe(mesh.geometry, d, config.case.shape);
+    machineBezel(mesh.geometry, bezelType, d);
+    shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth');
     metricLatheUV(mesh.geometry, R);
-    smoothTangents(mesh.geometry, 192);
+    smoothTangents(mesh.geometry, (mesh.geometry as THREE.LatheGeometry).parameters.segments);
     if (mesh.name !== 'joint') applyOcclusion(mesh.geometry, occlusion);
     const material = mesh.material as THREE.Material;
     const batch = batches.get(material) ?? [];
@@ -143,6 +151,9 @@ export function buildCushionCase(
     group.add(new THREE.Mesh(mergeGeometries(geometries), material));
     geometries.forEach((geometry) => geometry.dispose());
   }
+
+  if (effectiveRehautProfile(config) !== 'classic')
+    return { case: group, rehaut: buildWideRehaut(config, d, lib) };
 
   const rehaut = new THREE.Group();
   rehaut.name = 'rehaut';

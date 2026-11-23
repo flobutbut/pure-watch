@@ -17,6 +17,7 @@ import { buildCrystal } from './parts/crystal';
 import { buildDial } from './parts/dial';
 import { buildHands } from './parts/hands';
 import { buildLugs } from './parts/lugs';
+import { decorateRehaut } from './parts/rehaut';
 
 export const LAYERS = [
   'case',
@@ -114,6 +115,9 @@ export function buildWatch(
   for (const object of discarded) if (object) disposeGeometries(object);
 
   const root = new THREE.Group();
+  const rehautPrint = wanted('rehaut')
+    ? decorateRehaut(layers.rehaut, config, d, options.printSize)
+    : null;
   root.name = 'watch';
   for (const layer of LAYERS) root.add(layers[layer]);
 
@@ -121,7 +125,7 @@ export function buildWatch(
     root,
     layers,
     dimensions: d,
-    ready: dialParts?.ready ?? Promise.resolve(),
+    ready: Promise.all([dialParts?.ready, rehautPrint?.ready]).then(() => {}),
     setAngles: hands.setAngles,
     showOnly(visible) {
       for (const layer of LAYERS) layers[layer].visible = !visible || visible.includes(layer);
@@ -131,6 +135,7 @@ export function buildWatch(
       // les géométries et les ressources propres à cette montre.
       disposeGeometries(root);
       for (const resource of dialParts?.owned ?? []) resource.dispose();
+      for (const resource of rehautPrint?.owned ?? []) resource.dispose();
       root.removeFromParent();
     },
   };

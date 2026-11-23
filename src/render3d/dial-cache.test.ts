@@ -30,3 +30,63 @@ it('refreshes dependent previews for the aperture, without invalidating hands fo
   }
   renderer.dispose();
 });
+
+it('refreshes bezel-dependent previews without invalidating hands or isolated dials', () => {
+  const catalog = parseCatalog(rawCatalog);
+  const renderer = new PartRenderer3D(catalog);
+  const config = defaultConfig();
+  const changed = structuredClone(config);
+  changed.bezel.type = 'fluted';
+  for (const rowId of ['case-shape', 'crystal', 'hands', 'dial-finish']) {
+    const row = catalog.rows.find((r) => r.id === rowId)!;
+    const request: PartRequest = {
+      rowId,
+      variantId: row.variants[0]!.id,
+      context: row.previewContext,
+      config,
+      sizePx: 160,
+      pixelRatio: 1,
+    };
+    const same = renderer.cacheKey(request) === renderer.cacheKey({ ...request, config: changed });
+    expect(same).toBe(rowId === 'hands' || rowId === 'dial-finish');
+  }
+  renderer.dispose();
+});
+
+it('updates the dial and hands for rehaut width, but only rehaut previews for its colour or scale', () => {
+  const catalog = parseCatalog(rawCatalog);
+  const renderer = new PartRenderer3D(catalog);
+  const config = defaultConfig();
+  const wide = structuredClone(config);
+  wide.rehaut.profile = 'sloped';
+  const coloured = structuredClone(config);
+  coloured.rehaut.finish = 'custom';
+  coloured.rehaut.color = '#123ABC';
+  const graduated = structuredClone(config);
+  graduated.rehaut.scale = 'five-minute';
+  for (const rowId of [
+    'case-shape',
+    'crystal',
+    'hands',
+    'seconds',
+    'dial-finish',
+    'chapter-ring',
+    'indices',
+  ]) {
+    const row = catalog.rows.find((r) => r.id === rowId)!;
+    const request: PartRequest = {
+      rowId,
+      variantId: row.variants[0]!.id,
+      context: row.previewContext,
+      config,
+      sizePx: 160,
+      pixelRatio: 1,
+    };
+    const initial = renderer.cacheKey(request);
+    expect(renderer.cacheKey({ ...request, config: wide })).not.toBe(initial);
+    const showsRehaut = ['case-shape', 'crystal'].includes(rowId);
+    expect(renderer.cacheKey({ ...request, config: coloured }) !== initial).toBe(showsRehaut);
+    expect(renderer.cacheKey({ ...request, config: graduated }) !== initial).toBe(showsRehaut);
+  }
+  renderer.dispose();
+});

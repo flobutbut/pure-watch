@@ -10,6 +10,10 @@ import { caseLevels, metricLatheUV, shapeAperture, shapeLathe } from './levels';
 import { applyOcclusion, caseOcclusion } from './occlusion';
 import { arc, buildRuns, type P2, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
+import { bezelTypeForConfig } from '../../core/config/bezel';
+import { bezelProfile, bezelSegments, machineBezel } from './bezel';
+import { effectiveRehautProfile } from '../../core/config/rehaut';
+import { buildWideRehaut } from './rehaut';
 
 type CaseSurface = 'brushed' | 'polished' | 'joint';
 
@@ -111,14 +115,18 @@ export function buildCase(
       },
     );
   }
+  const bezelType = bezelTypeForConfig(config);
+  const customBezel = bezelProfile(bezelType, d, flankEnd);
+  if (customBezel) runs.splice(3, runs.length - 3, ...customBezel);
   const metal = (surface: CaseSurface) =>
     surface === 'joint' ? lib.matte('#090B0E') : lib.caseMetal(config, surface, true);
   const caseGroup = new THREE.Group();
   caseGroup.name = 'case';
   // Ombre douce autour de la racine des cornes et du tube de couronne.
   const occlusion = caseOcclusion(config, d);
-  for (const mesh of buildRuns(runs, metal)) {
-    shapeLathe(mesh.geometry, d, config.case.shape);
+  for (const mesh of buildRuns(runs, metal, (run) => bezelSegments(bezelType, run.points, d))) {
+    machineBezel(mesh.geometry, bezelType, d);
+    shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth');
     metricLatheUV(mesh.geometry, R);
     applyOcclusion(mesh.geometry, occlusion);
     caseGroup.add(mesh);
@@ -147,6 +155,9 @@ export function buildCase(
       geometries.forEach((g) => g.dispose());
     }
   }
+
+  if (effectiveRehautProfile(config) !== 'classic')
+    return { case: caseGroup, rehaut: buildWideRehaut(config, d, lib) };
 
   // Rehaut : anneau incliné de l'ouverture de lunette jusqu'au bord du cadran.
   const rehautGroup = new THREE.Group();

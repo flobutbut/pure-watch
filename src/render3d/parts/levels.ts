@@ -36,6 +36,7 @@ export function shapeLathe(
   geometry: THREE.BufferGeometry,
   d: WatchDimensions,
   shape: string,
+  linearFront = false,
 ): void {
   if (shape === 'round' && d.dialShape === 'round') return;
   const R = d.caseRadius;
@@ -54,7 +55,7 @@ export function shapeLathe(
     const caseFactor = shapeRadius(shape, theta);
     let outer = R * caseFactor;
     let radius = r + (caseFactor - 1) * R * w;
-    if (d.dialShape !== 'round') {
+    if (d.dialShape !== 'round' || linearFront) {
       const key = Math.round(theta * 1e5);
       let contour = contours.get(key);
       if (!contour) {

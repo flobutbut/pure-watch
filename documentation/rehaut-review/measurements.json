@@ -1,0 +1,37 @@
+{
+  "metrics": {
+    "classic": {
+      "triangles": 45784,
+      "meshes": 27,
+      "calls": 29,
+      "renderedTriangles": 45784,
+      "geometries": 27,
+      "textures": 5
+    },
+    "sloped": {
+      "triangles": 61912,
+      "meshes": 28,
+      "calls": 30,
+      "renderedTriangles": 61912,
+      "geometries": 28,
+      "textures": 6
+    },
+    "concave": {
+      "triangles": 61912,
+      "meshes": 28,
+      "calls": 30,
+      "renderedTriangles": 61912,
+      "geometries": 28,
+      "textures": 6
+    },
+    "stepped": {
+      "triangles": 61912,
+      "meshes": 28,
+      "calls": 30,
+      "renderedTriangles": 61912,
+      "geometries": 28,
+      "textures": 6
+    }
+  },
+  "errors": []
+}
