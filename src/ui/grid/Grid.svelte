@@ -296,7 +296,15 @@
   const watchY = $derived(colorTarget && width < 760 ? -height * 0.3 : dragY + bumpY);
 
   const colorForRow = (id: string): ColorTarget | null =>
-    id === 'dial-finish' ? 'dial' : id === 'hands' ? 'hands' : id === 'seconds' ? 'seconds' : null;
+    id === 'dial-finish'
+      ? 'dial'
+      : id === 'hands'
+        ? 'hands'
+        : id === 'seconds'
+          ? 'seconds'
+          : id === 'rehaut'
+            ? 'rehaut'
+            : null;
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -414,16 +422,22 @@
                 ? 'Couleur du cadran'
                 : target === 'hands'
                   ? 'Matière et couleur des aiguilles'
-                  : 'Couleur de la trotteuse'}
+                  : target === 'rehaut'
+                    ? 'Matière et couleur du réhaut'
+                    : 'Couleur de la trotteuse'}
               title={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
               <span class="color-dot" style:background={targetColor(config, target)}></span>
               <span>
                 Couleur <span class="color-value">
-                  · {target === 'seconds' && config.hands.second.color === 'match'
-                    ? 'Assortie'
-                    : targetColor(config, target).toUpperCase()}
+                  · {target === 'rehaut' && config.rehaut.finish !== 'custom'
+                    ? config.rehaut.finish === 'metal'
+                      ? 'Boîtier'
+                      : 'Cadran'
+                    : target === 'seconds' && config.hands.second.color === 'match'
+                      ? 'Assortie'
+                      : targetColor(config, target).toUpperCase()}
                 </span>
               </span>
             </button>
@@ -732,8 +746,8 @@
 
   .tools {
     position: absolute;
-    top: calc(24px + env(safe-area-inset-top));
-    right: calc(24px + env(safe-area-inset-right));
+    top: var(--chrome-top, calc(24px + env(safe-area-inset-top)));
+    right: calc(var(--chrome-gutter, 24px) + env(safe-area-inset-right));
     z-index: 2;
     display: flex;
     gap: 10px;

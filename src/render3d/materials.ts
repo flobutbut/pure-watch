@@ -9,6 +9,7 @@ import { DIAL_PATTERN_SETTINGS, isDialPatternFinish } from './dial-patterns';
 import { isBlackTonneau } from '../core/config/instrument';
 import { effectiveDialColor } from '../core/config/dial';
 import type { WatchConfig } from '../core/config/types';
+import { rehautColor, rehautSettings } from '../core/config/rehaut';
 import {
   forgedCarbonTexture,
   grainTextures,
@@ -389,11 +390,14 @@ export class MaterialLibrary {
 
   /** Rehaut : anneau incliné entre lunette et cadran, mat, dans la teinte du cadran. */
   rehaut(config: WatchConfig): THREE.MeshStandardMaterial {
-    const color = effectiveDialColor(config.dial);
+    const settings = rehautSettings(config);
+    if (settings.finish === 'metal') return this.caseMetal(config, 'satin', true);
+    const color = rehautColor(config);
     // (clé distincte de l'ancienne version sans couleurs de sommet)
-    return this.cached(`rehaut:${color}`, () => {
+    return this.cached(`rehaut:${settings.finish}:${color}`, () => {
       const c = new THREE.Color(color);
-      c.offsetHSL(0, 0, c.getHSL({ h: 0, s: 0, l: 0 }).l > 0.5 ? -0.06 : 0.03);
+      if (settings.finish !== 'custom')
+        c.offsetHSL(0, 0, c.getHSL({ h: 0, s: 0, l: 0 }).l > 0.5 ? -0.06 : 0.03);
       // Couleurs de sommet : le pied du rehaut, contre le cadran, est dans l'ombre.
       return new THREE.MeshStandardMaterial({
         color: c,

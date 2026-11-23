@@ -1,0 +1,45 @@
+import { expect, it } from 'vitest';
+import rawCatalog from '../../data/catalog.json';
+import { parseCatalog } from '../catalog/load';
+import { visibleRows } from '../rules/visibility';
+import { defaultConfig } from './defaults';
+import { rehautColor } from './rehaut';
+import { colorChoice, withColorChoice } from './colors';
+import { decodeConfigHash, encodeConfigHash } from './url';
+
+it('keeps independent colour, follows dial and case dynamically and retains both through URLs', () => {
+  const catalog = parseCatalog(rawCatalog);
+  let config = defaultConfig();
+  const before = structuredClone(config);
+  config = withColorChoice(config, 'rehaut', { color: '#C85432', finish: 'custom' });
+  expect(rehautColor(config)).toBe('#C85432');
+  expect(config.dial).toEqual(before.dial);
+  expect(config.hands).toEqual(before.hands);
+  expect(config.case).toEqual(before.case);
+  config = withColorChoice(config, 'rehaut', { color: '#C85432', finish: 'dial' });
+  config.dial.color = '#19476B';
+  expect(rehautColor(config)).toBe('#19476B');
+  config.rehaut.finish = 'metal';
+  config.case.material = 'gold-yellow';
+  expect(rehautColor(config)).toBe('#E6C068');
+  expect(colorChoice(config, 'rehaut')).toEqual({ color: '#C85432', finish: 'metal' });
+  expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
+  expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
+  expect(decodeConfigHash('#v1.e30', catalog).config.rehaut).toEqual(before.rehaut);
+});
+it('shows graduations only on a compatible wide profile and preserves hidden selections', () => {
+  const rows = parseCatalog(rawCatalog).rows;
+  const config = defaultConfig();
+  const shown = () => visibleRows(rows, config).map((r) => r.id);
+  expect(shown()).toContain('rehaut');
+  expect(shown()).not.toContain('rehaut-scale');
+  config.rehaut.profile = 'concave';
+  config.rehaut.scale = '24h';
+  expect(shown()).toContain('rehaut-scale');
+  config.case.shape = 'rectangle';
+  expect(shown()).not.toContain('rehaut');
+  expect(shown()).not.toContain('rehaut-scale');
+  config.dial.shape = 'rectangle';
+  expect(shown()).toContain('rehaut-scale');
+  expect(config.rehaut.scale).toBe('24h');
+});

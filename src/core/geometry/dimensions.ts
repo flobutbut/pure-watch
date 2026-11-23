@@ -7,6 +7,7 @@
  */
 import { contourExtents, effectiveDialShape, fitAperture } from './dial-shape';
 import type { WatchConfig } from '../config/types';
+import { effectiveRehautProfile } from '../config/rehaut';
 
 export interface WatchDimensions {
   /** Rayon extérieur du boîtier (hors couronne). */
@@ -54,7 +55,11 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
   const bezelWidth = clamp(diameter * 0.065, 1.4, 3.2);
   const openingRadius = caseRadius - bezelWidth;
   // Le rehaut (anneau incliné entre lunette et cadran) mange ≈ 0,6 mm.
-  const dialRadius = openingRadius - clamp(diameter * 0.015, 0.4, 0.8);
+  const rehautWidth =
+    effectiveRehautProfile(config) === 'classic'
+      ? clamp(diameter * 0.015, 0.4, 0.8)
+      : clamp(diameter * 0.045, 1, 2.2);
+  const dialRadius = openingRadius - rehautWidth;
 
   const dialShape = effectiveDialShape(config.dial.shape);
   const dialScale = fitAperture(config.case.shape, dialShape, caseRadius, openingRadius);

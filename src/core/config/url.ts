@@ -15,6 +15,7 @@ const V1_DEFAULTS = {
   ...frozenDefaults,
   dial: { ...frozenDefaults.dial, shape: 'round' },
   hands: { ...frozenDefaults.hands, color: '#E8EBF0' },
+  rehaut: { profile: 'classic', finish: 'dial', color: '#111317', scale: 'none' },
 } as WatchConfig;
 const MAX_HASH_LENGTH = 16_384;
 const id = z
@@ -97,6 +98,8 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     fluted: 5,
     notched: 6,
     rotating: 7,
+    rounded: 8,
+    stepped: 9,
   }),
   o: field('bezel.insert', id, {
     none: 1,
@@ -250,6 +253,10 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     rectangle: 6,
   }),
   ab: field('hands.color', hex),
+  ac: field('rehaut.profile', id, { classic: 1, sloped: 2, concave: 3, stepped: 4 }),
+  ad: field('rehaut.finish', id, { dial: 1, metal: 2, custom: 3 }),
+  ae: field('rehaut.color', hex),
+  af: field('rehaut.scale', id, { none: 1, minutes: 2, 'five-minute': 3, '24h': 4, tachymeter: 5 }),
 };
 
 function base64url(text: string): string {

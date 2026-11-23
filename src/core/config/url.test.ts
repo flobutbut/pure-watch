@@ -11,6 +11,19 @@ const hash = (payload: unknown) =>
   `#v1.${btoa(JSON.stringify(payload)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')}`;
 
 describe('versioned watch links', () => {
+  it('keeps historic bezel tokens and appends the two new profiles', () => {
+    for (const [type, token] of Object.entries({
+      smooth: 1,
+      coin: 4,
+      fluted: 5,
+      notched: 6,
+      rotating: 7,
+      rounded: 8,
+      stepped: 9,
+    })) {
+      expect(decodeConfigHash(hash({ n: token }), catalog).config.bezel.type).toBe(type);
+    }
+  });
   it('has a fixed v1 default and keeps typical configurations below 200 characters', () => {
     expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
     for (const config of [blackTonneauPilot(), cushionPilot()]) {

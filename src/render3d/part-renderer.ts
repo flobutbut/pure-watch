@@ -13,16 +13,19 @@ import { Stage, type SnapshotJob } from './stage';
 import { LAYERS, type Layer } from './watch';
 
 /** Parties de la configuration dont dépend chaque calque (pour la clé de cache). */
-const LAYER_DEPENDENCIES: Record<Layer, readonly (keyof WatchConfig | 'dial.shape')[]> = {
-  case: ['case', 'crystal', 'dial.shape'],
-  rehaut: ['case', 'crystal', 'dial'],
+const LAYER_DEPENDENCIES: Record<
+  Layer,
+  readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile')[]
+> = {
+  case: ['case', 'crystal', 'dial.shape', 'bezel.type'],
+  rehaut: ['case', 'crystal', 'dial', 'rehaut'],
   lugs: ['case', 'crystal'],
   crown: ['crown', 'case', 'crystal'],
-  dial: ['dial', 'case'],
-  print: ['dial', 'case'],
-  indices: ['dial', 'case'],
-  hands: ['hands', 'case', 'dial.shape'],
-  seconds: ['hands', 'case', 'dial.shape'],
+  dial: ['dial', 'case', 'rehaut.profile'],
+  print: ['dial', 'case', 'rehaut.profile'],
+  indices: ['dial', 'case', 'rehaut.profile'],
+  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile'],
+  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile'],
   crystal: ['crystal', 'case', 'dial.shape'],
 };
 
@@ -31,7 +34,7 @@ function relevantConfig(
   config: WatchConfig,
   layers: readonly Layer[] | null,
 ): Record<string, unknown> {
-  const keys = new Set<keyof WatchConfig | 'dial.shape'>();
+  const keys = new Set<keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile'>();
   for (const layer of layers ?? LAYERS) for (const key of LAYER_DEPENDENCIES[layer]) keys.add(key);
   const out: Record<string, unknown> = {};
   for (const key of [...keys].sort()) out[key] = getAtPath(config, key);
@@ -123,6 +126,11 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     context: neutralDial,
     frame: headFrame,
   },
+  bezel: {
+    layers: ['case', 'rehaut', 'dial'],
+    context: neutralDial,
+    frame: headFrame,
+  },
   // Cristal : le galbe ne se lit que de profil.
   crystal: {
     layers: ['case', 'crystal', 'rehaut', 'dial'],
@@ -132,6 +140,14 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     },
   },
   // Cadran : finition et couleur se lisent sur le disque seul (R1).
+  rehaut: { layers: ['case', 'rehaut', 'dial'], frame: quarterFrame },
+  'rehaut-scale': {
+    layers: ['rehaut', 'dial'],
+    frame: (config) => {
+      const d = watchDimensions(config);
+      return { x: 0, y: 0, half: ((d.dialExtent * d.openingRadius) / d.dialRadius) * 1.05 };
+    },
+  },
   'dial-shape': { layers: ['case', 'rehaut', 'dial', 'print', 'indices'], frame: headFrame },
   'dial-finish': { layers: ['dial'], frame: dialFrame },
   'dial-color': { layers: ['dial'], frame: dialFrame },

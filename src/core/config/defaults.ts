@@ -1,4 +1,5 @@
 import type { WatchConfig } from './types';
+import { DEFAULT_REHAUT } from './rehaut';
 
 /** Montre de départ : ronde, acier, 40 mm, cadran noir mat, aiguilles épée. */
 export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
@@ -19,6 +20,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
   crown: { style: 'onion', position: '3h', guard: false, screwed: true },
   bezel: { type: 'smooth', insert: 'none', scale: 'none', color: '#101418', pip: 'none' },
   crystal: { type: 'sapphire-domed', coating: 'none', cyclops: false },
+  rehaut: { ...DEFAULT_REHAUT },
   dial: {
     shape: 'round',
     material: 'metal',

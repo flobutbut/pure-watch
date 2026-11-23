@@ -36,7 +36,9 @@ export interface CrownConfig {
 }
 
 export interface BezelConfig {
-  type: Open<'smooth' | 'thin' | 'thick' | 'coin' | 'fluted' | 'notched' | 'rotating'>;
+  type: Open<
+    'smooth' | 'thin' | 'thick' | 'coin' | 'fluted' | 'notched' | 'rotating' | 'rounded' | 'stepped'
+  >;
   insert: Open<'none' | 'aluminium' | 'ceramic' | 'sapphire' | 'engraved-steel'>;
   scale: Open<'none' | 'dive-60' | '12h' | '24h' | 'tachymeter' | 'pulsometer' | 'telemeter'>;
   color: HexColor;
@@ -47,6 +49,13 @@ export interface CrystalConfig {
   type: Open<'sapphire-flat' | 'sapphire-domed' | 'sapphire-box' | 'mineral' | 'acrylic'>;
   coating: Open<'none' | 'ar-inner' | 'ar-double' | 'ar-blue' | 'ar-violet'>;
   cyclops: boolean;
+}
+
+export interface RehautConfig {
+  profile: Open<'classic' | 'sloped' | 'concave' | 'stepped'>;
+  finish: Open<'dial' | 'metal' | 'custom'>;
+  color: HexColor;
+  scale: Open<'none' | 'minutes' | 'five-minute' | '24h' | 'tachymeter'>;
 }
 
 export interface DialConfig {
@@ -151,6 +160,7 @@ export interface WatchConfig {
   crown: CrownConfig;
   bezel: BezelConfig;
   crystal: CrystalConfig;
+  rehaut: RehautConfig;
   dial: DialConfig;
   hands: HandsConfig;
   complications: ComplicationConfig[];

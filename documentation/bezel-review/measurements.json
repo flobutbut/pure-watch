@@ -1,0 +1,54 @@
+{
+  "browser": "149.0.7827.55",
+  "metrics": {
+    "smooth": {
+      "triangles": 45432,
+      "meshes": 26,
+      "calls": 28,
+      "renderedTriangles": 45432,
+      "geometries": 26,
+      "textures": 6
+    },
+    "rounded": {
+      "triangles": 50808,
+      "meshes": 25,
+      "calls": 27,
+      "renderedTriangles": 50808,
+      "geometries": 25,
+      "textures": 6
+    },
+    "stepped": {
+      "triangles": 42744,
+      "meshes": 27,
+      "calls": 29,
+      "renderedTriangles": 42744,
+      "geometries": 27,
+      "textures": 6
+    },
+    "fluted": {
+      "triangles": 55416,
+      "meshes": 26,
+      "calls": 28,
+      "renderedTriangles": 55416,
+      "geometries": 26,
+      "textures": 6
+    },
+    "coin": {
+      "triangles": 55416,
+      "meshes": 26,
+      "calls": 28,
+      "renderedTriangles": 55416,
+      "geometries": 26,
+      "textures": 6
+    },
+    "notched": {
+      "triangles": 55416,
+      "meshes": 26,
+      "calls": 28,
+      "renderedTriangles": 55416,
+      "geometries": 26,
+      "textures": 6
+    }
+  },
+  "errors": []
+}

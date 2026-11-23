@@ -11,6 +11,7 @@
     type ColorTarget,
   } from '../../core/config/colors';
   import { effectiveDialColor } from '../../core/config/dial';
+  import { REHAUT_FINISHES } from '../../core/config/rehaut';
   import type { HexColor, WatchConfig } from '../../core/config/types';
 
   interface Props {
@@ -41,9 +42,13 @@
       ? 'Couleur du cadran'
       : target === 'hands'
         ? 'Matière des aiguilles'
-        : 'Couleur de la trotteuse',
+        : target === 'rehaut'
+          ? 'Matière et couleur du réhaut'
+          : 'Couleur de la trotteuse',
   );
-  const free = $derived(target !== 'hands' || finish === 'lacquer');
+  const free = $derived(
+    target === 'rehaut' ? finish === 'custom' : target !== 'hands' || finish === 'lacquer',
+  );
   const color = $derived(hsvToHex(hsv.h, hsv.s, hsv.v));
   const valid = $derived(!free || matched || normalizeHex(hexInput) !== null);
   const choice = $derived<ColorChoice>({ color: matched ? 'match' : color, finish });
@@ -183,6 +188,22 @@
     </header>
     <p class="intro">Aperçu en direct sur votre montre.</p>
     <div class="body">
+      {#if target === 'rehaut'}
+        <div class="links" role="group" aria-label="Finition du réhaut">
+          {#each REHAUT_FINISHES as item (item.id)}
+            <button
+              type="button"
+              class:chosen={finish === item.id}
+              aria-pressed={finish === item.id}
+              onclick={() => {
+                finish = item.id;
+              }}
+            >
+              {item.name}
+            </button>
+          {/each}
+        </div>
+      {/if}
       {#if target === 'hands'}
         <div class="finishes" role="group" aria-label="Finition des aiguilles">
           {#each HAND_FINISHES as item (item.id)}
@@ -338,8 +359,13 @@
         </div>
       {:else}
         <p class="metal-note">
-          Les reflets et la matière suivent la finition choisie. Sélectionnez « Laqué » pour créer
-          une couleur libre.
+          {#if target === 'rehaut'}
+            Le réhaut suit {finish === 'metal' ? 'la matière du boîtier' : 'la couleur du cadran'}.
+            Sélectionnez « Couleur libre » pour choisir sa propre teinte.
+          {:else}
+            Les reflets et la matière suivent la finition choisie. Sélectionnez « Laqué » pour créer
+            une couleur libre.
+          {/if}
         </p>
       {/if}
     </div>
