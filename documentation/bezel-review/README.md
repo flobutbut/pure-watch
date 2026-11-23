@@ -1,5 +1,8 @@
 # Lunettes
 
+Mise à jour : le réglage d’ouverture ajuste désormais aussi les cadrans ronds aux boîtiers étroits. La restriction historique rectangle / cadran rond décrite ci-dessous est levée ; voir `documentation/dial-size/README.md`.
+
+
 Six profils fixes, dans une ligne « Lunette » placée avant « Cristal » : lisse (profil historique), bombée, double filet, cannelée, moletée et crantée. La matière et la finition suivent le boîtier. Les usinages sont géométriques, sans texture supplémentaire.
 
 L'ouverture, le siège du verre, le réhaut et les dimensions des aiguilles restent inchangés. Le contour extérieur suit le boîtier et le contour intérieur suit le cadran. Les profils usinés interpolent linéairement entre ces deux contours pour éviter un repli sur les côtés étroits du tonneau.

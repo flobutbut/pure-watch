@@ -30,7 +30,7 @@ export function outerRadiusAt(d: WatchDimensions, shape: string, theta: number):
 /**
  * Déforme une pièce tournée vers la forme du boîtier : les surfaces extérieures épousent
  * la forme. Le devant rejoint le contour indépendant du cadran ; les flancs, le fond
- * et les raccords des cornes gardent leur silhouette. Le cadran rond historique est conservé.
+ * et les raccords des cornes gardent leur silhouette, indépendamment de l’ouverture.
  */
 export function shapeLathe(
   geometry: THREE.BufferGeometry,
@@ -41,6 +41,7 @@ export function shapeLathe(
   if (shape === 'round' && d.dialShape === 'round') return;
   const R = d.caseRadius;
   const inner = d.openingRadius;
+  const bodyInner = R - clamp(R * 2 * 0.065, 1.4, 3.2);
   const pos = geometry.getAttribute('position');
   const { c, flankTop, rehautTop } = caseLevels(d);
   const contours = new Map<number, { caseRadius: number; opening: number }>();
@@ -50,12 +51,13 @@ export function shapeLathe(
     const r = Math.hypot(x, y);
     if (r < 1e-6) continue;
     const t = clamp((r - inner) / (R - inner), 0, 1);
-    const w = t * t * (3 - 2 * t);
+    const bodyT = clamp((r - bodyInner) / (R - bodyInner), 0, 1);
+    const w = bodyT * bodyT * (3 - 2 * bodyT);
     const theta = Math.atan2(y, x);
     const caseFactor = shapeRadius(shape, theta);
     let outer = R * caseFactor;
     let radius = r + (caseFactor - 1) * R * w;
-    if (d.dialShape !== 'round' || linearFront) {
+    if (d.dialShape !== 'round' || linearFront || Math.abs(inner - bodyInner) > 1e-6) {
       const key = Math.round(theta * 1e5);
       let contour = contours.get(key);
       if (!contour) {

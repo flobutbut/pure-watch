@@ -22,6 +22,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
   crystal: { type: 'sapphire-domed', coating: 'none', cyclops: false },
   rehaut: { ...DEFAULT_REHAUT },
   dial: {
+    size: 'open',
     shape: 'round',
     material: 'metal',
     finish: 'matte',

@@ -90,3 +90,34 @@ it('updates the dial and hands for rehaut width, but only rehaut previews for it
   }
   renderer.dispose();
 });
+
+it('refreshes aperture-dependent previews when the dial opening changes', () => {
+  const catalog = parseCatalog(rawCatalog),
+    renderer = new PartRenderer3D(catalog);
+  const config = defaultConfig(),
+    compact = structuredClone(config);
+  compact.dial.size = 'compact';
+  for (const rowId of [
+    'case-shape',
+    'bezel',
+    'crystal',
+    'hands',
+    'seconds',
+    'dial-finish',
+    'chapter-ring',
+    'indices',
+    'rehaut',
+  ]) {
+    const row = catalog.rows.find((r) => r.id === rowId)!;
+    const request: PartRequest = {
+      rowId,
+      variantId: row.variants[0]!.id,
+      context: row.previewContext,
+      config,
+      sizePx: 160,
+      pixelRatio: 1,
+    };
+    expect(renderer.cacheKey({ ...request, config: compact })).not.toBe(renderer.cacheKey(request));
+  }
+  renderer.dispose();
+});

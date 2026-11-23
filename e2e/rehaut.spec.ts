@@ -98,31 +98,38 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
   expect(errors).toEqual([]);
 });
 
-test('un réhaut incompatible disparaît et retrouve les réglages à la réapparition', async ({
+test('le rectangle conserve le réhaut avec une ouverture ronde et chaque taille', async ({
   page,
 }) => {
   await page.goto(link({ a: 6, ac: 3, ad: 3, ae: '#FFFF00', af: 4 }));
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
-  await seek(page, 'crystal');
+  await seek(page, 'rehaut-scale');
+  await expect(page.getByRole('grid')).toHaveAttribute(
+    'aria-activedescendant',
+    'cell-rehaut-scale-24h',
+  );
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
     'cell-dial-shape-round',
   );
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Home');
+  await expect(page.getByRole('grid')).toHaveAttribute(
+    'aria-activedescendant',
+    'cell-dial-size-compact',
+  );
+  await page.keyboard.press('ArrowUp');
   await page.keyboard.press('End');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
     'cell-dial-shape-rectangle',
   );
   await page.keyboard.press('ArrowUp');
-  await expect(page.getByRole('grid')).toHaveAttribute(
-    'aria-activedescendant',
-    'cell-rehaut-scale-24h',
-  );
   await page.keyboard.press('ArrowUp');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
     'cell-rehaut-concave',
   );
-  expect(payload(page)).toMatchObject({ ac: 3, ad: 3, ae: '#FFFF00', af: 4 });
+  expect(payload(page)).toMatchObject({ ac: 3, ad: 3, ae: '#FFFF00', af: 4, ag: 1 });
 });

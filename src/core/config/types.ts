@@ -59,6 +59,7 @@ export interface RehautConfig {
 }
 
 export interface DialConfig {
+  size: Open<'compact' | 'balanced' | 'open'>;
   shape: Open<'round' | 'cushion' | 'tonneau' | 'octagon' | 'square' | 'rectangle'>;
   material: Open<'metal' | 'enamel' | 'mother-of-pearl' | 'stone' | 'meteorite' | 'wood' | 'straw'>;
   finish: Open<

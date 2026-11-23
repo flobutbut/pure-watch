@@ -13,7 +13,7 @@ import frozenDefaults from './url-v1-defaults.json';
 // JSON and all existing wire identifiers stay unchanged.
 const V1_DEFAULTS = {
   ...frozenDefaults,
-  dial: { ...frozenDefaults.dial, shape: 'round' },
+  dial: { ...frozenDefaults.dial, shape: 'round', size: 'open' },
   hands: { ...frozenDefaults.hands, color: '#E8EBF0' },
   rehaut: { profile: 'classic', finish: 'dial', color: '#111317', scale: 'none' },
 } as WatchConfig;
@@ -257,6 +257,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   ad: field('rehaut.finish', id, { dial: 1, metal: 2, custom: 3 }),
   ae: field('rehaut.color', hex),
   af: field('rehaut.scale', id, { none: 1, minutes: 2, 'five-minute': 3, '24h': 4, tachymeter: 5 }),
+  ag: field('dial.size', id, { compact: 1, balanced: 2, open: 3 }),
 };
 
 function base64url(text: string): string {

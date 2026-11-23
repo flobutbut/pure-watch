@@ -1,0 +1,95 @@
+{
+  "dimensions": {
+    "compact": {
+      "caseRadius": 20,
+      "caseThickness": 11,
+      "bezelWidth": 4.688000000000001,
+      "openingRadius": 12.886175999999997,
+      "dialRadius": 11.086175999999998,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 11.086175999999998,
+      "dialExtent": 11.086175999999998,
+      "z": {
+        "back": -7.26,
+        "bezelTop": 2.6399999999999997,
+        "crystalTop": 3.7399999999999998,
+        "dial": 0
+      },
+      "lugToLug": 47,
+      "lugWidth": 20,
+      "lugThickness": 2.6,
+      "hands": {
+        "hour": 6.928859999999999,
+        "minute": 10.254712799999998,
+        "second": 10.8090216,
+        "secondTail": 3.0486983999999997
+      },
+      "crown": {
+        "radius": 3.4000000000000004,
+        "length": 2.8000000000000003
+      }
+    },
+    "balanced": {
+      "caseRadius": 20,
+      "caseThickness": 11,
+      "bezelWidth": 3.644000000000002,
+      "openingRadius": 13.928087999999995,
+      "dialRadius": 12.128087999999995,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 12.128087999999995,
+      "dialExtent": 12.128087999999995,
+      "z": {
+        "back": -7.26,
+        "bezelTop": 2.6399999999999997,
+        "crystalTop": 3.7399999999999998,
+        "dial": 0
+      },
+      "lugToLug": 47,
+      "lugWidth": 20,
+      "lugThickness": 2.6,
+      "hands": {
+        "hour": 7.580054999999996,
+        "minute": 11.218481399999995,
+        "second": 11.824885799999995,
+        "secondTail": 3.3352241999999985
+      },
+      "crown": {
+        "radius": 3.4000000000000004,
+        "length": 2.8000000000000003
+      }
+    },
+    "open": {
+      "caseRadius": 20,
+      "caseThickness": 11,
+      "bezelWidth": 2.6,
+      "openingRadius": 14.969999999999999,
+      "dialRadius": 13.169999999999998,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 13.169999999999998,
+      "dialExtent": 13.169999999999998,
+      "z": {
+        "back": -7.26,
+        "bezelTop": 2.6399999999999997,
+        "crystalTop": 3.7399999999999998,
+        "dial": 0
+      },
+      "lugToLug": 47,
+      "lugWidth": 20,
+      "lugThickness": 2.6,
+      "hands": {
+        "hour": 8.231249999999998,
+        "minute": 12.182249999999998,
+        "second": 12.840749999999998,
+        "secondTail": 3.621749999999999
+      },
+      "crown": {
+        "radius": 3.4000000000000004,
+        "length": 2.8000000000000003
+      }
+    }
+  },
+  "errors": []
+}

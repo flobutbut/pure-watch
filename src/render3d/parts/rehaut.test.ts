@@ -4,7 +4,6 @@ import { defaultConfig } from '../../core/config/defaults';
 import {
   DEFAULT_REHAUT,
   REHAUT_PROFILES,
-  canConfigureRehaut,
   effectiveRehautProfile,
   effectiveRehautScale,
 } from '../../core/config/rehaut';
@@ -53,7 +52,7 @@ it.each(CASE_SHAPES)(
           expect(p.getZ(i)).toBeLessThanOrEqual(rehautTop + 0.0001);
         }
         expect(d.hands.second).toBeLessThan(d.dialSafeRadius);
-        if (canConfigureRehaut(config) && profile !== 'classic') {
+        if (profile !== 'classic') {
           expect(rehautProfile(config, d)[0]).toEqual([d.openingRadius, rehautTop]);
           expect(rehautProfile(config, d).at(-1)![0]).toBe(d.dialRadius);
           expect(d.openingRadius - d.dialRadius).toBeGreaterThanOrEqual(0.99);
@@ -80,8 +79,8 @@ describe('rehaut compatibility and resources', () => {
     expect(fitted.hands.second).toBeLessThan(old.hands.second);
     expect(fitted.z).toEqual(old.z);
     config.case.shape = 'rectangle';
-    expect(effectiveRehautProfile(config)).toBe('classic');
-    expect(effectiveRehautScale(config)).toBe('none');
+    expect(effectiveRehautProfile(config)).toBe('sloped');
+    expect(effectiveRehautScale(config)).toBe('tachymeter');
     config.dial.shape = 'rectangle';
     expect(effectiveRehautProfile(config)).toBe('sloped');
     expect(effectiveRehautScale(config)).toBe('tachymeter');

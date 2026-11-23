@@ -57,7 +57,7 @@ test('les six lunettes se sélectionnent et se partagent avant la ligne Cristal'
   expect(errors).toEqual([]);
 });
 
-test('la lunette disparaît pour le cadran rond du rectangle et retrouve son choix ensuite', async ({
+test('la lunette reste disponible avec une ouverture ronde ajustée au rectangle', async ({
   page,
 }) => {
   const link = (data: object) => '/#v1.' + Buffer.from(JSON.stringify(data)).toString('base64url');
@@ -68,25 +68,14 @@ test('la lunette disparaît pour le cadran rond du rectangle et retrouve son cho
     (url) => {
       location.hash = url.split('#')[1]!;
     },
-    link({ a: 6, n: 5 }),
+    link({ a: 6, n: 5, ag: 1 }),
   );
-  await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
-  await expect(page.getByRole('row', { name: 'Lunette', exact: true })).toHaveCount(0);
-  await page.getByRole('grid').focus();
-  for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowUp');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
-    /cell-crown-position-/,
+    'cell-bezel-fluted',
   );
+  expect(payload(page)).toMatchObject({ a: 6, n: 5, ag: 1 });
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', /cell-crystal-/);
-  expect(payload(page).n).toBe(5);
-  await page.evaluate(
-    (url) => {
-      location.hash = url.split('#')[1]!;
-    },
-    link({ a: 6, aa: 6, n: 5 }),
-  );
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', /cell-crystal-/);
   await page.keyboard.press('ArrowUp');
   await expect(page.getByRole('grid')).toHaveAttribute(

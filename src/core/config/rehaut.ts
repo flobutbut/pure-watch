@@ -15,11 +15,8 @@ export const DEFAULT_REHAUT: Readonly<RehautConfig> = Object.freeze({
   scale: 'none',
 });
 
-export function canConfigureRehaut(config: WatchConfig): boolean {
-  return !(config.case.shape === 'rectangle' && config.dial.shape === 'round');
-}
 export function rehautSettings(config: WatchConfig): Readonly<RehautConfig> {
-  return canConfigureRehaut(config) ? (config.rehaut ?? DEFAULT_REHAUT) : DEFAULT_REHAUT;
+  return config.rehaut ?? DEFAULT_REHAUT;
 }
 export function effectiveRehautProfile(config: WatchConfig): string {
   const profile = rehautSettings(config).profile;

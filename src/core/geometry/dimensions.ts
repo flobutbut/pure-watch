@@ -7,6 +7,7 @@
  */
 import { contourExtents, effectiveDialShape, fitAperture } from './dial-shape';
 import type { WatchConfig } from '../config/types';
+import { dialOpeningFactor } from '../config/dial-size';
 import { effectiveRehautProfile } from '../config/rehaut';
 
 export interface WatchDimensions {
@@ -52,8 +53,15 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
   const diameter = config.case.diameterMm;
   const thickness = config.case.thicknessMm;
   const caseRadius = diameter / 2;
-  const bezelWidth = clamp(diameter * 0.065, 1.4, 3.2);
-  const openingRadius = caseRadius - bezelWidth;
+  const nominalBezel = clamp(diameter * 0.065, 1.4, 3.2);
+  const openingFactor = dialOpeningFactor(config.dial.size);
+  const requestedOpening = (caseRadius - nominalBezel) * openingFactor;
+  const bezelWidth = openingFactor === 1 ? nominalBezel : caseRadius - requestedOpening;
+  const dialShape = effectiveDialShape(config.dial.shape);
+  // Circular apertures also need to fit the narrow sides of tonneau / rectangle cases.
+  const available = caseRadius * contourExtents(config.case.shape).min - bezelWidth;
+  const openingRadius =
+    dialShape === 'round' && available < requestedOpening ? available * 0.998 : requestedOpening;
   // Le rehaut (anneau incliné entre lunette et cadran) mange ≈ 0,6 mm.
   const rehautWidth =
     effectiveRehautProfile(config) === 'classic'
@@ -61,7 +69,6 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
       : clamp(diameter * 0.045, 1, 2.2);
   const dialRadius = openingRadius - rehautWidth;
 
-  const dialShape = effectiveDialShape(config.dial.shape);
   const dialScale = fitAperture(config.case.shape, dialShape, caseRadius, openingRadius);
   const extents = contourExtents(dialShape);
   const dialSafeRadius =
