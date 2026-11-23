@@ -8,6 +8,7 @@
   import type { LiveWatch as LiveHandle, PartRenderer } from '../../render/types';
   import LiveWatch from '../view3d/LiveWatch.svelte';
   import BezelControl from '../view3d/BezelControl.svelte';
+  import IdentityCard from '../identity/IdentityCard.svelte';
   import Cell from './Cell.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
   import { commandFromKey } from './keyboard';
@@ -34,6 +35,8 @@
     onclose: () => void;
     oncolor: (target: ColorTarget) => void;
     onbezel: (angle: number) => void;
+    /** Signale l'affichage de la fiche d'identité (le pied de page lui laisse la place). */
+    oncard?: (shown: boolean) => void;
   }
 
   let {
@@ -49,6 +52,7 @@
     onclose,
     oncolor,
     onbezel,
+    oncard,
   }: Props = $props();
 
   let width = $state(0);
@@ -222,6 +226,13 @@
   let live = $state.raw<LiveHandle | null>(null);
   let paused = $state(false);
   let bezelEditing = $state(false);
+  /** Choix explicite de l'utilisateur ; par défaut la fiche s'ouvre sur grand écran. */
+  let cardWanted = $state<boolean | null>(null);
+  const cardShown = $derived(open && (cardWanted ?? width >= 760));
+  function toggleCard() {
+    cardWanted = !cardShown;
+  }
+  $effect(() => oncard?.(cardShown));
   $effect(() =>
     live?.setBezelControl(open && config.bezel.type === 'rotating' && bezelEditing, onbezel),
   );
@@ -258,6 +269,10 @@
       paused = live?.togglePause() ?? false;
       return true;
     }
+    if (event.key === 'i' || event.key === 'I') {
+      toggleCard();
+      return true;
+    }
     // Les touches qui ouvrent l'aperçu le referment aussi.
     if (event.key === 'Escape' || event.key === ' ' || event.key === 'Enter') {
       onclose();
@@ -269,6 +284,8 @@
   function onkeydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (colorTarget || target.closest('input, textarea, select')) return;
+    // Inside the identity card, keys scroll and activate it; Escape still leaves the 3D view.
+    if (target.closest('dialog') && event.key !== 'Escape') return;
     // Buttons retain their native activation; arrows still navigate after closing a colour panel.
     if (target.closest('button') && (event.key === 'Enter' || event.key === ' ')) return;
     if (open) {
@@ -319,9 +336,30 @@
       ? Math.min(width - 400, height * 0.76, 520)
       : Math.min(width * 0.62, height * 0.28),
   );
-  const watchScale = $derived(colorTarget ? colorWatchSize / Math.max(1, openSize) : liveScale);
-  const watchX = $derived(colorTarget && width >= 760 ? -175 : 0);
-  const watchY = $derived(colorTarget && width < 760 ? -height * 0.3 : dragY + bumpY);
+  /** In the 3D view the identity card takes the right side (or the bottom on phones). */
+  // On phones the card is a bottom sheet (52 % of the height): the watch fits between it and the tools.
+  const cardBand = $derived({ top: 140, bottom: height * 0.48 });
+  const cardWatchSize = $derived(
+    width >= 760
+      ? Math.min(width - 440, openSize)
+      : Math.min(width * 0.86, cardBand.bottom - cardBand.top + 40, openSize),
+  );
+  const watchScale = $derived(
+    colorTarget
+      ? colorWatchSize / Math.max(1, openSize)
+      : cardShown
+        ? cardWatchSize / Math.max(1, openSize)
+        : liveScale,
+  );
+  const sidePanel = $derived(colorTarget !== null || cardShown);
+  const watchX = $derived(sidePanel && width >= 760 ? (colorTarget ? -175 : -182) : 0);
+  const watchY = $derived(
+    colorTarget && width < 760
+      ? -height * 0.3
+      : cardShown && width < 760
+        ? (cardBand.top + cardBand.bottom) / 2 - height / 2
+        : dragY + bumpY,
+  );
   const livePlace = $derived(
     pixelSnap(width / 2 + watchX, height / 2 + watchY, openSize, watchScale, dpr),
   );
@@ -358,6 +396,8 @@
   aria-activedescendant="cell-{activeRowDef.id}-{activeVariant.id}"
   style:--pitch="{metrics.pitch}px"
   style:--cell="{metrics.cell}px"
+  style:--stage-x="{watchX}px"
+  style:--stage-bottom={cardShown && width < 760 ? 'calc(52dvh + 12px)' : null}
   {onkeydown}
   {onpointerdown}
   {onpointermove}
@@ -523,10 +563,24 @@
           {#if paused}<path d="M8 5l11 7-11 7z" />{:else}<path d="M9 5v14M15 5v14" />{/if}
         </svg>
       </button>
+      <button
+        class="tool card-toggle"
+        aria-label="Fiche d’identité"
+        aria-pressed={cardShown}
+        title="Fiche d’identité (I)"
+        onclick={toggleCard}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.01" />
+        </svg>
+      </button>
       <button class="tool" aria-label="Fermer" title="Fermer (Échap)" onclick={onclose}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
     </div>
+    {#if cardShown && nav.mode === 'view3d'}
+      <IdentityCard {rows} {config} onclose={() => (cardWanted = false)} />
+    {/if}
   {/if}
 
   <div
@@ -815,6 +869,13 @@
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     cursor: pointer;
+  }
+
+  .card-toggle[aria-pressed='true'] {
+    background: var(--ink);
+  }
+  .card-toggle[aria-pressed='true'] svg {
+    stroke: var(--veil);
   }
 
   .tool svg {

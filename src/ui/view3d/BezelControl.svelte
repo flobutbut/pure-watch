@@ -61,8 +61,9 @@
 <style>
   .bezel-control {
     position: absolute;
-    bottom: calc(76px + env(safe-area-inset-bottom));
-    left: 50%;
+    bottom: var(--stage-bottom, calc(76px + env(safe-area-inset-bottom)));
+    /* Follows the watch when a side panel moves it off-centre. */
+    left: calc(50% + var(--stage-x, 0px));
     transform: translateX(-50%);
     z-index: 8;
     display: flex;

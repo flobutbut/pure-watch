@@ -32,6 +32,7 @@
   let lastConfigUrl = location.href;
   let config = $state.raw(initialConfig);
   let colorTarget = $state<ColorTarget | null>(null);
+  let cardShown = $state(false);
   let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
   const rows = $derived(visibleRows(catalog.rows, config));
@@ -209,6 +210,7 @@
     url={configUrl(config, new URL(location.href)).href}
     inspecting={nav.mode === 'view3d' || nav.mode === 'opening3d'}
     colorEditing={colorTarget !== null}
+    sheetShown={cardShown}
   />
   <Grid
     {rows}
@@ -221,6 +223,7 @@
     oncommand={run}
     onopen={open}
     onclose={close}
+    oncard={(shown) => (cardShown = shown)}
     oncolor={(target) => {
       colorTarget = target;
     }}

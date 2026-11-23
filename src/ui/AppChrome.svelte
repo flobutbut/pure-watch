@@ -6,7 +6,8 @@
     url,
     inspecting,
     colorEditing,
-  }: { url: string; inspecting: boolean; colorEditing: boolean } = $props();
+    sheetShown = false,
+  }: { url: string; inspecting: boolean; colorEditing: boolean; sheetShown?: boolean } = $props();
   let shareButton: HTMLButtonElement;
   let aboutButton = $state<HTMLButtonElement>();
   let shareDialog: ShareDialog;
@@ -35,12 +36,13 @@
 </header>
 
 {#if !colorEditing}
-  <footer aria-label="Aide à la navigation">
+  <footer aria-label="Aide à la navigation" class:under-sheet={sheetShown}>
     <div class="keyboard-hints">
       {#if inspecting}
         <span><kbd>← ↑ ↓ →</kbd> Tourner</span>
         <span><kbd>1–5</kbd> Vues</span>
         <span><kbd>P</kbd> Pause</span>
+        <span><kbd>I</kbd> Fiche</span>
         <span><kbd>Échap</kbd> Retour</span>
       {:else}
         <span><kbd>↑ ↓</kbd> Pièces</span>
@@ -240,6 +242,12 @@
     }
     .about-button {
       font-size: 9px;
+    }
+  }
+  /* Below this width the identity card becomes a bottom sheet and covers the hints. */
+  @media (max-width: 759px) {
+    footer.under-sheet {
+      display: none;
     }
   }
   @media (prefers-reduced-motion: reduce) {
