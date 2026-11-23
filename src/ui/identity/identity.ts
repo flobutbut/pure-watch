@@ -4,6 +4,7 @@ import { tint } from '../../core/color/names';
 import { bezelScale } from '../../core/config/bezel';
 import { HAND_FINISHES, handColor } from '../../core/config/colors';
 import { dateComplication } from '../../core/config/date';
+import { smallSeconds } from '../../core/config/small-seconds';
 import { effectiveDialColor, hasIntrinsicColor } from '../../core/config/dial';
 import { getAtPath, matchesValue } from '../../core/config/path';
 import {
@@ -48,6 +49,7 @@ const EFFECTIVE: Record<string, (config: WatchConfig) => unknown> = {
   // Champs absents : le guichet porte ses valeurs par défaut.
   'date-window': (config) => dateComplication(config)?.window,
   'date-disc': (config) => dateComplication(config)?.disc,
+  'small-seconds-style': (config) => smallSeconds(config)?.style,
 };
 
 function rowValue(row: RowDef, config: WatchConfig): string {

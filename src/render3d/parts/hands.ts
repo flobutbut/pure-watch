@@ -13,7 +13,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { HandAngles } from '../../core/clock/angles';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
+import { subdialCircle } from '../../core/config/small-seconds';
 import type { MaterialLibrary } from '../materials';
+import { subdialFloor } from './subdial';
 import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
 
@@ -408,10 +410,17 @@ export function buildHands(
 
   const secThick = 0.12;
   const secondDesign = SECONDS[config.hands.second.style] ?? SECONDS['counterweight']!;
-  const secondParts = [
-    ...secondDesign(d.hands.second, d.hands.secondTail, k, secThick),
-    boss((refined ? 0.43 : 0.75) * k, secThick + 0.05),
-  ];
+  // Petite seconde : même forme et même couleur, à l'échelle du sous-cadran.
+  const subdial = subdialCircle(config, d.dialSafeRadius);
+  const secondParts = subdial
+    ? [
+        ...secondDesign(subdial.r * 0.86, subdial.r * 0.26, k * 0.5, secThick),
+        boss(0.42 * k, secThick + 0.05),
+      ]
+    : [
+        ...secondDesign(d.hands.second, d.hands.secondTail, k, secThick),
+        boss((refined ? 0.43 : 0.75) * k, secThick + 0.05),
+      ];
   const secondGeometry = mergeGeometries(secondParts);
   for (const g of secondParts) g.dispose();
   const color = config.hands.second.color;
@@ -436,6 +445,10 @@ export function buildHands(
   pivots.hour.position.z = levels.hour;
   pivots.minute.position.z = levels.minute;
   pivots.second.position.z = levels.second;
+  if (subdial) {
+    // Sous les aiguilles des heures, juste au-dessus du sous-cadran (ou de sa cuvette).
+    pivots.second.position.set(subdial.x, subdial.y, subdialFloor(subdial.style) + 0.2);
+  }
   cap.position.z = levels.cap;
 
   const group = new THREE.Group();

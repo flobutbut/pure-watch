@@ -12,6 +12,7 @@ import type { LiveWatch, PartImage, PartRenderer, PartRequest } from '../render/
 import { Stage, type SnapshotJob } from './stage';
 import { LAYERS, type Layer } from './watch';
 import { dateWindowRect } from './parts/date';
+import { subdialCircle } from '../core/config/small-seconds';
 
 /** Parties de la configuration dont dépend chaque calque (pour la clé de cache). */
 const LAYER_DEPENDENCIES: Record<
@@ -26,7 +27,7 @@ const LAYER_DEPENDENCIES: Record<
   print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
-  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
+  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications'],
   crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications'],
 };
 
@@ -90,6 +91,12 @@ const dateFrame = (config: WatchConfig) => {
   const rect = dateWindowRect(config, d);
   if (!rect) return dialFrame(config);
   return { x: rect.x, y: rect.y, half: Math.max(rect.width, rect.height) * 1.6 };
+};
+
+/** Gros plan sur le sous-cadran de la petite seconde, s'il y en a un. */
+const subdialFrame = (config: WatchConfig) => {
+  const c = subdialCircle(config, watchDimensions(config).dialSafeRadius);
+  return c ? { x: c.x, y: c.y, half: c.r * 1.25 } : null;
 };
 
 /** Quelles pièces montrer, et comment cadrer, pour chaque ligne (règles R1 à R4). */
@@ -184,13 +191,20 @@ const PREVIEWS: Record<string, PreviewSpec> = {
   'numeral-font': { layers: ['dial', 'print', 'indices'], frame: dialFrame },
   // Aiguilles : pas de disque de contexte, le fond de l'interface prend la couleur du cadran.
   hands: { layers: ['hands', 'seconds'], frame: handsFrame },
-  seconds: { layers: ['seconds'], frame: handsFrame },
-  'seconds-color': { layers: ['seconds'], frame: handsFrame },
+  // Avec une petite seconde, la trotteuse se montre dans son sous-cadran.
+  seconds: { layers: ['seconds'], frame: (c) => subdialFrame(c) ?? handsFrame(c) },
+  'seconds-color': { layers: ['seconds'], frame: (c) => subdialFrame(c) ?? handsFrame(c) },
   // Date : la position se lit sur le cadran entier, le guichet et le disque en gros plan.
   date: { layers: ['dial', 'print', 'indices'], frame: dialFrame },
   'date-window': { layers: ['dial', 'print', 'indices'], frame: dateFrame },
   'date-disc': { layers: ['dial', 'print', 'indices'], frame: dateFrame },
   'date-loupe': { layers: ['dial', 'print', 'indices', 'crystal'], frame: dateFrame },
+  // Petite seconde : position sur le cadran entier, style en gros plan sur le sous-cadran.
+  'small-seconds': { layers: ['dial', 'print', 'indices', 'seconds'], frame: dialFrame },
+  'small-seconds-style': {
+    layers: ['dial', 'print', 'indices', 'seconds'],
+    frame: (c) => subdialFrame(c) ?? dialFrame(c),
+  },
 };
 
 export class PartRenderer3D implements PartRenderer {

@@ -1991,6 +1991,118 @@
           }
         }
       ]
+    },
+    {
+      "id": "small-seconds",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.small-seconds",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Petite seconde"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": null,
+          "preview": "small-seconds/none.svg",
+          "i18n": {
+            "name": "Trotteuse au centre"
+          }
+        },
+        {
+          "id": "6h",
+          "value": {
+            "position": "6h"
+          },
+          "preview": "small-seconds/6h.svg",
+          "i18n": {
+            "name": "À 6 h"
+          }
+        },
+        {
+          "id": "9h",
+          "value": {
+            "position": "9h"
+          },
+          "preview": "small-seconds/9h.svg",
+          "i18n": {
+            "name": "À 9 h"
+          }
+        },
+        {
+          "id": "3h",
+          "value": {
+            "position": "3h"
+          },
+          "preview": "small-seconds/3h.svg",
+          "i18n": {
+            "name": "À 3 h"
+          }
+        },
+        {
+          "id": "12h",
+          "value": {
+            "position": "12h"
+          },
+          "preview": "small-seconds/12h.svg",
+          "i18n": {
+            "name": "À 12 h"
+          }
+        }
+      ]
+    },
+    {
+      "id": "small-seconds-style",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.small-seconds.style",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Sous-cadran"
+      },
+      "visibleWhen": {
+        "path": "complications.small-seconds",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "flat",
+          "value": "flat",
+          "preview": "small-seconds-style/flat.svg",
+          "i18n": {
+            "name": "Plat"
+          }
+        },
+        {
+          "id": "azure",
+          "value": "azure",
+          "preview": "small-seconds-style/azure.svg",
+          "i18n": {
+            "name": "Azuré"
+          }
+        },
+        {
+          "id": "sunken",
+          "value": "sunken",
+          "preview": "small-seconds-style/sunken.svg",
+          "i18n": {
+            "name": "En creux"
+          }
+        },
+        {
+          "id": "rail",
+          "value": "rail",
+          "preview": "small-seconds-style/rail.svg",
+          "i18n": {
+            "name": "Chemin de fer"
+          }
+        }
+      ]
     }
   ]
 }

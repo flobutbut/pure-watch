@@ -5,7 +5,7 @@ import { dialRadiusAt } from '../../core/geometry/dial-shape';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
 import { effectiveDialColor } from '../../core/config/dial';
-import { dateHour } from '../../core/config/date';
+import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { dialPrintSvg, inkForDial, numeralHours } from '../../render2d/dial-print';
@@ -13,6 +13,7 @@ import { fontFaceCss } from '../../render2d/fonts';
 import { latheZ } from '../lathe';
 import { profileGeometry, type Sample } from './profile';
 import { buildDate, dateWindowRect, roundedRect } from './date';
+import { buildSubdial, circleOutline, subdialOf } from './subdial';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 
@@ -42,13 +43,18 @@ export function buildDial(
 ): DialParts {
   const R = d.dialSafeRadius;
   const windowRect = dateWindowRect(config, d);
-  const hole = windowRect ? roundedRect(windowRect) : null;
+  const subdial = subdialOf(config, d);
+  // Ouvertures du cadran : guichet de date, cuvette d'un sous-cadran en creux.
+  const holes = [
+    ...(windowRect ? [roundedRect(windowRect)] : []),
+    ...(subdial?.style === 'sunken' ? [circleOutline(subdial)] : []),
+  ];
   // Police de style éventuelle : chargée à la demande puis embarquée dans les SVG.
   const fontCss = fontFaceCss(config.dial.indices.numeralFont);
 
   const dial = new THREE.Group();
   dial.name = 'dial';
-  dial.add(new THREE.Mesh(dialSurface(d, hole), lib.dial(config)));
+  dial.add(new THREE.Mesh(dialSurface(d, holes), lib.dial(config)));
 
   const print = new THREE.Group();
   print.name = 'print';
@@ -62,8 +68,13 @@ export function buildDial(
     dial.add(date.recess);
     indices.add(date.frame);
   }
-  const owned = date?.owned ?? [];
-  const dateReady = date?.ready ?? Promise.resolve();
+  const seconds = buildSubdial(config, d, lib, { fontCss, print: options.print });
+  if (seconds) {
+    dial.add(seconds.surface);
+    print.add(seconds.print);
+  }
+  const owned = [...(date?.owned ?? []), ...(seconds?.owned ?? [])];
+  const dateReady = Promise.all([date?.ready, seconds?.ready]).then(() => {});
   const loupe = date?.loupe ?? new THREE.Group();
   if (!options.print) {
     return { dial, print, indices, loupe, ready: dateReady, owned };
@@ -83,7 +94,7 @@ export function buildDial(
       line2: config.dial.text.line2,
       numerals: config.dial.indices.numerals,
       numeralFont: config.dial.indices.numeralFont,
-      omitHours: hourList(dateHour(config)),
+      omitHours: complicationHours(config),
     }),
   );
   const { texture, ready } = svgTexture(markup, options.printSize);
@@ -99,7 +110,7 @@ export function buildDial(
       polygonOffsetFactor: -1,
     }),
   );
-  const printMesh = new THREE.Mesh(dialSurface(d, hole), printMaterial);
+  const printMesh = new THREE.Mesh(dialSurface(d, holes), printMaterial);
   printMesh.position.z = 0.01;
   print.add(printMesh);
 
@@ -112,8 +123,6 @@ export function buildDial(
     owned: [texture, printMaterial, ...owned],
   };
 }
-
-const hourList = (hour: number | null) => (hour === null ? [] : [hour]);
 
 /* ---------- Index appliqués (spec §5.6) ---------- */
 
@@ -256,7 +265,7 @@ function buildIndices(config: WatchConfig, d: WatchDimensions, lib: MaterialLibr
   // Les heures qui portent un chiffre, ou le guichet de date, n'ont pas d'index.
   const skip = new Set([
     ...numeralHours(config.dial.indices.numerals),
-    ...hourList(dateHour(config)),
+    ...complicationHours(config),
   ]);
   const unit = design.geometry();
   const parts: THREE.BufferGeometry[] = [];
@@ -293,11 +302,8 @@ function buildIndices(config: WatchConfig, d: WatchDimensions, lib: MaterialLibr
  * Physical XY UVs keep glyphs and grain undistorted on a non-circular face. With a date,
  * the face is a contour pierced by the window (the window itself keeps its proportions).
  */
-function dialSurface(
-  d: WatchDimensions,
-  hole: THREE.Vector2[] | null = null,
-): THREE.BufferGeometry {
-  if (hole) {
+function dialSurface(d: WatchDimensions, holes: THREE.Vector2[][] = []): THREE.BufferGeometry {
+  if (holes.length > 0) {
     const outline = Array.from({ length: 160 }, (_, i) => {
       const angle = (i / 160) * Math.PI * 2;
       const k = d.dialShape === 'round' ? 1 : d.dialScale * shapeRadius(d.dialShape, angle);
@@ -307,7 +313,7 @@ function dialSurface(
       );
     });
     const shape = new THREE.Shape(outline);
-    shape.holes.push(new THREE.Path(hole));
+    for (const hole of holes) shape.holes.push(new THREE.Path(hole));
     const geometry = new THREE.ShapeGeometry(shape);
     const p = geometry.getAttribute('position');
     const uv = geometry.getAttribute('uv');

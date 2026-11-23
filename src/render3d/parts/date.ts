@@ -107,7 +107,8 @@ export interface DateParts {
   owned: { dispose(): void }[];
 }
 
-function shade(hex: string, k: number): string {
+/** Teinte assombrie (k < 1), pour les parois taillées dans le cadran. */
+export function shade(hex: string, k: number): string {
   const n = Number.parseInt(hex.slice(1, 7), 16);
   const c = (s: number) =>
     Math.round(((n >> s) & 255) * k)
@@ -117,7 +118,7 @@ function shade(hex: string, k: number): string {
 }
 
 /** Parois verticales du guichet, normales tournées vers l'intérieur. */
-function walls(outline: THREE.Vector2[], depth: number): THREE.BufferGeometry {
+export function walls(outline: THREE.Vector2[], depth: number): THREE.BufferGeometry {
   const positions: number[] = [];
   const normals: number[] = [];
   for (let i = 0; i < outline.length; i++) {
