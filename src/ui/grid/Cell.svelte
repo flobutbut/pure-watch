@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { PartRenderer, PartRequest } from '../../render/types';
+  import { onDestroy, untrack } from 'svelte';
+  import { bootCellReady, bootExpectCell, booting } from '../boot';
   import { snapshotCache } from './snapshot-cache';
 
   interface Props {
@@ -9,6 +11,22 @@
 
   let { renderer, request }: Props = $props();
   let bitmap = $state.raw<ImageBitmap | null>(null);
+
+  // Vue de chargement : les pièces qui entourent la montre doivent être prêtes avant
+  // qu'elle ne s'efface (anneau le plus proche du centre).
+  // Seule la position au montage compte (untrack : lecture volontairement initiale).
+  let awaited = booting() && untrack(() => request.priority ?? 0) <= 1.5;
+  if (awaited) bootExpectCell();
+  function settle() {
+    if (!awaited) return;
+    awaited = false;
+    bootCellReady();
+  }
+  $effect(() => {
+    if (bitmap) settle();
+  });
+  // Une pièce retirée avant d'être prête n'est plus attendue.
+  onDestroy(settle);
 
   // L'instantané précédent reste affiché jusqu'à ce que le nouveau soit prêt :
   // pas de clignotement quand la configuration change.

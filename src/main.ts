@@ -2,11 +2,12 @@ import { inject } from '@vercel/analytics';
 import { mount } from 'svelte';
 import './app.css';
 import App from './App.svelte';
+import { bootStage } from './ui/boot';
 
+bootStage('script');
 const app = mount(App, { target: document.getElementById('app')! });
-
-// L'écran de chargement se fond dans l'application une fois celle-ci montée.
-document.getElementById('boot')?.classList.add('done');
+// La vue de chargement reste affichée jusqu'à ce que la montre et ses pièces soient prêtes.
+bootStage('app');
 
 // Mesure d'audience Vercel Web Analytics (sans cookie, données agrégées, spec §9.11).
 // En production seulement. La configuration de la montre vit dans le fragment de l'URL

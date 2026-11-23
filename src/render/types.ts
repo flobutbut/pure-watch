@@ -30,6 +30,8 @@ export type PartImage = { kind: 'svg'; markup: string } | { kind: 'bitmap'; bitm
 
 /** Montre complète rendue en direct (montre centrale, puis vue plein écran). */
 export interface LiveWatch {
+  /** Résolue quand la montre est assemblée et affichée pour la première fois. */
+  ready: Promise<void>;
   update(config: WatchConfig): void;
   /** « grid » : vue de face, immobile ; « inspect » : trois quarts, orbite au pointeur. */
   setMode(mode: 'grid' | 'inspect'): void;

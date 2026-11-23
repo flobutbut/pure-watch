@@ -6,55 +6,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Épure</title>
     <style>
-      /* Écran de chargement en ligne : visible avant tout JavaScript (plan d'action §1.4). */
+      /*
+       * Vue de chargement, en ligne : visible avant tout JavaScript (plan d'action §1.4).
+       * Un cadran épuré se dessine ; ses douze index s'allument au fil du chargement réel
+       * (moteur 3D, montre, premières pièces), pendant qu'une trotteuse balaie le cadran.
+       * src/ui/boot.ts la pilote, puis la fond dans la grille.
+       */
       html,
       body {
         margin: 0;
         height: 100%;
-        background: #e5e5e3;
+        background: #16181c;
       }
       #boot {
+        --boot-bg: #16181c;
+        --boot-ink: #f2f1ec;
         position: fixed;
         inset: 0;
+        z-index: 100;
         display: grid;
-        place-items: center;
-        transition: opacity 400ms cubic-bezier(0.2, 0, 0, 1);
+        place-content: center;
+        justify-items: center;
+        gap: 28px;
+        background: var(--boot-bg);
+        color: var(--boot-ink);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Helvetica Neue',
+          sans-serif;
+        transition:
+          background-color 500ms cubic-bezier(0.2, 0, 0, 1),
+          color 500ms cubic-bezier(0.2, 0, 0, 1),
+          opacity 700ms cubic-bezier(0.3, 0, 0, 1);
+      }
+      #boot .dial {
+        width: min(34vmin, 168px);
+        height: min(34vmin, 168px);
+        overflow: visible;
+        transition: transform 700ms cubic-bezier(0.3, 0, 0, 1);
+      }
+      #boot .case {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 0.9;
+        stroke-linecap: round;
+        stroke-dasharray: 289;
+        stroke-dashoffset: 289;
+        transform: rotate(-90deg);
+        animation: boot-draw 1.1s cubic-bezier(0.4, 0, 0, 1) forwards;
+      }
+      #boot .tick {
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        opacity: 0.14;
+        transition: opacity 360ms cubic-bezier(0.2, 0, 0, 1);
+      }
+      #boot .tick.on {
+        opacity: 0.95;
+      }
+      #boot .tick.twelve {
+        stroke-width: 2.4;
+      }
+      #boot .seconds {
+        stroke: #f0561d;
+        stroke-width: 0.8;
+        stroke-linecap: round;
+        animation: boot-sweep 3s steps(90) infinite;
+      }
+      #boot .pivot {
+        fill: #f0561d;
+      }
+      #boot .name {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.62em;
+        text-indent: 0.62em; /* compense l'espacement de la dernière lettre */
+        opacity: 0.9;
+      }
+      #boot .label {
+        margin: -16px 0 0;
+        min-height: 1.3em;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        opacity: 0.55;
+        transition: opacity 240ms ease;
       }
       #boot.done {
         opacity: 0;
         pointer-events: none;
       }
-      #boot svg {
-        width: 96px;
-        height: 96px;
-      }
-      #boot circle {
-        fill: none;
-        stroke: #1b1f27;
-        stroke-width: 1.5;
-        stroke-linecap: round;
-        stroke-dasharray: 289;
-        stroke-dashoffset: 289;
-        animation: boot-draw 1.6s cubic-bezier(0.4, 0, 0, 1) infinite;
+      #boot.done .dial {
+        transform: scale(1.18);
       }
       @keyframes boot-draw {
-        60%,
-        100% {
+        to {
           stroke-dashoffset: 0;
         }
       }
+      @keyframes boot-sweep {
+        to {
+          transform: rotate(360deg);
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
-        #boot circle {
+        #boot .case {
           animation: none;
           stroke-dashoffset: 0;
-          opacity: 0.4;
+        }
+        #boot .seconds {
+          animation: none;
+        }
+        #boot,
+        #boot .dial {
+          transition-duration: 120ms;
         }
       }
     </style>
   </head>
   <body>
-    <div id="boot" aria-hidden="true">
-      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" /></svg>
+    <div
+      id="boot"
+      role="progressbar"
+      aria-label="Chargement de l'atelier Épure"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="5"
+    >
+      <svg class="dial" viewBox="-50 -50 100 100" aria-hidden="true">
+        <circle class="case" r="46" />
+        <g class="ticks">
+          <line class="tick twelve" x1="0" y1="-40" x2="0" y2="-33" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(30)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(60)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(90)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(120)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(150)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(180)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(210)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(240)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(270)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(300)" />
+          <line class="tick" x1="0" y1="-40" x2="0" y2="-35" transform="rotate(330)" />
+        </g>
+        <line class="seconds" x1="0" y1="7" x2="0" y2="-38" />
+        <circle class="pivot" r="1.8" />
+      </svg>
+      <p class="name">ÉPURE</p>
+      <p class="label">Préparation de l'atelier</p>
     </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>

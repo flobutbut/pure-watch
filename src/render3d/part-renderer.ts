@@ -190,9 +190,13 @@ export class PartRenderer3D implements PartRenderer {
     this.stage?.dispose();
     const stage = new Stage(target);
     this.stage = stage;
-    void stage.setConfig(config);
+    // Prête après le premier rendu de la montre assemblée.
+    const ready = stage
+      .setConfig(config)
+      .then(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
     for (const wake of this.waiting.splice(0)) wake();
     return {
+      ready,
       update: (next) => void stage.setConfig(next),
       setMode: (mode) => stage.setMode(mode),
       view: (index) => stage.view(index),

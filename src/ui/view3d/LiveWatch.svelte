@@ -2,6 +2,7 @@
   import { untrack } from 'svelte';
   import type { WatchConfig } from '../../core/config/types';
   import type { LiveWatch, PartRenderer } from '../../render/types';
+  import { bootStage } from '../boot';
 
   interface Props {
     renderer: PartRenderer | null;
@@ -26,6 +27,10 @@
       untrack(() => config),
     );
     live = instance;
+    instance.ready.then(
+      () => bootStage('watch'),
+      () => {},
+    );
     return () => {
       instance.destroy();
       live = null;

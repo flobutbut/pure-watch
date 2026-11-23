@@ -18,6 +18,7 @@
   import Grid from './ui/grid/Grid.svelte';
   import Ambience from './ui/Ambience.svelte';
   import { ambienceFor } from './ui/ambience';
+  import { bootStage, bootTheme } from './ui/boot';
 
   const catalog = parseCatalog(rawCatalog);
 
@@ -48,6 +49,8 @@
   $effect(() => {
     document.documentElement.style.backgroundColor = ambience.base;
     document.documentElement.style.colorScheme = ambience.tone;
+    // La vue de chargement prend la teinte du cadran : elle se fond dans la grille.
+    bootTheme(ambience.base, ambience.ink);
   });
 
   function syncConfigUrl(next: WatchConfig) {
@@ -98,6 +101,7 @@
       if (disposed) return;
       instance = new PartRenderer3D(catalog);
       renderer = instance;
+      bootStage('engine');
     });
     return () => {
       window.removeEventListener('hashchange', followConfigUrl);
