@@ -6,7 +6,7 @@ import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { rehautPrintExtent, rehautPrintSvg } from '../../render2d/rehaut-print';
 import { latheZ, type P2 } from '../lathe';
 import type { MaterialLibrary } from '../materials';
-import { svgTexture } from '../textures';
+import { sharpPrint, svgTexture } from '../textures';
 import { caseLevels, metricLatheUV, shapeAperture } from './levels';
 import { applyOcclusion } from './occlusion';
 
@@ -58,16 +58,18 @@ export function decorateRehaut(
   for (let i = 0; i < p.count; i++) uv.setXY(i, 0.5 + p.getX(i) / span, 0.5 + p.getY(i) / span);
   uv.needsUpdate = true;
   const { texture, ready } = svgTexture(rehautPrintSvg(config, d), size);
-  const material = new THREE.MeshStandardMaterial({
-    map: texture,
-    alphaTest: 0.35,
-    // MSAA alpha-to-coverage punctures these small, dark glyphs on light rings.
-    // Alpha testing keeps them opaque in the crystal's transmission pass.
-    roughness: 0.7,
-    metalness: 0,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-  });
+  const material = sharpPrint(
+    new THREE.MeshStandardMaterial({
+      map: texture,
+      alphaTest: 0.35,
+      // MSAA alpha-to-coverage punctures these small, dark glyphs on light rings.
+      // Alpha testing keeps them opaque in the crystal's transmission pass.
+      roughness: 0.7,
+      metalness: 0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+    }),
+  );
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'rehaut-graduations';
   mesh.position.z = 0.009;

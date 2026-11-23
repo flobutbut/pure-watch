@@ -348,3 +348,30 @@ function contourGradient(source: THREE.CanvasTexture, shape: string): THREE.Canv
   source.dispose();
   return texture;
 }
+
+/**
+ * Biais de niveau de mipmap des impressions (cadran, réhaut). Vue de face, la texture
+ * d'impression est réduite d'un facteur 2 à 10 selon la taille de la montre à l'écran :
+ * en filtrage trilinéaire, le GPU mélange alors une mipmap assez fine avec la suivante,
+ * deux fois plus petite que l'écran, et les chiffres et graduations s'empâtent. Un biais
+ * négatif décale le choix vers la mipmap la plus fine qui reste au moins aussi détaillée
+ * que l'écran. Un demi-niveau suffit : au-delà, les traits fins scintilleraient quand la
+ * montre bouge, pour un gain de netteté négligeable.
+ */
+export const PRINT_LOD_BIAS = -0.5;
+
+/** Applique PRINT_LOD_BIAS à la carte de couleur (et donc à l'alpha) d'un matériau. */
+export function sharpPrint<T extends THREE.Material>(material: T): T {
+  const bias = PRINT_LOD_BIAS.toFixed(2);
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      THREE.ShaderChunk.map_fragment.replace(
+        'texture2D( map, vMapUv )',
+        `texture2D( map, vMapUv, ${bias} )`,
+      ),
+    );
+  };
+  material.customProgramCacheKey = () => `sharp-print:${bias}`;
+  return material;
+}
