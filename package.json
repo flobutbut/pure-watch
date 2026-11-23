@@ -40,6 +40,7 @@
     "@fontsource/orbitron": "^5.3.0",
     "@fontsource/playfair-display": "^5.3.0",
     "@fontsource/poiret-one": "^5.3.0",
+    "@vercel/analytics": "^2.0.1",
     "three": "^0.187.0",
     "zod": "^4.6.7"
   }
