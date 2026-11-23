@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dragSteps, WheelStepper, wheelPixels } from './gestures';
-import { gridMetrics, hierarchy, rowEnds, visibleSlots } from './layout';
+import { gridMetrics, hierarchy, pixelSnap, rowEnds, visibleSlots } from './layout';
 
 describe('gridMetrics', () => {
   it('reprend la grille Figma sur un écran de 1440 × 1024', () => {
@@ -120,5 +120,25 @@ describe('rowEnds', () => {
   it('ne marque rien quand la jonction est hors de la fenêtre', () => {
     const slots = visibleSlots(rows, 0, (r) => [2, 0, 0][r]!, { colsHalf: 1, rowsHalf: 2 });
     expect(rowEnds(rows, slots)).toEqual([]);
+  });
+});
+
+describe('pixelSnap', () => {
+  it('cale le côté affiché et le coin sur des pixels physiques', () => {
+    for (const dpr of [1, 1.25, 1.5, 2, 3]) {
+      for (const [cx, cy, size, scale] of [
+        [453.5, 433.5, 100.72, 0.84],
+        [453.5, 433.5, 710.94, 0.297],
+        [200.3, 87.1, 355.5, 1],
+      ] as const) {
+        const p = pixelSnap(cx, cy, size, scale, dpr);
+        expect(Number.isInteger(p.devicePx)).toBe(true);
+        expect(size * p.scale * dpr).toBeCloseTo(p.devicePx, 9);
+        expect((p.x * dpr) % 1).toBeCloseTo(0, 9);
+        expect((p.y * dpr) % 1).toBeCloseTo(0, 9);
+        // Le centre ne bouge pas de plus d'un pixel physique.
+        expect(Math.abs(p.x + (size * p.scale) / 2 - cx)).toBeLessThanOrEqual(1 / dpr);
+      }
+    }
   });
 });

@@ -9,7 +9,14 @@
   import Cell from './Cell.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
   import { commandFromKey } from './keyboard';
-  import { gridMetrics, hierarchy, rowEnds, visibleSlots, type CellSlot } from './layout';
+  import {
+    gridMetrics,
+    hierarchy,
+    pixelSnap,
+    rowEnds,
+    visibleSlots,
+    type CellSlot,
+  } from './layout';
 
   interface Props {
     rows: readonly RowDef[];
@@ -284,7 +291,9 @@
 
   /* ---------- Montre centrale : petite dans la grille, grande à l'ouverture ---------- */
 
-  const openSize = $derived(Math.min(width, height) * 0.82);
+  /** Densité de l'écran : les montres et cellules sont calées sur ses pixels (netteté). */
+  const dpr = globalThis.devicePixelRatio ?? 1;
+  const openSize = $derived(Math.round(Math.min(width, height) * 0.82 * dpr) / dpr);
   const liveScale = $derived(open ? 1 : metrics.watch / Math.max(1, openSize));
   const colorWatchSize = $derived(
     width >= 760
@@ -294,6 +303,9 @@
   const watchScale = $derived(colorTarget ? colorWatchSize / Math.max(1, openSize) : liveScale);
   const watchX = $derived(colorTarget && width >= 760 ? -175 : 0);
   const watchY = $derived(colorTarget && width < 760 ? -height * 0.3 : dragY + bumpY);
+  const livePlace = $derived(
+    pixelSnap(width / 2 + watchX, height / 2 + watchY, openSize, watchScale, dpr),
+  );
 
   const colorForRow = (id: string): ColorTarget | null =>
     id === 'dial-finish'
@@ -339,6 +351,13 @@
           {@const isActiveRow = slot.dRow === 0}
           {@const isCenter = isActiveRow && slot.dCol === 0}
           {@const h = hierarchy(slot.dCol, slot.dRow)}
+          {@const place = pixelSnap(
+            width / 2 + slot.dCol * metrics.pitch + (isActiveRow ? dragX + bumpX : 0),
+            height / 2 + slot.dRow * metrics.pitch + dragY + bumpY,
+            metrics.cell,
+            h.scale,
+            dpr,
+          )}
           <div
             id="cell-{row.id}-{variant.id}"
             class="cell"
@@ -350,15 +369,13 @@
               .variants.length}{isCenter ? ' — montre complète, Entrée pour la voir en 3D' : ''}"
             data-row={rowIndex}
             data-variant={slot.variantIndex}
-            style:transform="translate({slot.dCol * metrics.pitch +
-              (isActiveRow ? dragX + bumpX : 0)}px, {slot.dRow * metrics.pitch + dragY + bumpY}px)
-            scale({h.scale})"
+            style:transform="translate({place.x}px, {place.y}px) scale({place.scale})"
             style:opacity={isCenter ? 0 : h.opacity}
           >
             <div class="face">
               <Cell
                 {renderer}
-                displayScale={h.scale}
+                displayPx={place.devicePx}
                 request={{
                   rowId: row.id,
                   variantId: variant.id,
@@ -485,7 +502,7 @@
     class="live-slot"
     style:width="{openSize}px"
     style:height="{openSize}px"
-    style:transform="translate(-50%, -50%) translate({watchX}px, {watchY}px) scale({watchScale})"
+    style:transform="translate({livePlace.x}px, {livePlace.y}px) scale({livePlace.scale})"
   >
     <!-- Double clic : réinitialise la vue (spec §3.3). -->
     <div class="live-hit" role="presentation" ondblclick={() => live?.view(4)}>
@@ -494,7 +511,7 @@
         config={previewConfig ?? config}
         transient={previewConfig !== null}
         mode={open ? 'inspect' : 'grid'}
-        displayScale={watchScale}
+        displayScale={livePlace.scale}
         bind:handle={live}
       />
     </div>
@@ -593,11 +610,12 @@
 
   .cell {
     position: absolute;
-    left: 50%;
-    top: 50%;
+    /* Placée en JS (pixelSnap) : coin calé sur un pixel physique, réduction depuis le coin. */
+    left: 0;
+    top: 0;
     width: var(--cell);
     height: var(--cell);
-    margin: calc(var(--cell) / -2) 0 0 calc(var(--cell) / -2);
+    transform-origin: 0 0;
     border-radius: 50%;
     cursor: pointer;
     /* Masque circulaire doux (spec §2.3) : les gros plans (couronne, corne) s'estompent
@@ -721,8 +739,10 @@
 
   .live-slot {
     position: absolute;
-    left: 50%;
-    top: 50%;
+    /* Placée en JS (pixelSnap), comme les cellules : rendu 3D pixel pour pixel. */
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
     pointer-events: none;
     transition: transform var(--dur-open) var(--ease-open);
     will-change: transform;

@@ -152,9 +152,10 @@ export class Stage {
   private readonly floating = new THREE.Group();
   private readonly resizeObserver: ResizeObserver;
   private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  /** Densité de pixels de l'écran (plafonnée à 2), avant l'échelle d'affichage. */
-  private readonly basePixelRatio = Math.min(devicePixelRatio, 2);
   private displayScale: number | null = null;
+  /** Taille du conteneur en pixels physiques, avant la transformation CSS de la page. */
+  private boxWidth = 0;
+  private boxHeight = 0;
   private shrinkTimer: ReturnType<typeof setTimeout> | undefined;
   /** Demandes d'instantanés pas encore construites. */
   private readonly pending: QueuedJob[] = [];
@@ -162,7 +163,10 @@ export class Stage {
   private readonly prepared: QueuedJob[] = [];
   /** Instantanés dont les textures et les shaders sont en préparation. */
   private readonly building = new Set<QueuedJob>();
-  /** Taille CSS du conteneur, relevée par le ResizeObserver (pas de lecture de mise en page par image). */
+  /**
+   * Taille du canvas en pixels (rapport de pixels de three fixé à 1) : celle réellement
+   * affichée, relevée par le ResizeObserver (pas de lecture de mise en page par image).
+   */
   private width = 0;
   private height = 0;
   /** Vrai quand l'image en direct doit être redessinée à la prochaine image. */
@@ -190,9 +194,10 @@ export class Stage {
   private mode: LiveMode = 'grid';
   private cameraGoal: CameraGoal | null = null;
 
-  constructor(private readonly container: HTMLElement) {
+  constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(this.basePixelRatio);
+    // Le canvas est dimensionné directement en pixels physiques (voir resize).
+    this.renderer.setPixelRatio(1);
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.setClearColor(0x000000, 0);
@@ -241,8 +246,17 @@ export class Stage {
     this.controls.maxPolarAngle = Math.PI / 2 - MIN_EL;
     this.placeCamera(VIEWS.grid);
 
-    this.resizeObserver = new ResizeObserver(() => this.resize());
+    this.resizeObserver = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      // Taille exacte en pixels physiques quand le navigateur la fournit.
+      const device = entry.devicePixelContentBoxSize?.[0];
+      this.boxWidth = device?.inlineSize ?? entry.contentRect.width * devicePixelRatio;
+      this.boxHeight = device?.blockSize ?? entry.contentRect.height * devicePixelRatio;
+      this.resize();
+    });
     this.resizeObserver.observe(container);
+    this.boxWidth = container.clientWidth * devicePixelRatio;
+    this.boxHeight = container.clientHeight * devicePixelRatio;
     this.resize();
     this.frameHandle = requestAnimationFrame(this.frame);
   }
@@ -330,7 +344,7 @@ export class Stage {
    * résolution monte tout de suite ; en rapetissant, après la transition CSS.
    */
   setDisplayScale(scale: number): void {
-    const next = THREE.MathUtils.clamp(scale, 0.05, 1);
+    const next = THREE.MathUtils.clamp(scale, 0.05, 4);
     clearTimeout(this.shrinkTimer);
     if (this.displayScale === null || next >= this.displayScale) {
       this.applyDisplayScale(next);
@@ -341,10 +355,7 @@ export class Stage {
 
   private applyDisplayScale(scale: number): void {
     this.displayScale = scale;
-    const ratio = this.basePixelRatio * scale;
-    if (ratio === this.renderer.getPixelRatio()) return;
-    this.renderer.setPixelRatio(ratio); // redimensionne le canvas, qui est alors effacé
-    this.dirty = true;
+    this.resize();
   }
 
   /** Met en pause ou relance les aiguilles ; renvoie vrai si elles sont en pause. */
@@ -561,9 +572,18 @@ export class Stage {
     this.shadow.scale.set((major * 2 * spread + drop) * k, (minor * 2 * spread + drop) * k, 1);
   }
 
+  /**
+   * Canvas à la taille réellement affichée, en pixels physiques : taille du conteneur
+   * multipliée par l'échelle CSS de la page. La grille cale cette taille sur un nombre
+   * entier de pixels : l'image s'affiche pixel pour pixel. Au-delà d'une densité de 2
+   * (écrans 3×), on plafonne pour le coût, quitte à laisser le navigateur agrandir.
+   */
   private resize(): void {
-    const { clientWidth: w, clientHeight: h } = this.container;
-    if (w === 0 || h === 0) return;
+    const density = Math.min(1, 2 / devicePixelRatio);
+    const scale = (this.displayScale ?? 1) * density;
+    const w = Math.round(this.boxWidth * scale);
+    const h = Math.round(this.boxHeight * scale);
+    if (w === 0 || h === 0 || (w === this.width && h === this.height)) return;
     this.width = w;
     this.height = h;
     this.dirty = true;

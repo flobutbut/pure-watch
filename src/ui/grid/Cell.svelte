@@ -7,11 +7,11 @@
   interface Props {
     renderer: PartRenderer | null;
     request: PartRequest;
-    /** Échelle CSS de la cellule (hiérarchie de la grille) : l'image est réduite ici, finement. */
-    displayScale?: number;
+    /** Côté affiché de la cellule en pixels physiques (calé par la grille). */
+    displayPx?: number;
   }
 
-  let { renderer, request, displayScale = 1 }: Props = $props();
+  let { renderer, request, displayPx }: Props = $props();
   let bitmap = $state.raw<ImageBitmap | null>(null);
 
   // Vue de chargement : les pièces qui entourent la montre doivent être prêtes avant
@@ -55,14 +55,17 @@
   /**
    * L'instantané est rendu pour la cellule à pleine taille. Une cellule éloignée du centre
    * est réduite par une transformation CSS : on dessine l'image directement à la taille
-   * affichée (lissage de haute qualité), pour que le navigateur n'ait plus à la réduire
-   * lui-même, ce qui l'adoucissait.
+   * affichée, en pixels physiques (lissage de haute qualité). La grille cale la cellule
+   * sur les pixels de l'écran : l'image s'affiche pixel pour pixel, sans interpolation.
    */
-  function paint(canvas: HTMLCanvasElement, params: { bitmap: ImageBitmap | null; scale: number }) {
-    const draw = ({ bitmap: b, scale }: { bitmap: ImageBitmap | null; scale: number }) => {
+  type PaintParams = { bitmap: ImageBitmap | null; px: number | undefined };
+  function paint(canvas: HTMLCanvasElement, params: PaintParams) {
+    const draw = ({ bitmap: b, px }: PaintParams) => {
       if (!b) return;
-      const w = Math.max(1, Math.round(b.width * Math.min(1, scale)));
-      const h = Math.max(1, Math.round(b.height * Math.min(1, scale)));
+      const w = Math.max(1, px ?? b.width);
+      const h = Math.max(1, px ?? b.height);
+      if (canvas.width === w && canvas.height === h && drawn === b) return;
+      drawn = b;
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
@@ -70,12 +73,13 @@
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(b, 0, 0, w, h);
     };
+    let drawn: ImageBitmap | null = null;
     draw(params);
     return { update: draw };
   }
 </script>
 
-<canvas use:paint={{ bitmap, scale: displayScale }} class:loaded={bitmap !== null}></canvas>
+<canvas use:paint={{ bitmap, px: displayPx }} class:loaded={bitmap !== null}></canvas>
 {#if !bitmap}<span class="skeleton"></span>{/if}
 
 <style>

@@ -35,6 +35,39 @@ export function gridMetrics(width: number, height: number): GridMetrics {
   };
 }
 
+export interface SnappedPlacement {
+  /** Coin haut-gauche (px CSS), sur un pixel physique. */
+  x: number;
+  y: number;
+  /** Échelle à appliquer avec transform-origin: 0 0. */
+  scale: number;
+  /** Côté affiché, en pixels physiques (entier). */
+  devicePx: number;
+}
+
+/**
+ * Place une boîte carrée de `size` px CSS, centrée en (cx, cy) et réduite à `scale`, de
+ * sorte que son côté affiché tombe sur un nombre entier de pixels physiques et son coin
+ * sur un pixel physique. Une image dessinée à cette taille s'affiche alors pixel pour
+ * pixel : le navigateur n'a plus à l'interpoler entre deux pixels voisins, ce qui la floute.
+ */
+export function pixelSnap(
+  cx: number,
+  cy: number,
+  size: number,
+  scale: number,
+  dpr: number,
+): SnappedPlacement {
+  const devicePx = Math.max(1, Math.round(size * scale * dpr));
+  const shown = devicePx / dpr;
+  return {
+    x: Math.round((cx - shown / 2) * dpr) / dpr,
+    y: Math.round((cy - shown / 2) * dpr) / dpr,
+    scale: shown / size,
+    devicePx,
+  };
+}
+
 /** Hiérarchie visuelle selon la distance au centre (spec §2.6). */
 const SCALE = [1, 0.92, 0.84, 0.76, 0.7];
 const OPACITY = [1, 0.9, 0.7, 0.45, 0.25];
