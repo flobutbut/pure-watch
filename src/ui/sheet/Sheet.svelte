@@ -89,9 +89,12 @@
 </dialog>
 
 <style>
+  /* Explicit tones rather than light-dark(): the production CSS transpiler turns that
+     function into variables that only a static color-scheme rule would define, and the
+     tone here is set at runtime from the dial colour. */
   dialog {
-    --ink: light-dark(#20242b, #f4f3ef);
-    --veil: light-dark(#faf9f6, #25282c);
+    --ink: #20242b;
+    --veil: #faf9f6;
     /* Outlined controls need a filled surface to read as buttons on the pale veil. */
     --control: color-mix(in srgb, var(--ink) 5%, transparent);
     --control-line: color-mix(in srgb, var(--ink) 28%, transparent);
@@ -113,6 +116,10 @@
     color: var(--ink);
     box-shadow: 0 16px 80px #0003;
     font: inherit;
+  }
+  :global(:root[data-tone='dark']) dialog {
+    --ink: #f4f3ef;
+    --veil: #25282c;
   }
   dialog.stage {
     --sheet-top: calc(var(--chrome-top, 84px) + 60px);

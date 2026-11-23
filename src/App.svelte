@@ -85,6 +85,8 @@
   $effect(() => {
     document.documentElement.style.backgroundColor = ambience.base;
     document.documentElement.style.colorScheme = ambience.tone;
+    // Read by CSS (sheets): light-dark() is transpiled away in production builds.
+    document.documentElement.dataset.tone = ambience.tone;
     // La vue de chargement prend la teinte du cadran : elle se fond dans la grille.
     bootTheme(ambience.base, ambience.ink);
   });
