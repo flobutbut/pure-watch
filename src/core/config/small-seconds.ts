@@ -17,10 +17,11 @@ export interface SmallSeconds {
 }
 
 /** Centre du sous-cadran, en fraction du rayon (§8.3). */
+// Dans l'ordre de préférence quand une autre complication prend la place.
 export const SMALL_SECONDS_POSITIONS: Readonly<Record<string, readonly [number, number]>> = {
-  '3h': [0.5, 0],
   '6h': [0, -0.5],
   '9h': [-0.5, 0],
+  '3h': [0.5, 0],
   '12h': [0, 0.5],
 };
 

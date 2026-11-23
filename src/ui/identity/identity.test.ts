@@ -86,6 +86,7 @@ describe('fiche d’identité', () => {
       'Disque de date : Blanc',
       'Loupe de date : Sans loupe',
       'Petite seconde : Trotteuse au centre',
+      'Réserve de marche : Sans indicateur',
     ]);
   });
 
@@ -97,5 +98,15 @@ describe('fiche d’identité', () => {
       .traits.map((t) => `${t.label} : ${t.value}`);
     expect(traits).toContain('Petite seconde : À 6 h');
     expect(traits).toContain('Sous-cadran : Plat');
+  });
+
+  it('montre la réserve de marche avec son échelle par défaut', () => {
+    const config = defaultConfig();
+    config.complications = [{ type: 'power-reserve', position: '9h' }];
+    const traits = identitySections(visibleRows(catalog.rows, config), config)
+      .find((s) => s.title === 'Complications')!
+      .traits.map((t) => `${t.label} : ${t.value}`);
+    expect(traits).toContain('Réserve de marche : À 9 h');
+    expect(traits).toContain('Échelle de réserve : Heures (0 à 40 h)');
   });
 });
