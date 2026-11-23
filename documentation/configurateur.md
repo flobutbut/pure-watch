@@ -530,17 +530,18 @@ Détection de cycles : si le point fixe n'est pas atteint en 8 passes, annuler l
 
 Ce chapitre répertorie les lignes possibles de la grille. Chaque table donne des **variantes d'exemple**, le **contexte d'aperçu**, les **dépendances** et une **priorité**. Les noms de marques ne sont pas utilisés : ce sont des archétypes de conception.
 
-**Ordre recommandé des lignes** (de haut en bas) : l'ordre suit le regard — structure, face, mouvement, finitions, bracelet.
+**Ordre des lignes** (de haut en bas, révisé le 23 novembre) : du général au détail — la silhouette, puis la matière, puis les détails de la carrure, le cristal qui sépare le boîtier du cadran, le cadran du fond à l'impression, et enfin ce qui bouge.
 
-| # | Groupe | Ligne |
+| Groupe | Lignes, dans l'ordre | Logique |
 |---|---|---|
-| 0 | Départ | Style (préréglage) |
-| 1–6 | Structure | Boîtier · Taille · Cornes · Lunette · Cristal · Couronne |
-| 7–13 | Face | Cadran (matière) · Finition · Couleur · Échelle · Index · Chiffres · Texte |
-| 14–16 | Aiguilles | Jeu d'aiguilles · Trotteuse · Lume |
-| 17–24 | Complications | Date · Jour · Petite seconde · Réserve de marche · Chronographe · Second fuseau · Phase de lune · Ouverture du cadran |
-| 25–26 | Mouvement | Mouvement · Fond de boîte |
-| 27–30 | Bracelet | Type · Matière · Couleur · Boucle |
+| Départ | Style (préréglage, à venir) | Un point de départ cohérent avant de détailler |
+| Silhouette | Forme du boîtier · Taille · Cornes | Ce qui se lit en premier, de loin |
+| Matière | Matière du boîtier · Finition du boîtier | S'applique à toute la silhouette |
+| Carrure | Couronne · Position de la couronne · (Lunette, à venir) | Détails montés sur le boîtier |
+| Verre | Cristal | Sépare le boîtier du cadran |
+| Cadran | Forme · Finition · Couleur · Piste des minutes · Index · Chiffres · Typographie | Du fond vers l'impression |
+| Aiguilles | Jeu d'aiguilles · Trotteuse · Couleur de trotteuse · (Lume, à venir) | Ce qui bouge, posé sur le cadran |
+| À venir | Complications · Mouvement · Fond de boîte · Bracelet | |
 
 ### 5.1 Boîtier
 

@@ -11,13 +11,13 @@ describe('catalogue', () => {
     const catalog = parseCatalog(rawCatalog);
     expect(catalog.rows.map((r) => r.id)).toEqual([
       'case-shape',
-      'case-material',
-      'case-finish',
       'case-size',
       'lugs',
-      'crystal',
+      'case-material',
+      'case-finish',
       'crown',
       'crown-position',
+      'crystal',
       'dial-shape',
       'dial-finish',
       'dial-color',

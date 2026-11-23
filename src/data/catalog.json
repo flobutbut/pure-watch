@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.7.0",
+  "catalogVersion": "0.8.0",
   "rows": [
     {
       "id": "case-shape",
@@ -10,7 +10,7 @@
       "looping": false,
       "priority": "P0",
       "i18n": {
-        "name": "Boîtier"
+        "name": "Forme du boîtier"
       },
       "variants": [
         {
@@ -59,150 +59,6 @@
           "preview": "case-shape/rectangle.svg",
           "i18n": {
             "name": "Rectangulaire"
-          }
-        }
-      ]
-    },
-    {
-      "id": "case-material",
-      "group": "case",
-      "kind": "enum",
-      "path": "case.material",
-      "previewContext": "none",
-      "looping": false,
-      "priority": "P1",
-      "i18n": {
-        "name": "Matière du boîtier"
-      },
-      "variants": [
-        {
-          "id": "steel",
-          "value": "steel",
-          "preview": "case-material/steel.svg",
-          "i18n": {
-            "name": "Acier"
-          }
-        },
-        {
-          "id": "titanium",
-          "value": "titanium",
-          "preview": "case-material/titanium.svg",
-          "i18n": {
-            "name": "Titane"
-          }
-        },
-        {
-          "id": "bronze",
-          "value": "bronze",
-          "preview": "case-material/bronze.svg",
-          "i18n": {
-            "name": "Bronze"
-          }
-        },
-        {
-          "id": "gold-yellow",
-          "value": "gold-yellow",
-          "preview": "case-material/gold-yellow.svg",
-          "i18n": {
-            "name": "Or jaune"
-          }
-        },
-        {
-          "id": "gold-rose",
-          "value": "gold-rose",
-          "preview": "case-material/gold-rose.svg",
-          "i18n": {
-            "name": "Or rose"
-          }
-        },
-        {
-          "id": "brass",
-          "value": "brass",
-          "preview": "case-material/brass.svg",
-          "i18n": {
-            "name": "Laiton plaqué"
-          }
-        },
-        {
-          "id": "ceramic",
-          "value": "ceramic",
-          "preview": "case-material/ceramic.svg",
-          "i18n": {
-            "name": "Céramique noire"
-          }
-        },
-        {
-          "id": "carbon",
-          "value": "carbon",
-          "preview": "case-material/carbon.svg",
-          "i18n": {
-            "name": "Carbone forgé"
-          }
-        }
-      ]
-    },
-    {
-      "id": "case-finish",
-      "group": "case",
-      "kind": "enum",
-      "path": "case.finish",
-      "previewContext": "none",
-      "looping": false,
-      "priority": "P1",
-      "i18n": {
-        "name": "Finition du boîtier"
-      },
-      "visibleWhen": {
-        "path": "case.material",
-        "notIn": ["ceramic", "carbon"]
-      },
-      "variants": [
-        {
-          "id": "mixed",
-          "value": "mixed",
-          "preview": "case-finish/mixed.svg",
-          "i18n": {
-            "name": "Mixte (brossé et poli)"
-          }
-        },
-        {
-          "id": "brushed",
-          "value": "brushed",
-          "preview": "case-finish/brushed.svg",
-          "i18n": {
-            "name": "Brossé"
-          }
-        },
-        {
-          "id": "polished",
-          "value": "polished",
-          "preview": "case-finish/polished.svg",
-          "i18n": {
-            "name": "Poli"
-          }
-        },
-        {
-          "id": "sandblasted",
-          "value": "sandblasted",
-          "preview": "case-finish/sandblasted.svg",
-          "i18n": {
-            "name": "Sablé"
-          }
-        },
-        {
-          "id": "pvd-black",
-          "value": "pvd-black",
-          "preview": "case-finish/pvd-black.svg",
-          "i18n": {
-            "name": "Noir (PVD)"
-          }
-        },
-        {
-          "id": "patina",
-          "value": "patina",
-          "preview": "case-finish/patina.svg",
-          "i18n": {
-            "name": "Patiné"
           }
         }
       ]
@@ -483,47 +339,145 @@
       ]
     },
     {
-      "id": "crystal",
+      "id": "case-material",
       "group": "case",
       "kind": "enum",
-      "path": "crystal.type",
-      "previewContext": "dial-sample",
+      "path": "case.material",
+      "previewContext": "none",
       "looping": false,
-      "priority": "P0",
+      "priority": "P1",
       "i18n": {
-        "name": "Cristal"
+        "name": "Matière du boîtier"
       },
       "variants": [
         {
-          "id": "sapphire-flat",
-          "value": "sapphire-flat",
-          "preview": "crystal/sapphire-flat.svg",
+          "id": "steel",
+          "value": "steel",
+          "preview": "case-material/steel.svg",
           "i18n": {
-            "name": "Saphir plat"
+            "name": "Acier"
           }
         },
         {
-          "id": "sapphire-domed",
-          "value": "sapphire-domed",
-          "preview": "crystal/sapphire-domed.svg",
+          "id": "titanium",
+          "value": "titanium",
+          "preview": "case-material/titanium.svg",
           "i18n": {
-            "name": "Saphir bombé"
+            "name": "Titane"
           }
         },
         {
-          "id": "sapphire-box",
-          "value": "sapphire-box",
-          "preview": "crystal/sapphire-box.svg",
+          "id": "bronze",
+          "value": "bronze",
+          "preview": "case-material/bronze.svg",
           "i18n": {
-            "name": "Saphir « boîte »"
+            "name": "Bronze"
           }
         },
         {
-          "id": "acrylic",
-          "value": "acrylic",
-          "preview": "crystal/acrylic.svg",
+          "id": "gold-yellow",
+          "value": "gold-yellow",
+          "preview": "case-material/gold-yellow.svg",
           "i18n": {
-            "name": "Acrylique (hésalite)"
+            "name": "Or jaune"
+          }
+        },
+        {
+          "id": "gold-rose",
+          "value": "gold-rose",
+          "preview": "case-material/gold-rose.svg",
+          "i18n": {
+            "name": "Or rose"
+          }
+        },
+        {
+          "id": "brass",
+          "value": "brass",
+          "preview": "case-material/brass.svg",
+          "i18n": {
+            "name": "Laiton plaqué"
+          }
+        },
+        {
+          "id": "ceramic",
+          "value": "ceramic",
+          "preview": "case-material/ceramic.svg",
+          "i18n": {
+            "name": "Céramique noire"
+          }
+        },
+        {
+          "id": "carbon",
+          "value": "carbon",
+          "preview": "case-material/carbon.svg",
+          "i18n": {
+            "name": "Carbone forgé"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-finish",
+      "group": "case",
+      "kind": "enum",
+      "path": "case.finish",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P1",
+      "i18n": {
+        "name": "Finition du boîtier"
+      },
+      "visibleWhen": {
+        "path": "case.material",
+        "notIn": ["ceramic", "carbon"]
+      },
+      "variants": [
+        {
+          "id": "mixed",
+          "value": "mixed",
+          "preview": "case-finish/mixed.svg",
+          "i18n": {
+            "name": "Mixte (brossé et poli)"
+          }
+        },
+        {
+          "id": "brushed",
+          "value": "brushed",
+          "preview": "case-finish/brushed.svg",
+          "i18n": {
+            "name": "Brossé"
+          }
+        },
+        {
+          "id": "polished",
+          "value": "polished",
+          "preview": "case-finish/polished.svg",
+          "i18n": {
+            "name": "Poli"
+          }
+        },
+        {
+          "id": "sandblasted",
+          "value": "sandblasted",
+          "preview": "case-finish/sandblasted.svg",
+          "i18n": {
+            "name": "Sablé"
+          }
+        },
+        {
+          "id": "pvd-black",
+          "value": "pvd-black",
+          "preview": "case-finish/pvd-black.svg",
+          "i18n": {
+            "name": "Noir (PVD)"
+          }
+        },
+        {
+          "id": "patina",
+          "value": "patina",
+          "preview": "case-finish/patina.svg",
+          "i18n": {
+            "name": "Patiné"
           }
         }
       ]
@@ -624,6 +578,52 @@
           "preview": "crown-position/2h.svg",
           "i18n": {
             "name": "2 h"
+          }
+        }
+      ]
+    },
+    {
+      "id": "crystal",
+      "group": "case",
+      "kind": "enum",
+      "path": "crystal.type",
+      "previewContext": "dial-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Cristal"
+      },
+      "variants": [
+        {
+          "id": "sapphire-flat",
+          "value": "sapphire-flat",
+          "preview": "crystal/sapphire-flat.svg",
+          "i18n": {
+            "name": "Saphir plat"
+          }
+        },
+        {
+          "id": "sapphire-domed",
+          "value": "sapphire-domed",
+          "preview": "crystal/sapphire-domed.svg",
+          "i18n": {
+            "name": "Saphir bombé"
+          }
+        },
+        {
+          "id": "sapphire-box",
+          "value": "sapphire-box",
+          "preview": "crystal/sapphire-box.svg",
+          "i18n": {
+            "name": "Saphir « boîte »"
+          }
+        },
+        {
+          "id": "acrylic",
+          "value": "acrylic",
+          "preview": "crystal/acrylic.svg",
+          "i18n": {
+            "name": "Acrylique (hésalite)"
           }
         }
       ]

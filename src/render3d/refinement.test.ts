@@ -145,5 +145,8 @@ describe('hand and crystal clearances', () => {
         lib.dispose();
       }
     },
+    // Lancer de rayons sur chaque sommet de trois tailles : calcul lourd, qui frôlait la
+    // limite de 5 s par défaut et échouait par intermittence.
+    20_000,
   );
 });
