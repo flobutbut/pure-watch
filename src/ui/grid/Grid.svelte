@@ -358,6 +358,7 @@
             <div class="face">
               <Cell
                 {renderer}
+                displayScale={h.scale}
                 request={{
                   rowId: row.id,
                   variantId: variant.id,
@@ -493,6 +494,7 @@
         config={previewConfig ?? config}
         transient={previewConfig !== null}
         mode={open ? 'inspect' : 'grid'}
+        displayScale={watchScale}
         bind:handle={live}
       />
     </div>

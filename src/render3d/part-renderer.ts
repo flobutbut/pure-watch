@@ -218,6 +218,7 @@ export class PartRenderer3D implements PartRenderer {
       view: (index) => stage.view(index),
       rotate: (dAz, dEl) => stage.rotate(dAz, dEl),
       togglePause: () => stage.togglePause(),
+      setDisplayScale: (scale) => stage.setDisplayScale(scale),
       destroy: () => {
         if (this.stage === stage) this.stage = null;
         stage.dispose();
