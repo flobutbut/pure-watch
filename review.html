@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Épure · contrôle du coussin</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #e4e7e9;
+        color: #202832;
+        font:
+          14px system-ui,
+          sans-serif;
+      }
+      header {
+        padding: 24px 32px 12px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 8px;
+        font-weight: 500;
+      }
+      p {
+        margin: 6px 0;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 32px;
+      }
+      button,
+      select {
+        font: inherit;
+        border: 1px solid #a7b0ba;
+        border-radius: 5px;
+        padding: 8px 12px;
+        background: #f5f6f7;
+        color: inherit;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      section {
+        min-width: 0;
+        text-align: center;
+      }
+      h2 {
+        font-size: 15px;
+        font-weight: 500;
+        margin: 12px 0 0;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1;
+      }
+      output {
+        display: block;
+        font-variant-numeric: tabular-nums;
+        padding-bottom: 20px;
+      }
+      footer {
+        padding: 10px 32px 24px;
+        color: #465261;
+      }
+      a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Coussin bleu · étude des formes et finitions</h1>
+      <p>Même configuration 40 mm, même caméra, même studio, heure figée à 10 h 10 min 35 s.</p>
+    </header>
+    <nav aria-label="Contrôles de comparaison">
+      <button data-view="front">Face</button>
+      <button data-view="quarter">Trois quarts</button>
+      <button data-view="profile">Profil</button>
+      <button data-view="back">Fond</button>
+      <button id="rotate">Rotation</button>
+      <button id="hands">Animer les aiguilles</button>
+      <label
+        >Après
+        <select id="finish">
+          <option value="refined">Géométrie + grain affiné</option>
+          <option value="geometry">Géométrie seule</option>
+        </select></label
+      >
+      <label
+        >Verre
+        <select id="quality">
+          <option value="transmission">Transmission</option>
+          <option value="fallback">Repli mobile</option>
+        </select></label
+      >
+    </nav>
+    <main>
+      <section>
+        <h2>Avant · construction initiale</h2>
+        <canvas id="before"></canvas><output id="before-stats"></output>
+      </section>
+      <section>
+        <h2>Après · coussin usiné</h2>
+        <canvas id="after"></canvas><output id="after-stats"></output>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Glisser sur une montre pour faire tourner les deux. Éclairage inchangé ; aucun
+        post-traitement ajouté.
+      </p>
+      <a href="/?pilot=cushion">Ouvrir le pilote dans le configurateur</a> ·
+      <a href="/?pilot=cushion&model=legacy">Pilote avec le rendu initial</a>
+    </footer>
+    <script type="module" src="/src/review/cushion.ts"></script>
+  </body>
+</html>

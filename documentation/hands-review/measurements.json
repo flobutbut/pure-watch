@@ -1,0 +1,114 @@
+{
+  "browser": "149.0.7827.55",
+  "sets": {
+    "baton": {
+      "before": {
+        "triangles": 1612,
+        "meshes": 4,
+        "calls": 9,
+        "renderedTriangles": 1614,
+        "geometries": 5,
+        "textures": 2
+      },
+      "after": {
+        "triangles": 1612,
+        "meshes": 4,
+        "calls": 7,
+        "renderedTriangles": 1614,
+        "geometries": 5,
+        "textures": 2
+      }
+    },
+    "sword": {
+      "before": {
+        "triangles": 1636,
+        "meshes": 4,
+        "calls": 5,
+        "renderedTriangles": 1638,
+        "geometries": 5,
+        "textures": 2
+      },
+      "after": {
+        "triangles": 1668,
+        "meshes": 4,
+        "calls": 7,
+        "renderedTriangles": 1670,
+        "geometries": 5,
+        "textures": 2
+      }
+    },
+    "dauphine": {
+      "before": {
+        "triangles": 1616,
+        "meshes": 4,
+        "calls": 5,
+        "renderedTriangles": 1618,
+        "geometries": 5,
+        "textures": 2
+      },
+      "after": {
+        "triangles": 1640,
+        "meshes": 4,
+        "calls": 7,
+        "renderedTriangles": 1642,
+        "geometries": 5,
+        "textures": 2
+      }
+    },
+    "leaf": {
+      "before": {
+        "triangles": 1896,
+        "meshes": 4,
+        "calls": 5,
+        "renderedTriangles": 1898,
+        "geometries": 5,
+        "textures": 2
+      },
+      "after": {
+        "triangles": 2032,
+        "meshes": 4,
+        "calls": 7,
+        "renderedTriangles": 2034,
+        "geometries": 5,
+        "textures": 2
+      }
+    },
+    "syringe": {
+      "before": {
+        "triangles": 1674,
+        "meshes": 4,
+        "calls": 5,
+        "renderedTriangles": 1676,
+        "geometries": 5,
+        "textures": 2
+      },
+      "after": {
+        "triangles": 1722,
+        "meshes": 4,
+        "calls": 7,
+        "renderedTriangles": 1724,
+        "geometries": 5,
+        "textures": 2
+      }
+    },
+    "breguet": {
+      "before": {
+        "triangles": 2652,
+        "meshes": 4,
+        "calls": 5,
+        "renderedTriangles": 2654,
+        "geometries": 5,
+        "textures": 2
+      },
+      "after": {
+        "triangles": 3588,
+        "meshes": 4,
+        "calls": 7,
+        "renderedTriangles": 3590,
+        "geometries": 5,
+        "textures": 2
+      }
+    }
+  },
+  "errors": []
+}

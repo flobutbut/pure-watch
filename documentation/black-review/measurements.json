@@ -1,0 +1,104 @@
+{
+  "browser": "149.0.7827.55",
+  "viewport": {
+    "width": 1500,
+    "height": 1100
+  },
+  "captures": [
+    "transmission-front.png",
+    "transmission-quarter.png",
+    "transmission-profile.png",
+    "transmission-back.png",
+    "fallback-front.png",
+    "fallback-quarter.png",
+    "fallback-profile.png",
+    "fallback-back.png"
+  ],
+  "benchmark": {
+    "transmission": {
+      "before": {
+        "triangles": 31344,
+        "meshes": 22,
+        "calls": 43,
+        "renderedTriangles": 52128,
+        "geometries": 22,
+        "textures": 6,
+        "frameMedianMs": 191.59999999999854,
+        "frameP95Ms": 275.3999999999978,
+        "submitMedianMs": 0.5,
+        "width": 750,
+        "height": 750,
+        "pixelRatio": 1,
+        "quality": "transmission"
+      },
+      "after": {
+        "triangles": 30220,
+        "meshes": 16,
+        "calls": 39,
+        "renderedTriangles": 49880,
+        "geometries": 16,
+        "textures": 6,
+        "frameMedianMs": 165.60000000000218,
+        "frameP95Ms": 209.5,
+        "submitMedianMs": 0.5999999940395355,
+        "width": 750,
+        "height": 750,
+        "pixelRatio": 1,
+        "quality": "transmission"
+      },
+      "afterRebuild": {
+        "triangles": 30220,
+        "meshes": 16,
+        "calls": 39,
+        "renderedTriangles": 49880,
+        "geometries": 16,
+        "textures": 6
+      }
+    },
+    "fallback": {
+      "before": {
+        "triangles": 31344,
+        "meshes": 22,
+        "calls": 22,
+        "renderedTriangles": 31344,
+        "geometries": 22,
+        "textures": 5,
+        "frameMedianMs": 75.30000000000109,
+        "frameP95Ms": 101.70000000000073,
+        "submitMedianMs": 0.3999999761581421,
+        "width": 750,
+        "height": 750,
+        "pixelRatio": 1,
+        "quality": "fallback"
+      },
+      "after": {
+        "triangles": 30220,
+        "meshes": 16,
+        "calls": 20,
+        "renderedTriangles": 30220,
+        "geometries": 16,
+        "textures": 5,
+        "frameMedianMs": 75,
+        "frameP95Ms": 109.20000000000073,
+        "submitMedianMs": 0.3999999761581421,
+        "width": 750,
+        "height": 750,
+        "pixelRatio": 1,
+        "quality": "fallback"
+      },
+      "afterRebuild": {
+        "triangles": 30220,
+        "meshes": 16,
+        "calls": 20,
+        "renderedTriangles": 30220,
+        "geometries": 16,
+        "textures": 5
+      }
+    }
+  },
+  "errors": [],
+  "gpu": {
+    "vendor": "Google Inc. (Google)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+  }
+}

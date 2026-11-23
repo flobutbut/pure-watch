@@ -1,0 +1,168 @@
+{
+  "browser": "149.0.7827.55",
+  "combinations": {
+    "round/round": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "cushion/cushion": {
+      "before": {
+        "triangles": 37640,
+        "meshes": 21,
+        "calls": 31,
+        "renderedTriangles": 37640,
+        "geometries": 21,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 37640,
+        "meshes": 21,
+        "calls": 31,
+        "renderedTriangles": 37640,
+        "geometries": 21,
+        "textures": 6
+      }
+    },
+    "tonneau/tonneau": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 47672,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47672,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "octagon/octagon": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 47672,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47672,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "square/square": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 47672,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47672,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "rectangle/rectangle": {
+      "before": {
+        "triangles": 47448,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47448,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 49688,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 49688,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "round/square": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 47672,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47672,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "round/rectangle": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 47672,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47672,
+        "geometries": 26,
+        "textures": 6
+      }
+    },
+    "square/tonneau": {
+      "before": {
+        "triangles": 45432,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 45432,
+        "geometries": 26,
+        "textures": 6
+      },
+      "after": {
+        "triangles": 47672,
+        "meshes": 26,
+        "calls": 28,
+        "renderedTriangles": 47672,
+        "geometries": 26,
+        "textures": 6
+      }
+    }
+  },
+  "errors": []
+}

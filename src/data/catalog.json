@@ -1,0 +1,1363 @@
+{
+  "catalogVersion": "0.7.0",
+  "rows": [
+    {
+      "id": "case-shape",
+      "group": "case",
+      "kind": "enum",
+      "path": "case.shape",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Boîtier"
+      },
+      "variants": [
+        {
+          "id": "round",
+          "value": "round",
+          "preview": "case-shape/round.svg",
+          "i18n": {
+            "name": "Rond"
+          }
+        },
+        {
+          "id": "cushion",
+          "value": "cushion",
+          "preview": "case-shape/cushion.svg",
+          "i18n": {
+            "name": "Coussin"
+          }
+        },
+        {
+          "id": "tonneau",
+          "value": "tonneau",
+          "preview": "case-shape/tonneau.svg",
+          "i18n": {
+            "name": "Tonneau"
+          }
+        },
+        {
+          "id": "octagon",
+          "value": "octagon",
+          "preview": "case-shape/octagon.svg",
+          "i18n": {
+            "name": "Octogonal"
+          }
+        },
+        {
+          "id": "square",
+          "value": "square",
+          "preview": "case-shape/square.svg",
+          "i18n": {
+            "name": "Carré"
+          }
+        },
+        {
+          "id": "rectangle",
+          "value": "rectangle",
+          "preview": "case-shape/rectangle.svg",
+          "i18n": {
+            "name": "Rectangulaire"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-material",
+      "group": "case",
+      "kind": "enum",
+      "path": "case.material",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P1",
+      "i18n": {
+        "name": "Matière du boîtier"
+      },
+      "variants": [
+        {
+          "id": "steel",
+          "value": "steel",
+          "preview": "case-material/steel.svg",
+          "i18n": {
+            "name": "Acier"
+          }
+        },
+        {
+          "id": "titanium",
+          "value": "titanium",
+          "preview": "case-material/titanium.svg",
+          "i18n": {
+            "name": "Titane"
+          }
+        },
+        {
+          "id": "bronze",
+          "value": "bronze",
+          "preview": "case-material/bronze.svg",
+          "i18n": {
+            "name": "Bronze"
+          }
+        },
+        {
+          "id": "gold-yellow",
+          "value": "gold-yellow",
+          "preview": "case-material/gold-yellow.svg",
+          "i18n": {
+            "name": "Or jaune"
+          }
+        },
+        {
+          "id": "gold-rose",
+          "value": "gold-rose",
+          "preview": "case-material/gold-rose.svg",
+          "i18n": {
+            "name": "Or rose"
+          }
+        },
+        {
+          "id": "brass",
+          "value": "brass",
+          "preview": "case-material/brass.svg",
+          "i18n": {
+            "name": "Laiton plaqué"
+          }
+        },
+        {
+          "id": "ceramic",
+          "value": "ceramic",
+          "preview": "case-material/ceramic.svg",
+          "i18n": {
+            "name": "Céramique noire"
+          }
+        },
+        {
+          "id": "carbon",
+          "value": "carbon",
+          "preview": "case-material/carbon.svg",
+          "i18n": {
+            "name": "Carbone forgé"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-finish",
+      "group": "case",
+      "kind": "enum",
+      "path": "case.finish",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P1",
+      "i18n": {
+        "name": "Finition du boîtier"
+      },
+      "visibleWhen": {
+        "path": "case.material",
+        "notIn": ["ceramic", "carbon"]
+      },
+      "variants": [
+        {
+          "id": "mixed",
+          "value": "mixed",
+          "preview": "case-finish/mixed.svg",
+          "i18n": {
+            "name": "Mixte (brossé et poli)"
+          }
+        },
+        {
+          "id": "brushed",
+          "value": "brushed",
+          "preview": "case-finish/brushed.svg",
+          "i18n": {
+            "name": "Brossé"
+          }
+        },
+        {
+          "id": "polished",
+          "value": "polished",
+          "preview": "case-finish/polished.svg",
+          "i18n": {
+            "name": "Poli"
+          }
+        },
+        {
+          "id": "sandblasted",
+          "value": "sandblasted",
+          "preview": "case-finish/sandblasted.svg",
+          "i18n": {
+            "name": "Sablé"
+          }
+        },
+        {
+          "id": "pvd-black",
+          "value": "pvd-black",
+          "preview": "case-finish/pvd-black.svg",
+          "i18n": {
+            "name": "Noir (PVD)"
+          }
+        },
+        {
+          "id": "patina",
+          "value": "patina",
+          "preview": "case-finish/patina.svg",
+          "i18n": {
+            "name": "Patiné"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-size",
+      "group": "case",
+      "kind": "ordinal",
+      "path": "case",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Taille",
+        "hint": "Diamètre du boîtier, hors couronne"
+      },
+      "variants": [
+        {
+          "id": "22-mm",
+          "value": {
+            "diameterMm": 22,
+            "lugToLugMm": 26,
+            "lugWidthMm": 12,
+            "thicknessMm": 6
+          },
+          "preview": "case-size/22-mm.svg",
+          "i18n": {
+            "name": "22 mm"
+          }
+        },
+        {
+          "id": "24-mm",
+          "value": {
+            "diameterMm": 24,
+            "lugToLugMm": 28.5,
+            "lugWidthMm": 12,
+            "thicknessMm": 6.5
+          },
+          "preview": "case-size/24-mm.svg",
+          "i18n": {
+            "name": "24 mm"
+          }
+        },
+        {
+          "id": "26-mm",
+          "value": {
+            "diameterMm": 26,
+            "lugToLugMm": 30.5,
+            "lugWidthMm": 14,
+            "thicknessMm": 7
+          },
+          "preview": "case-size/26-mm.svg",
+          "i18n": {
+            "name": "26 mm"
+          }
+        },
+        {
+          "id": "28-mm",
+          "value": {
+            "diameterMm": 28,
+            "lugToLugMm": 33,
+            "lugWidthMm": 14,
+            "thicknessMm": 7.5
+          },
+          "preview": "case-size/28-mm.svg",
+          "i18n": {
+            "name": "28 mm"
+          }
+        },
+        {
+          "id": "30-mm",
+          "value": {
+            "diameterMm": 30,
+            "lugToLugMm": 35.5,
+            "lugWidthMm": 16,
+            "thicknessMm": 8.5
+          },
+          "preview": "case-size/30-mm.svg",
+          "i18n": {
+            "name": "30 mm"
+          }
+        },
+        {
+          "id": "32-mm",
+          "value": {
+            "diameterMm": 32,
+            "lugToLugMm": 38,
+            "lugWidthMm": 16,
+            "thicknessMm": 9
+          },
+          "preview": "case-size/32-mm.svg",
+          "i18n": {
+            "name": "32 mm"
+          }
+        },
+        {
+          "id": "34-mm",
+          "value": {
+            "diameterMm": 34,
+            "lugToLugMm": 40,
+            "lugWidthMm": 18,
+            "thicknessMm": 9.5
+          },
+          "preview": "case-size/34-mm.svg",
+          "i18n": {
+            "name": "34 mm"
+          }
+        },
+        {
+          "id": "36-mm",
+          "value": {
+            "diameterMm": 36,
+            "lugToLugMm": 42.5,
+            "lugWidthMm": 18,
+            "thicknessMm": 10
+          },
+          "preview": "case-size/36-mm.svg",
+          "i18n": {
+            "name": "36 mm"
+          }
+        },
+        {
+          "id": "38-mm",
+          "value": {
+            "diameterMm": 38,
+            "lugToLugMm": 45,
+            "lugWidthMm": 20,
+            "thicknessMm": 10.5
+          },
+          "preview": "case-size/38-mm.svg",
+          "i18n": {
+            "name": "38 mm"
+          }
+        },
+        {
+          "id": "40-mm",
+          "value": {
+            "diameterMm": 40,
+            "lugToLugMm": 47,
+            "lugWidthMm": 20,
+            "thicknessMm": 11
+          },
+          "preview": "case-size/40-mm.svg",
+          "i18n": {
+            "name": "40 mm"
+          }
+        },
+        {
+          "id": "42-mm",
+          "value": {
+            "diameterMm": 42,
+            "lugToLugMm": 49.5,
+            "lugWidthMm": 22,
+            "thicknessMm": 11.5
+          },
+          "preview": "case-size/42-mm.svg",
+          "i18n": {
+            "name": "42 mm"
+          }
+        },
+        {
+          "id": "44-mm",
+          "value": {
+            "diameterMm": 44,
+            "lugToLugMm": 52,
+            "lugWidthMm": 22,
+            "thicknessMm": 12
+          },
+          "preview": "case-size/44-mm.svg",
+          "i18n": {
+            "name": "44 mm"
+          }
+        },
+        {
+          "id": "46-mm",
+          "value": {
+            "diameterMm": 46,
+            "lugToLugMm": 54.5,
+            "lugWidthMm": 24,
+            "thicknessMm": 12.5
+          },
+          "preview": "case-size/46-mm.svg",
+          "i18n": {
+            "name": "46 mm"
+          }
+        },
+        {
+          "id": "48-mm",
+          "value": {
+            "diameterMm": 48,
+            "lugToLugMm": 56.5,
+            "lugWidthMm": 24,
+            "thicknessMm": 13
+          },
+          "preview": "case-size/48-mm.svg",
+          "i18n": {
+            "name": "48 mm"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lugs",
+      "group": "case",
+      "kind": "enum",
+      "path": "case.lugs",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Cornes"
+      },
+      "variants": [
+        {
+          "id": "straight",
+          "value": "straight",
+          "preview": "lugs/straight.svg",
+          "i18n": {
+            "name": "Droites"
+          }
+        },
+        {
+          "id": "curved",
+          "value": "curved",
+          "preview": "lugs/curved.svg",
+          "i18n": {
+            "name": "Courbes"
+          }
+        },
+        {
+          "id": "pointed",
+          "value": "pointed",
+          "preview": "lugs/pointed.svg",
+          "i18n": {
+            "name": "Pointues"
+          }
+        },
+        {
+          "id": "faceted",
+          "value": "faceted",
+          "preview": "lugs/faceted.svg",
+          "i18n": {
+            "name": "Chanfreinées"
+          }
+        },
+        {
+          "id": "teardrop",
+          "value": "teardrop",
+          "preview": "lugs/teardrop.svg",
+          "i18n": {
+            "name": "Gouttes"
+          }
+        },
+        {
+          "id": "drilled",
+          "value": "drilled",
+          "preview": "lugs/drilled.svg",
+          "i18n": {
+            "name": "Percées"
+          }
+        },
+        {
+          "id": "integrated",
+          "value": "integrated",
+          "preview": "lugs/integrated.svg",
+          "i18n": {
+            "name": "Intégrées"
+          }
+        },
+        {
+          "id": "none",
+          "value": "none",
+          "preview": "lugs/none.svg",
+          "i18n": {
+            "name": "Aucune"
+          }
+        }
+      ]
+    },
+    {
+      "id": "crystal",
+      "group": "case",
+      "kind": "enum",
+      "path": "crystal.type",
+      "previewContext": "dial-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Cristal"
+      },
+      "variants": [
+        {
+          "id": "sapphire-flat",
+          "value": "sapphire-flat",
+          "preview": "crystal/sapphire-flat.svg",
+          "i18n": {
+            "name": "Saphir plat"
+          }
+        },
+        {
+          "id": "sapphire-domed",
+          "value": "sapphire-domed",
+          "preview": "crystal/sapphire-domed.svg",
+          "i18n": {
+            "name": "Saphir bombé"
+          }
+        },
+        {
+          "id": "sapphire-box",
+          "value": "sapphire-box",
+          "preview": "crystal/sapphire-box.svg",
+          "i18n": {
+            "name": "Saphir « boîte »"
+          }
+        },
+        {
+          "id": "acrylic",
+          "value": "acrylic",
+          "preview": "crystal/acrylic.svg",
+          "i18n": {
+            "name": "Acrylique (hésalite)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "crown",
+      "group": "case",
+      "kind": "enum",
+      "path": "crown.style",
+      "previewContext": "case-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Couronne"
+      },
+      "variants": [
+        {
+          "id": "fluted",
+          "value": "fluted",
+          "preview": "crown/fluted.svg",
+          "i18n": {
+            "name": "Cannelée"
+          }
+        },
+        {
+          "id": "onion",
+          "value": "onion",
+          "preview": "crown/onion.svg",
+          "i18n": {
+            "name": "Oignon"
+          }
+        },
+        {
+          "id": "pointed",
+          "value": "pointed",
+          "preview": "crown/pointed.svg",
+          "i18n": {
+            "name": "Pointue"
+          }
+        },
+        {
+          "id": "square",
+          "value": "square",
+          "preview": "crown/square.svg",
+          "i18n": {
+            "name": "Carrée"
+          }
+        },
+        {
+          "id": "pump",
+          "value": "pump",
+          "preview": "crown/pump.svg",
+          "i18n": {
+            "name": "Pompe"
+          }
+        },
+        {
+          "id": "guarded",
+          "value": "guarded",
+          "preview": "crown/guarded.svg",
+          "i18n": {
+            "name": "À protège-couronne"
+          }
+        }
+      ]
+    },
+    {
+      "id": "crown-position",
+      "group": "case",
+      "kind": "enum",
+      "path": "crown.position",
+      "previewContext": "case-sample",
+      "looping": false,
+      "priority": "P1",
+      "i18n": {
+        "name": "Position de la couronne"
+      },
+      "variants": [
+        {
+          "id": "3h",
+          "value": "3h",
+          "preview": "crown-position/3h.svg",
+          "i18n": {
+            "name": "3 h"
+          }
+        },
+        {
+          "id": "4h",
+          "value": "4h",
+          "preview": "crown-position/4h.svg",
+          "i18n": {
+            "name": "4 h"
+          }
+        },
+        {
+          "id": "2h",
+          "value": "2h",
+          "preview": "crown-position/2h.svg",
+          "i18n": {
+            "name": "2 h"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dial-shape",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.shape",
+      "previewContext": "case-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Forme du cadran"
+      },
+      "variants": [
+        {
+          "id": "round",
+          "value": "round",
+          "preview": "dial-shape/round.svg",
+          "i18n": {
+            "name": "Rond"
+          }
+        },
+        {
+          "id": "cushion",
+          "value": "cushion",
+          "preview": "dial-shape/cushion.svg",
+          "i18n": {
+            "name": "Coussin"
+          }
+        },
+        {
+          "id": "tonneau",
+          "value": "tonneau",
+          "preview": "dial-shape/tonneau.svg",
+          "i18n": {
+            "name": "Tonneau"
+          }
+        },
+        {
+          "id": "octagon",
+          "value": "octagon",
+          "preview": "dial-shape/octagon.svg",
+          "i18n": {
+            "name": "Octogonal"
+          }
+        },
+        {
+          "id": "square",
+          "value": "square",
+          "preview": "dial-shape/square.svg",
+          "i18n": {
+            "name": "Carré"
+          }
+        },
+        {
+          "id": "rectangle",
+          "value": "rectangle",
+          "preview": "dial-shape/rectangle.svg",
+          "i18n": {
+            "name": "Rectangulaire"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dial-finish",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.finish",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Finition du cadran"
+      },
+      "variants": [
+        {
+          "id": "matte",
+          "value": "matte",
+          "preview": "dial-finish/matte.svg",
+          "i18n": {
+            "name": "Mat"
+          }
+        },
+        {
+          "id": "sunburst",
+          "value": "sunburst",
+          "preview": "dial-finish/sunburst.svg",
+          "i18n": {
+            "name": "Soleillé"
+          }
+        },
+        {
+          "id": "grained",
+          "value": "grained",
+          "preview": "dial-finish/grained.svg",
+          "i18n": {
+            "name": "Grainé"
+          }
+        },
+        {
+          "id": "lacquer",
+          "value": "lacquer",
+          "preview": "dial-finish/lacquer.svg",
+          "i18n": {
+            "name": "Laqué"
+          }
+        },
+        {
+          "id": "fume",
+          "value": "fume",
+          "preview": "dial-finish/fume.svg",
+          "i18n": {
+            "name": "Fumé"
+          }
+        },
+        {
+          "id": "iridescent-pearl",
+          "value": "iridescent-pearl",
+          "preview": "dial-finish/iridescent-pearl.svg",
+          "i18n": {
+            "name": "Nacré"
+          }
+        },
+        {
+          "id": "iridescent-oil",
+          "value": "iridescent-oil",
+          "preview": "dial-finish/iridescent-oil.svg",
+          "i18n": {
+            "name": "Huile"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dial-color",
+      "group": "face",
+      "kind": "palette",
+      "path": "dial.color",
+      "previewContext": "none",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Couleur du cadran"
+      },
+      "variants": [
+        {
+          "id": "black",
+          "value": "#111317",
+          "preview": "dial-color/black.svg",
+          "i18n": {
+            "name": "Noir"
+          }
+        },
+        {
+          "id": "white",
+          "value": "#F2F0EA",
+          "preview": "dial-color/white.svg",
+          "i18n": {
+            "name": "Blanc"
+          }
+        },
+        {
+          "id": "silver",
+          "value": "#C9CCD1",
+          "preview": "dial-color/silver.svg",
+          "i18n": {
+            "name": "Argent"
+          }
+        },
+        {
+          "id": "champagne",
+          "value": "#D9C59A",
+          "preview": "dial-color/champagne.svg",
+          "i18n": {
+            "name": "Champagne"
+          }
+        },
+        {
+          "id": "salmon",
+          "value": "#E8A58C",
+          "preview": "dial-color/salmon.svg",
+          "i18n": {
+            "name": "Saumon"
+          }
+        },
+        {
+          "id": "copper",
+          "value": "#B8734A",
+          "preview": "dial-color/copper.svg",
+          "i18n": {
+            "name": "Cuivre"
+          }
+        },
+        {
+          "id": "burgundy",
+          "value": "#5E1A2B",
+          "preview": "dial-color/burgundy.svg",
+          "i18n": {
+            "name": "Bordeaux"
+          }
+        },
+        {
+          "id": "green",
+          "value": "#1F4D3A",
+          "preview": "dial-color/green.svg",
+          "i18n": {
+            "name": "Vert"
+          }
+        },
+        {
+          "id": "sky",
+          "value": "#8DB8E0",
+          "preview": "dial-color/sky.svg",
+          "i18n": {
+            "name": "Bleu ciel"
+          }
+        },
+        {
+          "id": "navy",
+          "value": "#1E3A6B",
+          "preview": "dial-color/navy.svg",
+          "i18n": {
+            "name": "Bleu nuit"
+          }
+        },
+        {
+          "id": "slate",
+          "value": "#4A5059",
+          "preview": "dial-color/slate.svg",
+          "i18n": {
+            "name": "Gris ardoise"
+          }
+        }
+      ],
+      "visibleWhen": {
+        "path": "dial.finish",
+        "notIn": ["iridescent-pearl", "iridescent-oil"]
+      }
+    },
+    {
+      "id": "chapter-ring",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.chapterRing",
+      "previewContext": "none",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Piste des minutes"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": "none",
+          "preview": "chapter-ring/none.svg",
+          "i18n": {
+            "name": "Aucune"
+          }
+        },
+        {
+          "id": "railroad",
+          "value": "railroad",
+          "preview": "chapter-ring/railroad.svg",
+          "i18n": {
+            "name": "Chemin de fer"
+          }
+        },
+        {
+          "id": "dots",
+          "value": "dots",
+          "preview": "chapter-ring/dots.svg",
+          "i18n": {
+            "name": "Points"
+          }
+        },
+        {
+          "id": "ticks",
+          "value": "ticks",
+          "preview": "chapter-ring/ticks.svg",
+          "i18n": {
+            "name": "Bâtons"
+          }
+        },
+        {
+          "id": "five-minute",
+          "value": "five-minute",
+          "preview": "chapter-ring/five-minute.svg",
+          "i18n": {
+            "name": "Graduée par 5 minutes"
+          }
+        }
+      ]
+    },
+    {
+      "id": "indices",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.indices.style",
+      "previewContext": "dial-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Index"
+      },
+      "variants": [
+        {
+          "id": "baton",
+          "value": "baton",
+          "preview": "indices/baton.svg",
+          "i18n": {
+            "name": "Bâtons"
+          }
+        },
+        {
+          "id": "baton-facet",
+          "value": "baton-facet",
+          "preview": "indices/baton-facet.svg",
+          "i18n": {
+            "name": "Bâtons facettés"
+          }
+        },
+        {
+          "id": "dauphine",
+          "value": "dauphine",
+          "preview": "indices/dauphine.svg",
+          "i18n": {
+            "name": "Dauphine"
+          }
+        },
+        {
+          "id": "dots",
+          "value": "dots",
+          "preview": "indices/dots.svg",
+          "i18n": {
+            "name": "Points"
+          }
+        },
+        {
+          "id": "triangles",
+          "value": "triangles",
+          "preview": "indices/triangles.svg",
+          "i18n": {
+            "name": "Triangles"
+          }
+        },
+        {
+          "id": "baguettes",
+          "value": "baguettes",
+          "preview": "indices/baguettes.svg",
+          "i18n": {
+            "name": "Baguettes"
+          }
+        },
+        {
+          "id": "drops",
+          "value": "drops",
+          "preview": "indices/drops.svg",
+          "i18n": {
+            "name": "Gouttes"
+          }
+        },
+        {
+          "id": "none",
+          "value": "none",
+          "preview": "indices/none.svg",
+          "i18n": {
+            "name": "Aucun"
+          }
+        }
+      ]
+    },
+    {
+      "id": "numerals",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.indices.numerals",
+      "previewContext": "dial-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Chiffres"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": "none",
+          "preview": "numerals/none.svg",
+          "i18n": {
+            "name": "Aucun"
+          }
+        },
+        {
+          "id": "cardinal",
+          "value": "cardinal",
+          "preview": "numerals/cardinal.svg",
+          "i18n": {
+            "name": "12, 3, 6, 9"
+          }
+        },
+        {
+          "id": "explorer",
+          "value": "explorer",
+          "preview": "numerals/explorer.svg",
+          "i18n": {
+            "name": "3, 6, 9"
+          }
+        },
+        {
+          "id": "twelve",
+          "value": "twelve",
+          "preview": "numerals/twelve.svg",
+          "i18n": {
+            "name": "12 seul"
+          }
+        },
+        {
+          "id": "six-twelve",
+          "value": "six-twelve",
+          "preview": "numerals/six-twelve.svg",
+          "i18n": {
+            "name": "6 et 12"
+          }
+        },
+        {
+          "id": "all",
+          "value": "all",
+          "preview": "numerals/all.svg",
+          "i18n": {
+            "name": "Tous"
+          }
+        },
+        {
+          "id": "roman",
+          "value": "roman",
+          "preview": "numerals/roman.svg",
+          "i18n": {
+            "name": "Romains"
+          }
+        }
+      ]
+    },
+    {
+      "id": "numeral-font",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.indices.numeralFont",
+      "previewContext": "dial-sample",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Typographie des chiffres"
+      },
+      "visibleWhen": {
+        "path": "dial.indices.numerals",
+        "notEquals": "none"
+      },
+      "variants": [
+        {
+          "id": "sans",
+          "value": "sans",
+          "preview": "numeral-font/sans.svg",
+          "i18n": {
+            "name": "Sans empattement fin"
+          }
+        },
+        {
+          "id": "sans-bold",
+          "value": "sans-bold",
+          "preview": "numeral-font/sans-bold.svg",
+          "i18n": {
+            "name": "Sans empattement gras"
+          }
+        },
+        {
+          "id": "geometric",
+          "value": "geometric",
+          "preview": "numeral-font/geometric.svg",
+          "i18n": {
+            "name": "Géométrique"
+          }
+        },
+        {
+          "id": "serif",
+          "value": "serif",
+          "preview": "numeral-font/serif.svg",
+          "i18n": {
+            "name": "Serif classique"
+          }
+        },
+        {
+          "id": "mono",
+          "value": "mono",
+          "preview": "numeral-font/mono.svg",
+          "i18n": {
+            "name": "Mono"
+          }
+        },
+        {
+          "id": "art-nouveau",
+          "value": "art-nouveau",
+          "preview": "numeral-font/art-nouveau.svg",
+          "i18n": {
+            "name": "Art nouveau"
+          }
+        },
+        {
+          "id": "art-deco",
+          "value": "art-deco",
+          "preview": "numeral-font/art-deco.svg",
+          "i18n": {
+            "name": "Art déco"
+          }
+        },
+        {
+          "id": "lapidary",
+          "value": "lapidary",
+          "preview": "numeral-font/lapidary.svg",
+          "i18n": {
+            "name": "Lapidaire"
+          }
+        },
+        {
+          "id": "condensed",
+          "value": "condensed",
+          "preview": "numeral-font/condensed.svg",
+          "i18n": {
+            "name": "Condensée"
+          }
+        },
+        {
+          "id": "futurist",
+          "value": "futurist",
+          "preview": "numeral-font/futurist.svg",
+          "i18n": {
+            "name": "Futuriste"
+          }
+        },
+        {
+          "id": "italic",
+          "value": "italic",
+          "preview": "numeral-font/italic.svg",
+          "i18n": {
+            "name": "Italique"
+          }
+        }
+      ]
+    },
+    {
+      "id": "hands",
+      "group": "hands",
+      "kind": "enum",
+      "path": "hands.set",
+      "previewContext": "dark-disc",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Aiguilles"
+      },
+      "variants": [
+        {
+          "id": "baton",
+          "value": "baton",
+          "preview": "hands/baton.svg",
+          "i18n": {
+            "name": "Bâton"
+          }
+        },
+        {
+          "id": "dauphine",
+          "value": "dauphine",
+          "preview": "hands/dauphine.svg",
+          "i18n": {
+            "name": "Dauphine"
+          }
+        },
+        {
+          "id": "sword",
+          "value": "sword",
+          "preview": "hands/sword.svg",
+          "i18n": {
+            "name": "Épée"
+          }
+        },
+        {
+          "id": "leaf",
+          "value": "leaf",
+          "preview": "hands/leaf.svg",
+          "i18n": {
+            "name": "Feuille"
+          }
+        },
+        {
+          "id": "breguet",
+          "value": "breguet",
+          "preview": "hands/breguet.svg",
+          "i18n": {
+            "name": "Breguet"
+          }
+        },
+        {
+          "id": "syringe",
+          "value": "syringe",
+          "preview": "hands/syringe.svg",
+          "i18n": {
+            "name": "Seringue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "seconds",
+      "group": "hands",
+      "kind": "enum",
+      "path": "hands.second",
+      "previewContext": "dark-disc",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Trotteuse"
+      },
+      "variants": [
+        {
+          "id": "thin",
+          "value": {
+            "style": "thin",
+            "counterweight": false
+          },
+          "preview": "seconds/thin.svg",
+          "i18n": {
+            "name": "Fine"
+          }
+        },
+        {
+          "id": "counterweight",
+          "value": {
+            "style": "counterweight",
+            "counterweight": true
+          },
+          "preview": "seconds/counterweight.svg",
+          "i18n": {
+            "name": "Avec contrepoids"
+          }
+        },
+        {
+          "id": "lollipop",
+          "value": {
+            "style": "lollipop",
+            "counterweight": true
+          },
+          "preview": "seconds/lollipop.svg",
+          "i18n": {
+            "name": "Sucette"
+          }
+        },
+        {
+          "id": "arrow",
+          "value": {
+            "style": "arrow",
+            "counterweight": false
+          },
+          "preview": "seconds/arrow.svg",
+          "i18n": {
+            "name": "Flèche"
+          }
+        },
+        {
+          "id": "triangle",
+          "value": {
+            "style": "triangle",
+            "counterweight": true
+          },
+          "preview": "seconds/triangle.svg",
+          "i18n": {
+            "name": "Triangle"
+          }
+        }
+      ]
+    },
+    {
+      "id": "seconds-color",
+      "group": "hands",
+      "kind": "palette",
+      "path": "hands.second.color",
+      "previewContext": "dark-disc",
+      "looping": false,
+      "priority": "P0",
+      "i18n": {
+        "name": "Couleur de trotteuse"
+      },
+      "variants": [
+        {
+          "id": "orange",
+          "value": "#F0561D",
+          "preview": "seconds-color/orange.svg",
+          "i18n": {
+            "name": "Orange"
+          }
+        },
+        {
+          "id": "red",
+          "value": "#D7262E",
+          "preview": "seconds-color/red.svg",
+          "i18n": {
+            "name": "Rouge"
+          }
+        },
+        {
+          "id": "blue",
+          "value": "#2F6BD8",
+          "preview": "seconds-color/blue.svg",
+          "i18n": {
+            "name": "Bleue"
+          }
+        },
+        {
+          "id": "yellow",
+          "value": "#F2C230",
+          "preview": "seconds-color/yellow.svg",
+          "i18n": {
+            "name": "Jaune"
+          }
+        },
+        {
+          "id": "match",
+          "value": "match",
+          "preview": "seconds-color/match.svg",
+          "i18n": {
+            "name": "Assortie aux aiguilles"
+          }
+        }
+      ]
+    }
+  ]
+}
