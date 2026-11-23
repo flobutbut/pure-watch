@@ -40,7 +40,13 @@
     if (modal) {
       dialog.showModal();
       heading.focus();
-    } else dialog.show();
+    } else {
+      dialog.show();
+      // show() déplace le focus dans le panneau : la vue 3D le garde, avec ses raccourcis
+      // (Espace pour refermer l'aperçu, flèches pour tourner la montre).
+      if (previousFocus?.isConnected && previousFocus !== document.body)
+        previousFocus.focus({ preventScroll: true });
+    }
     return () => {
       dialog.close();
       if (modal && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });

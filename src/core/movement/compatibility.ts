@@ -5,6 +5,7 @@
  * adapter pour monter le calibre dans ce boîtier, sans prétendre à un plan d'usinage.
  */
 import { dateComplication } from '../config/date';
+import { chronograph } from '../config/chronograph';
 import { powerReserve } from '../config/power-reserve';
 import { smallSeconds } from '../config/small-seconds';
 import type { WatchConfig } from '../config/types';
@@ -52,6 +53,14 @@ export function movementFit(config: WatchConfig, movement: MovementSpec): Moveme
       fit: 'no',
       notes: ['Un quartz n’a pas de réserve de marche à indiquer : il tourne sur sa pile.'],
     };
+  if (movement.kind === 'quartz' && chronograph(config))
+    return {
+      movement,
+      fit: 'check',
+      notes: [
+        'Chronographe à quartz ou mécaquartz (série Seiko VK, par exemple) : disposition des compteurs selon le calibre.',
+      ],
+    };
   if (movement.kind === 'quartz' || movement.heightMm === undefined)
     return { movement, fit: 'check', notes: ['Cotes et fonctions selon le calibre choisi.'] };
 
@@ -85,6 +94,10 @@ export function movementFit(config: WatchConfig, movement: MovementSpec): Moveme
   if (smallSeconds(config))
     blocking.push(
       `Trotteuse au centre sur le ${movement.name} : la petite seconde demande un calibre qui la porte.`,
+    );
+  if (chronograph(config))
+    blocking.push(
+      `Pas de chronographe dans le ${movement.name} : il faut un calibre chronographe.`,
     );
   if (powerReserve(config))
     blocking.push(

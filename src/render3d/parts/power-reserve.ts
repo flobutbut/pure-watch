@@ -153,22 +153,23 @@ export function buildReservePrint(
   return { print, ready, owned: [texture, material] };
 }
 
-/** Aiguille de la réserve, fixe sur son niveau (calque des aiguilles). */
-export function buildReserveHand(
-  config: WatchConfig,
-  d: WatchDimensions,
+/**
+ * Aiguille bâton d'indicateur (réserve, compteurs) : pointe vers 12 h, pivot à l'origine,
+ * avec son canon.
+ */
+export function stickHand(
+  length: number,
+  tail: number,
+  k: number,
   material: THREE.Material,
-): THREE.Object3D | null {
-  const gauge = reserveGauge(config, d.dialSafeRadius);
-  if (!gauge) return null;
-  const k = d.dialSafeRadius / 20;
+): THREE.Mesh {
   const t = 0.1;
   const parts = [
     profileGeometry(
       [
-        [-gauge.r * 0.18, 0.12 * k],
+        [-tail, 0.12 * k],
         [0, 0.12 * k],
-        [gauge.r * 0.9, 0.05 * k],
+        [length, 0.05 * k],
       ],
       t,
       0,
@@ -177,7 +178,18 @@ export function buildReserveHand(
   ];
   const geometry = mergeGeometries(parts);
   for (const g of parts) g.dispose();
-  const hand = new THREE.Mesh(geometry, material);
+  return new THREE.Mesh(geometry, material);
+}
+
+/** Aiguille de la réserve, fixe sur son niveau (calque des aiguilles). */
+export function buildReserveHand(
+  config: WatchConfig,
+  d: WatchDimensions,
+  material: THREE.Material,
+): THREE.Object3D | null {
+  const gauge = reserveGauge(config, d.dialSafeRadius);
+  if (!gauge) return null;
+  const hand = stickHand(gauge.r * 0.9, gauge.r * 0.18, d.dialSafeRadius / 20, material);
   hand.name = 'reserve-blade';
   const pivot = new THREE.Group();
   pivot.name = 'reserve-hand';

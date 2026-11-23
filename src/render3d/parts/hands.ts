@@ -16,7 +16,8 @@ import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { subdialCircle } from '../../core/config/small-seconds';
 import type { MaterialLibrary } from '../materials';
 import { subdialFloor } from './subdial';
-import { buildReserveHand } from './power-reserve';
+import { buildReserveHand, stickHand } from './power-reserve';
+import { chronoCounters } from '../../core/config/chronograph';
 import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
 
@@ -460,6 +461,23 @@ export function buildHands(
   const seconds = new THREE.Group();
   seconds.name = 'seconds';
   seconds.add(pivots.second);
+
+  // Chronographe au repos : trotteuse du chrono et compteurs à zéro ; les secondes
+  // courantes tournent dans leur compteur.
+  const counters = chronoCounters(config, d.dialSafeRadius);
+  let running: THREE.Group | null = null;
+  for (const c of counters) {
+    const hand = stickHand(c.r * 0.86, c.r * 0.22, k * 0.8, steel);
+    hand.name = `${c.kind}-counter-blade`;
+    const pivot = new THREE.Group();
+    pivot.name = `${c.kind}-counter`;
+    pivot.position.set(c.x, c.y, 0.2);
+    pivot.add(hand);
+    if (c.kind === 'seconds') {
+      running = pivot;
+      seconds.add(pivot);
+    } else group.add(pivot);
+  }
   if (refined) group.scale.z = seconds.scale.z = Math.min(1, d.caseThickness / 11);
 
   return {
@@ -469,7 +487,8 @@ export function buildHands(
       // Sens horaire vu de face (caméra sur +Z) = rotation négative autour de Z.
       pivots.hour.rotation.z = -angles.hour * DEG;
       pivots.minute.rotation.z = -angles.minute * DEG;
-      pivots.second.rotation.z = -angles.second * DEG;
+      if (running) running.rotation.z = -angles.second * DEG;
+      else pivots.second.rotation.z = -angles.second * DEG;
     },
   };
 }

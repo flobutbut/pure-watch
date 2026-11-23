@@ -4,6 +4,7 @@ import { tint } from '../../core/color/names';
 import { bezelScale } from '../../core/config/bezel';
 import { HAND_FINISHES, handColor } from '../../core/config/colors';
 import { dateComplication } from '../../core/config/date';
+import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
 import { effectiveDialColor, hasIntrinsicColor } from '../../core/config/dial';
@@ -52,6 +53,8 @@ const EFFECTIVE: Record<string, (config: WatchConfig) => unknown> = {
   'date-disc': (config) => dateComplication(config)?.disc,
   'small-seconds-style': (config) => smallSeconds(config)?.style,
   'power-reserve-style': (config) => powerReserve(config)?.style,
+  'chronograph-counters': (config) => chronograph(config)?.counters,
+  'chronograph-pushers': (config) => chronograph(config)?.pushers,
 };
 
 function rowValue(row: RowDef, config: WatchConfig): string {

@@ -12,7 +12,7 @@ import type { CrystalQuality, MaterialLibrary } from './materials';
 import type { Refinement } from './refinement';
 import { buildCushionCase } from './parts/cushion-case';
 import { buildCase } from './parts/case';
-import { buildCrown } from './parts/crown';
+import { buildCrown, buildPushers } from './parts/crown';
 import { buildCrystal, crystalSurface } from './parts/crystal';
 import { HANDS_ORDER } from './parts/date';
 import { buildDial } from './parts/dial';
@@ -61,6 +61,22 @@ export interface BuildOptions {
 
 const empty = (name: string) => Object.assign(new THREE.Group(), { name });
 
+/** Couronne, et poussoirs du chronographe s'il y en a un (même calque, même matière). */
+function withPushers(
+  crown: THREE.Group,
+  config: WatchConfig,
+  d: WatchDimensions,
+  lib: MaterialLibrary,
+  refined: boolean,
+): THREE.Object3D {
+  const pushers = buildPushers(config, d, lib, refined);
+  if (!pushers) return crown;
+  const group = new THREE.Group();
+  group.name = 'crown-and-pushers';
+  group.add(crown, pushers);
+  return group;
+}
+
 export function buildWatch(
   config: WatchConfig,
   lib: MaterialLibrary,
@@ -106,7 +122,9 @@ export function buildWatch(
     case: caseParts && wanted('case') ? caseParts.case : empty('case'),
     rehaut: caseParts && wanted('rehaut') ? caseParts.rehaut : empty('rehaut'),
     lugs: wanted('lugs') ? buildLugs(config, d, lib, refined) : empty('lugs'),
-    crown: wanted('crown') ? buildCrown(config, d, lib, refined) : empty('crown'),
+    crown: wanted('crown')
+      ? withPushers(buildCrown(config, d, lib, refined), config, d, lib, refined)
+      : empty('crown'),
     dial: dialParts?.dial ?? empty('dial'),
     print: dialParts?.print ?? empty('print'),
     indices: dialParts && wanted('indices') ? dialParts.indices : empty('indices'),

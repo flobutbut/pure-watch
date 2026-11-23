@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { effectiveDialColor } from '../../core/config/dial';
 import { subdialCircle, type SubdialStyle } from '../../core/config/small-seconds';
+import { chronoCounters, COUNTER_DISCS, type CounterKind } from '../../core/config/chronograph';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { inkForDial } from '../../render2d/dial-print';
@@ -42,17 +43,31 @@ export function subdialFloor(style: SubdialStyle): number {
 
 const f = (n: number) => n.toFixed(3);
 
-/** Graduations des secondes, centrées sur le sous-cadran (y vers le bas, 60 en haut). */
+/** Échelles des sous-cadrans : graduations, repères forts et chiffres. */
+const SCALES: Readonly<
+  Record<CounterKind, { count: number; major: number; labels: number[]; rail: number[] }>
+> = {
+  seconds: { count: 60, major: 5, labels: [10, 20, 30, 40, 50, 60], rail: [15, 30, 45, 60] },
+  minutes: { count: 30, major: 5, labels: [10, 20, 30], rail: [10, 20, 30] },
+  hours: { count: 12, major: 3, labels: [3, 6, 9, 12], rail: [3, 6, 9, 12] },
+};
+
+/**
+ * Graduations d'un sous-cadran, centrées sur lui (y vers le bas, zéro en haut) : secondes
+ * de la petite seconde, ou minutes et heures des compteurs d'un chronographe.
+ */
 export function subdialSvg(
   r: number,
   style: SubdialStyle,
   ink: string,
   font: { family: string; weight: string | number; style?: string },
   fontCss = '',
+  kind: CounterKind = 'seconds',
 ): string {
+  const scale = SCALES[kind];
   const parts: string[] = [];
-  const tick = (r0: number, r1: number, second: number, width: number) => {
-    const a = (second / 60) * Math.PI * 2;
+  const tick = (r0: number, r1: number, step: number, width: number) => {
+    const a = (step / scale.count) * Math.PI * 2;
     const [s, c] = [Math.sin(a), -Math.cos(a)];
     parts.push(
       `<line x1="${f(r0 * s)}" y1="${f(r0 * c)}" x2="${f(r1 * s)}" y2="${f(r1 * c)}" stroke-width="${f(width)}"/>`,
@@ -64,18 +79,21 @@ export function subdialSvg(
       `<circle r="${f(r * 0.95)}" fill="none" stroke-width="${f(r * 0.018)}"/>`,
       `<circle r="${f(r * 0.82)}" fill="none" stroke-width="${f(r * 0.018)}"/>`,
     );
-    for (let s = 0; s < 60; s++) tick(r * 0.82, r * 0.95, s, r * (s % 5 === 0 ? 0.04 : 0.018));
+    for (let s = 0; s < scale.count; s++)
+      tick(r * 0.82, r * 0.95, s, r * (s % scale.major === 0 ? 0.04 : 0.018));
   } else {
     parts.push(`<circle r="${f(r * 0.97)}" fill="none" stroke-width="${f(r * 0.02)}"/>`);
-    for (let s = 0; s < 60; s++)
-      tick(s % 5 === 0 ? r * 0.78 : r * 0.87, r * 0.97, s, r * (s % 5 === 0 ? 0.045 : 0.02));
+    for (let s = 0; s < scale.count; s++) {
+      const major = s % scale.major === 0;
+      tick(major ? r * 0.78 : r * 0.87, r * 0.97, s, r * (major ? 0.045 : 0.02));
+    }
   }
   // Chiffres de dix en dix ; de quinze en quinze avec le chemin de fer, plus aéré.
-  const labels = rail ? [15, 30, 45, 60] : [10, 20, 30, 40, 50, 60];
+  const labels = rail ? scale.rail : scale.labels;
   const radius = rail ? r * 0.6 : r * 0.58;
-  const size = r * (rail ? 0.2 : 0.17);
+  const size = r * (labels.length <= 4 ? 0.2 : 0.17);
   for (const n of labels) {
-    const a = (n / 60) * Math.PI * 2;
+    const a = (n / scale.count) * Math.PI * 2;
     parts.push(
       `<text x="${f(radius * Math.sin(a))}" y="${f(-radius * Math.cos(a))}" font-size="${f(size)}" font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" text-anchor="middle" dominant-baseline="central" stroke="none">${n}</text>`,
     );
@@ -123,20 +141,10 @@ export function buildSubdial(
   const dialColor = effectiveDialColor(config.dial);
 
   if (c.style === 'azure') {
-    const { texture, ready } = svgTexture(azureSvg(c.r), 1024);
-    const material = new THREE.MeshStandardMaterial({
-      color: dialColor,
-      map: texture,
-      bumpMap: texture,
-      bumpScale: 0.35,
-      roughness: 0.42,
-      metalness: 0.15,
-    });
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(c.r, 96), material);
-    disc.position.set(c.x, c.y, subdialFloor('azure'));
-    surface.add(disc);
-    owned.push(texture, material);
-    waits.push(ready);
+    const disc = azureDisc(c, dialColor);
+    surface.add(disc.mesh);
+    owned.push(...disc.owned);
+    waits.push(disc.ready);
   } else if (c.style === 'sunken') {
     surface.add(
       new THREE.Mesh(walls(circleOutline(c), SUNKEN_DEPTH), lib.matte(shade(dialColor, 0.4))),
@@ -168,26 +176,90 @@ export function buildSubdial(
   if (options.print) {
     const font = fontDef(config.dial.indices.numeralFont);
     const ink = inkForDial(dialColor);
-    const { texture, ready } = svgTexture(
+    const printed = printDisc(
       options.fontCss.then((css) => subdialSvg(c.r, c.style, ink, font, css)),
-      512,
+      c,
+      subdialFloor(c.style) + 0.012,
     );
-    const material = sharpPrint(
-      new THREE.MeshStandardMaterial({
-        map: texture,
-        alphaTest: 0.35,
-        roughness: 0.55,
-        metalness: 0,
-        polygonOffset: true,
-        polygonOffsetFactor: -1,
-      }),
-    );
-    const mesh = new THREE.Mesh(new THREE.CircleGeometry(c.r * 1.02, 96), material);
-    mesh.position.set(c.x, c.y, subdialFloor(c.style) + 0.012);
-    print.add(mesh);
-    owned.push(texture, material);
-    waits.push(ready);
+    print.add(printed.mesh);
+    owned.push(...printed.owned);
+    waits.push(printed.ready);
   }
 
+  return { surface, print, ready: Promise.all(waits).then(() => {}), owned };
+}
+
+/** Disque azuré (sillons concentriques) de la couleur donnée, juste au-dessus du cadran. */
+function azureDisc(c: { x: number; y: number; r: number }, color: string) {
+  const { texture, ready } = svgTexture(azureSvg(c.r), 1024);
+  const material = new THREE.MeshStandardMaterial({
+    color,
+    map: texture,
+    bumpMap: texture,
+    bumpScale: 0.35,
+    roughness: 0.42,
+    metalness: 0.15,
+  });
+  const mesh = new THREE.Mesh(new THREE.CircleGeometry(c.r, 96), material);
+  mesh.position.set(c.x, c.y, subdialFloor('azure'));
+  return { mesh, ready, owned: [texture, material] };
+}
+
+/** Graduations imprimées d'un sous-cadran (découpe alpha, comme l'impression du cadran). */
+function printDisc(markup: Promise<string>, c: { x: number; y: number; r: number }, z: number) {
+  const { texture, ready } = svgTexture(markup, 512);
+  const material = sharpPrint(
+    new THREE.MeshStandardMaterial({
+      map: texture,
+      alphaTest: 0.35,
+      roughness: 0.55,
+      metalness: 0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+    }),
+  );
+  const mesh = new THREE.Mesh(new THREE.CircleGeometry(c.r * 1.02, 96), material);
+  mesh.position.set(c.x, c.y, z);
+  return { mesh, ready, owned: [texture, material] };
+}
+
+/**
+ * Compteurs du chronographe : graduations de leur échelle, et pour le panda (inversé) un
+ * disque azuré noir ou clair sous elles.
+ */
+export function buildCounters(
+  config: WatchConfig,
+  d: WatchDimensions,
+  options: { fontCss: Promise<string>; print: boolean },
+): SubdialParts | null {
+  const counters = chronoCounters(config, d.dialSafeRadius);
+  if (counters.length === 0) return null;
+  const surface = new THREE.Group();
+  surface.name = 'chrono-counters';
+  const print = new THREE.Group();
+  print.name = 'chrono-print';
+  const owned: { dispose(): void }[] = [];
+  const waits: Promise<void>[] = [];
+  const dialInk = inkForDial(effectiveDialColor(config.dial));
+  const font = fontDef(config.dial.indices.numeralFont);
+  for (const c of counters) {
+    const disc = c.colors === 'match' ? null : COUNTER_DISCS[c.colors];
+    if (disc) {
+      const azure = azureDisc(c, disc.color);
+      surface.add(azure.mesh);
+      owned.push(...azure.owned);
+      waits.push(azure.ready);
+    }
+    if (!options.print) continue;
+    const ink = disc?.ink ?? dialInk;
+    const printed = printDisc(
+      options.fontCss.then((css) => subdialSvg(c.r, 'flat', ink, font, css, c.kind)),
+      c,
+      subdialFloor(disc ? 'azure' : 'flat') + 0.012,
+    );
+    print.add(printed.mesh);
+    owned.push(...printed.owned);
+    waits.push(printed.ready);
+  }
   return { surface, print, ready: Promise.all(waits).then(() => {}), owned };
 }
