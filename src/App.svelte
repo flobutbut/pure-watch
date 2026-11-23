@@ -60,19 +60,24 @@
       .map((variant) => ({ name: variant.i18n.name, color: variant.value as string })),
   );
 
-  function cancelColor() {
+  /** Leaves the panel without touching the configuration (a link took over). */
+  function dropColor() {
     colorTarget = null;
     previewConfig = null;
   }
   function previewColor(choice: ColorChoice) {
     if (colorTarget) previewConfig = withColorChoice(config, colorTarget, choice);
   }
-  function applyColor(choice: ColorChoice) {
+  /** Closing the panel saves: the watch keeps the colour it shows. */
+  function closeColor(choice?: ColorChoice) {
     if (!colorTarget) return;
-    config = withColorChoice(config, colorTarget, choice);
-    linkNotice = '';
-    announcement = 'Couleur appliquée';
-    cancelColor();
+    const next = choice ? withColorChoice(config, colorTarget, choice) : previewConfig;
+    if (next && encodeConfigHash(next) !== encodeConfigHash(config)) {
+      config = next;
+      linkNotice = '';
+      announcement = 'Couleur enregistrée';
+    }
+    dropColor();
   }
 
   // Couleur de fond du document (barre d'adresse mobile, débordements) et thème clair/sombre.
@@ -94,7 +99,7 @@
 
   function followConfigUrl() {
     if (location.href === lastConfigUrl) return;
-    cancelColor();
+    dropColor();
     lastConfigUrl = location.href;
     const loaded = readConfigUrl(new URL(location.href), catalog);
     linkNotice = loaded.notice;
@@ -192,7 +197,7 @@
 <svelte:window
   onkeydown={(e) => {
     if (e.key === 'Escape') {
-      if (colorTarget) cancelColor();
+      if (colorTarget) closeColor();
       else close();
     }
   }}
@@ -230,8 +235,7 @@
       {config}
       presets={colorPresets}
       onpreview={previewColor}
-      onapply={applyColor}
-      oncancel={cancelColor}
+      onclose={closeColor}
     />
   {/if}
   <p class="sr-only" aria-live="polite">{announcement}</p>

@@ -31,7 +31,8 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
   await expect(page.locator('html')).not.toHaveAttribute('style', background!);
   expect(page.url()).toBe(original);
   await expect(page.locator('.live canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await page.getByRole('button', { name: 'Rétablir' }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await expect(dialog).toBeHidden();
   expect(page.url()).toBe(original);
   await expect(page.locator('html')).toHaveAttribute('style', background!);
@@ -40,7 +41,7 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#7C3AED');
   await page.waitForTimeout(350);
   await page.screenshot({ path: `documentation/colors-review/${info.project.name}-dial.png` });
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).x).toBe('#7C3AED');
   const saved = page.url();
   await page.reload();
@@ -77,13 +78,13 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
   await hands.click();
   await page.getByRole('button', { name: 'Or', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).J).toBe('gold');
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowDown');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
   await page.getByRole('button', { name: 'Assortie aux aiguilles', exact: true }).click();
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowUp');
   await hands.click();
@@ -98,7 +99,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
     .toBe(true);
   await page.waitForTimeout(350);
   await page.screenshot({ path: `documentation/colors-review/${info.project.name}-hands.png` });
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({ J: 'lacquer', ab: '#B83D91', M: 'match' });
   await page.reload();
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
@@ -130,7 +131,6 @@ test('les champs et le clavier restent dans le panneau, un code invalide ne s’
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#GG0000');
-  await expect(page.getByRole('button', { name: 'Appliquer', exact: true })).toBeDisabled();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveAttribute(
     'aria-invalid',
     'true',
@@ -187,5 +187,5 @@ test('la palette se glisse avec un aperçu avant le relâchement et laisse la mo
     Math.min(watch!.x + watch!.width, panel!.x + panel!.width) > Math.max(watch!.x, panel!.x) &&
     Math.min(watch!.y + watch!.height, panel!.y + panel!.height) > Math.max(watch!.y, panel!.y);
   expect(overlap).toBe(false);
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
 });
