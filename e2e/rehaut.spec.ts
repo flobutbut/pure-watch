@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { hexField } from './hex';
 test.setTimeout(120_000);
 const link = (data: object) => '/#v1.' + Buffer.from(JSON.stringify(data)).toString('base64url');
 const payload = (page: Page) =>
@@ -34,14 +35,14 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
   const saved = page.url();
   await trigger.click();
   await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#C85432');
+  await (await hexField(page)).fill('#C85432');
   expect(page.url()).toBe(saved);
   await page.getByRole('button', { name: 'Rétablir' }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(page.url()).toBe(saved);
   await trigger.click();
   await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#C85432');
+  await (await hexField(page)).fill('#C85432');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({
     a: 5,

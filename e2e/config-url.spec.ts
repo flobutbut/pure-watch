@@ -58,7 +58,7 @@ test('naviguer entre les lignes ne réécrit pas les valeurs personnalisées du 
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-finish-matte');
   await expect(
     page.getByRole('button', { name: 'Couleur du cadran', exact: true }),
-  ).toHaveAttribute('title', '#123abc');
+  ).toHaveAttribute('data-color', '#123abc');
   expect(page.url()).toBe(original);
   await expect(page.getByRole('status')).toHaveCount(0);
 });

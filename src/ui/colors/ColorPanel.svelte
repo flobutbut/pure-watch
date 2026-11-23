@@ -14,6 +14,7 @@
   import { REHAUT_FINISHES } from '../../core/config/rehaut';
   import type { HexColor, WatchConfig } from '../../core/config/types';
   import Sheet from '../sheet/Sheet.svelte';
+  import { tint } from '../../core/color/names';
 
   interface Props {
     target: ColorTarget;
@@ -36,6 +37,9 @@
   let spectrum = $state<HTMLButtonElement>();
   let pointer: number | null = null;
   const RECENT_KEY = 'epure:recent-colors:v1';
+  const ADVANCED_KEY = 'epure:color-advanced:v1';
+  /** The HEX field is a power-user tool: folded away unless someone opened it before. */
+  let advanced = $state(false);
   const title = $derived(
     target === 'dial'
       ? 'Couleur du cadran'
@@ -70,6 +74,7 @@
     }, 100);
   }
   $effect(() => schedulePreview(choice));
+  const named = $derived(tint(color));
 
   onMount(() => {
     try {
@@ -83,6 +88,7 @@
               .filter((v): v is HexColor => v !== null),
           ),
         ].slice(0, 8);
+      advanced = localStorage.getItem(ADVANCED_KEY) === 'open';
     } catch {
       /* Private browsing and full storage do not prevent editing. */
     }
@@ -244,7 +250,7 @@
               type="button"
               class="swatch"
               aria-label="Réutiliser {hex}"
-              title={hex}
+              title={tint(hex).name}
               style:--swatch={hex}
               onclick={() => selectHex(hex)}
             ></button>
@@ -260,6 +266,12 @@
       </p>
     {/if}
     <div class="custom" class:muted={matched}>
+      {#if !matched}
+        <p class="tint" aria-live="polite">
+          <span class="dot" style:--swatch={color}></span>{named.name}
+          {#if named.ral}<span class="tint-ref">≈ RAL {named.ral.code}</span>{/if}
+        </p>
+      {/if}
       <button
         type="button"
         class="spectrum"
@@ -298,40 +310,55 @@
           oninput={(event) => chooseHsv(Number(event.currentTarget.value), hsv.s, hsv.v)}
         />
       </label>
-      <label class="hex-label">
-        <span>HEX</span><span class="hex-preview" style:background={color}></span>
-        <input
-          aria-label="Code HEX"
-          aria-invalid={!valid}
-          aria-describedby={!valid ? 'hex-error' : undefined}
-          type="text"
-          value={hexInput}
-          maxlength="7"
-          spellcheck="false"
-          autocomplete="off"
-          onfocus={(event) =>
-            event.currentTarget.parentElement?.scrollIntoView({ block: 'nearest' })}
-          oninput={(event) => {
-            matched = false;
-            hexInput = event.currentTarget.value;
-            const hex = normalizeHex(hexInput);
-            if (hex) {
-              const text = hexInput;
-              selectHex(hex);
-              hexInput = text;
-            }
-          }}
-          onkeydown={(event) => {
-            if (event.key !== 'Enter') return;
-            event.preventDefault();
-            close();
-          }}
-          onblur={() => {
-            if (normalizeHex(hexInput)) hexInput = color;
-          }}
-        />
-      </label>
-      {#if !valid}<p id="hex-error" class="error">Saisissez 3 ou 6 caractères : 0–9 ou A–F.</p>{/if}
+      <details
+        class="advanced"
+        bind:open={advanced}
+        ontoggle={() => {
+          try {
+            localStorage.setItem(ADVANCED_KEY, advanced ? 'open' : 'closed');
+          } catch {
+            /* Optional convenience. */
+          }
+        }}
+      >
+        <summary>Avancé</summary>
+        <label class="hex-label">
+          <span>HEX</span><span class="hex-preview" style:background={color}></span>
+          <input
+            aria-label="Code HEX"
+            aria-invalid={!valid}
+            aria-describedby={!valid ? 'hex-error' : undefined}
+            type="text"
+            value={hexInput}
+            maxlength="7"
+            spellcheck="false"
+            autocomplete="off"
+            onfocus={(event) =>
+              event.currentTarget.parentElement?.scrollIntoView({ block: 'nearest' })}
+            oninput={(event) => {
+              matched = false;
+              hexInput = event.currentTarget.value;
+              const hex = normalizeHex(hexInput);
+              if (hex) {
+                const text = hexInput;
+                selectHex(hex);
+                hexInput = text;
+              }
+            }}
+            onkeydown={(event) => {
+              if (event.key !== 'Enter') return;
+              event.preventDefault();
+              close();
+            }}
+            onblur={() => {
+              if (normalizeHex(hexInput)) hexInput = color;
+            }}
+          />
+        </label>
+        {#if !valid}<p id="hex-error" class="error">
+            Saisissez 3 ou 6 caractères : 0–9 ou A–F.
+          </p>{/if}
+      </details>
     </div>
   {:else}
     <p class="metal-note">
@@ -472,6 +499,49 @@
     border: 3px solid white;
     background: transparent;
     box-shadow: 0 1px 4px #0007;
+  }
+  .tint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 13px;
+  }
+  .tint-ref {
+    margin-left: auto;
+    font-size: 11px;
+    opacity: 0.6;
+  }
+  .advanced {
+    margin-top: 4px;
+  }
+  .advanced summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    font-size: 11px;
+    opacity: 0.7;
+    cursor: pointer;
+    list-style: none;
+  }
+  .advanced summary::-webkit-details-marker {
+    display: none;
+  }
+  .advanced summary::before {
+    content: '›';
+    font-size: 14px;
+    transition: rotate 150ms;
+  }
+  .advanced[open] summary::before {
+    rotate: 90deg;
+  }
+  .advanced summary:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+  .advanced[open] .hex-label {
+    margin-top: 6px;
   }
   .hex-label {
     display: flex;

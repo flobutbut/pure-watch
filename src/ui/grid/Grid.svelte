@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { RowDef } from '../../core/catalog/types';
   import type { WatchConfig } from '../../core/config/types';
-  import { targetColor, type ColorTarget } from '../../core/config/colors';
+  import { HAND_FINISHES, targetColor, type ColorTarget } from '../../core/config/colors';
+  import { tint } from '../../core/color/names';
   import { hasIntrinsicColor } from '../../core/config/dial';
   import { turnBezel } from '../../core/config/bezel';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
@@ -364,6 +365,12 @@
     pixelSnap(width / 2 + watchX, height / 2 + watchY, openSize, watchScale, dpr),
   );
 
+  /** Metal hands are named by their material; painted surfaces by their tint. */
+  const colorLabel = (target: ColorTarget) =>
+    target === 'hands' && config.hands.finish !== 'lacquer'
+      ? (HAND_FINISHES.find((f) => f.id === config.hands.finish)?.name ?? '')
+      : tint(targetColor(config, target)).name;
+
   const colorForRow = (id: string): ColorTarget | null =>
     id === 'bezel' && config.bezel.type === 'rotating'
       ? 'bezel'
@@ -506,7 +513,8 @@
                     : target === 'rehaut'
                       ? 'Matière et couleur du réhaut'
                       : 'Couleur de la trotteuse'}
-              title={targetColor(config, target)}
+              title={colorLabel(target)}
+              data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
               <span class="color-dot" style:background={targetColor(config, target)}></span>
@@ -518,7 +526,7 @@
                       : 'Cadran'
                     : target === 'seconds' && config.hands.second.color === 'match'
                       ? 'Assortie'
-                      : targetColor(config, target).toUpperCase()}
+                      : colorLabel(target)}
                 </span>
               </span>
             </button>

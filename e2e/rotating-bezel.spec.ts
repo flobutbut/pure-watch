@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { hexField } from './hex';
 test.setTimeout(90_000);
 const link = (data: object) => '/#v1.' + Buffer.from(JSON.stringify(data)).toString('base64url');
 const payload = (page: Page) =>
@@ -37,7 +38,7 @@ test('la lunette tournante conserve sa couleur, sa graduation et sa position dan
   expect(payload(page).p).toBe(4);
   await page.keyboard.press('ArrowUp');
   await page.getByRole('button', { name: 'Couleur de la lunette', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#316C4E');
+  await (await hexField(page)).fill('#316C4E');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).q).toBe('#316C4E');
   await page.getByRole('grid').focus();

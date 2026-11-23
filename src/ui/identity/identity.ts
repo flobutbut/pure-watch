@@ -1,5 +1,6 @@
 /** Contenu de la fiche d'identité : la configuration lue comme une fiche technique. */
 import type { RowDef } from '../../core/catalog/types';
+import { tint } from '../../core/color/names';
 import { bezelScale } from '../../core/config/bezel';
 import { HAND_FINISHES, handColor } from '../../core/config/colors';
 import { effectiveDialColor, hasIntrinsicColor } from '../../core/config/dial';
@@ -20,6 +21,8 @@ export interface Trait {
   /** Couleur à montrer en pastille ; `metal` donne le reflet des finitions métalliques. */
   swatch?: string;
   metal?: boolean;
+  /** Référence de fabrication, sous la valeur (RAL le plus proche, ou procédé à valider). */
+  reference?: string;
 }
 
 export interface TraitSection {
@@ -49,53 +52,78 @@ function rowValue(row: RowDef, config: WatchConfig): string {
   return typeof actual === 'string' || typeof actual === 'number' ? String(actual) : '—';
 }
 
+/** Finitions dont la couleur vient d'une peinture ou d'une laque : RAL a un sens. */
+const PAINTED_DIALS = new Set(['matte', 'lacquer']);
+const SAMPLE = 'Teinte de finition, à valider sur échantillon';
+
+/** A painted or lacquered surface: its name, and the nearest RAL as a maker's reference. */
+function painted(label: string, color: string): Trait {
+  const { name, ral } = tint(color);
+  return {
+    label,
+    value: name,
+    swatch: color,
+    reference: ral
+      ? `≈ RAL ${ral.code}${ral.name === name ? '' : ` ${ral.name}`}`
+      : 'Pas d’équivalent RAL proche',
+  };
+}
+
 /** Colours are not grid rows: they follow the row whose panel edits them. */
 function colorTraits(row: RowDef, config: WatchConfig): Trait[] {
   if (row.id === 'dial-finish' && !hasIntrinsicColor(config.dial.finish)) {
     const color = effectiveDialColor(config.dial);
-    return [{ label: 'Couleur du cadran', value: color.toUpperCase(), swatch: color }];
+    if (PAINTED_DIALS.has(config.dial.finish)) return [painted('Couleur du cadran', color)];
+    // Sunburst, guilloché, fumé… : the tone comes from a galvanic or PVD process, not a paint.
+    return [
+      { label: 'Couleur du cadran', value: tint(color).name, swatch: color, reference: SAMPLE },
+    ];
   }
   if (row.id === 'hands') {
+    if (config.hands.finish === 'lacquer')
+      return [
+        {
+          ...painted('Matière des aiguilles', config.hands.color),
+          value: `Laqué ${tint(config.hands.color).name.toLowerCase()}`,
+        },
+      ];
     const finish = HAND_FINISHES.find((f) => f.id === config.hands.finish);
-    const lacquer = config.hands.finish === 'lacquer';
     return [
       {
         label: 'Matière des aiguilles',
-        value: lacquer ? `Laqué ${config.hands.color}` : (finish?.name ?? config.hands.finish),
+        value: finish?.name ?? config.hands.finish,
         swatch: handColor(config),
-        metal: !lacquer,
+        metal: true,
       },
     ];
   }
   if (row.id === 'seconds') {
-    const match = config.hands.second.color === 'match';
+    if (config.hands.second.color !== 'match')
+      return [painted('Couleur de la trotteuse', config.hands.second.color)];
     return [
       {
         label: 'Couleur de la trotteuse',
-        value: match ? 'Assortie aux aiguilles' : config.hands.second.color,
-        swatch: match ? handColor(config) : config.hands.second.color,
-        metal: match && config.hands.finish !== 'lacquer',
+        value: 'Assortie aux aiguilles',
+        swatch: handColor(config),
+        metal: config.hands.finish !== 'lacquer',
       },
     ];
   }
   if (row.id === 'rehaut') {
+    if (config.rehaut.finish === 'custom')
+      return [painted('Teinte du réhaut', config.rehaut.color)];
     const finish = REHAUT_FINISHES.find((f) => f.id === config.rehaut.finish);
     return [
       {
         label: 'Teinte du réhaut',
-        value:
-          config.rehaut.finish === 'custom'
-            ? config.rehaut.color
-            : (finish?.name ?? config.rehaut.finish),
+        value: finish?.name ?? config.rehaut.finish,
         swatch: rehautColor(config),
         metal: config.rehaut.finish === 'metal',
       },
     ];
   }
   if (row.id === 'bezel' && config.bezel.type === 'rotating')
-    return [
-      { label: 'Couleur de la lunette', value: config.bezel.color, swatch: config.bezel.color },
-    ];
+    return [painted('Couleur de la lunette', config.bezel.color)];
   return [];
 }
 

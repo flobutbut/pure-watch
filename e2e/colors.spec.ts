@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { hexField } from './hex';
 
 test.setTimeout(60_000);
 const payload = (page: Page) =>
@@ -27,7 +28,7 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
   await trigger.click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#7C3AED');
+  await (await hexField(page)).fill('#7C3AED');
   await expect(page.locator('html')).not.toHaveAttribute('style', background!);
   expect(page.url()).toBe(original);
   await expect(page.locator('.live canvas')).toBeVisible();
@@ -38,7 +39,7 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
   await expect(page.locator('html')).toHaveAttribute('style', background!);
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#7C3AED');
+  await (await hexField(page)).fill('#7C3AED');
   await page.waitForTimeout(350);
   await page.screenshot({ path: `documentation/colors-review/${info.project.name}-dial.png` });
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
@@ -50,7 +51,7 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
     'cell-hands-dauphine',
   );
   await dialRow(page);
-  await expect(trigger).toHaveAttribute('title', '#7C3AED');
+  await expect(trigger).toHaveAttribute('data-color', '#7C3AED');
   await trigger.click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#7C3AED');
   await expect(
@@ -89,7 +90,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
   await page.keyboard.press('ArrowUp');
   await hands.click();
   await page.getByRole('button', { name: 'Laqué', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#B83D91');
+  await (await hexField(page)).fill('#B83D91');
   await expect
     .poll(async () => {
       const field = await page.getByRole('textbox', { name: 'Code HEX' }).boundingBox();
@@ -103,7 +104,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
   expect(payload(page)).toMatchObject({ J: 'lacquer', ab: '#B83D91', M: 'match' });
   await page.reload();
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
-  await expect(hands).toHaveAttribute('title', '#B83D91');
+  await expect(hands).toHaveAttribute('data-color', '#B83D91');
   await hands.click();
   await expect(page.getByRole('button', { name: 'Laqué', exact: true })).toHaveAttribute(
     'aria-pressed',
@@ -130,12 +131,12 @@ test('les champs et le clavier restent dans le panneau, un code invalide ne s’
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('#GG0000');
+  await (await hexField(page)).fill('#GG0000');
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveAttribute(
     'aria-invalid',
     'true',
   );
-  await page.getByRole('textbox', { name: 'Code HEX' }).fill('abc');
+  await (await hexField(page)).fill('abc');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog')).toBeHidden();
   expect(payload(page).ab).toBe('#AABBCC');
