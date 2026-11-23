@@ -19,10 +19,10 @@
     config: WatchConfig;
     presets: { name: string; color: string }[];
     onpreview: (choice: ColorChoice) => void;
-    onapply: (choice: ColorChoice) => void;
-    oncancel: () => void;
+    /** Every way out keeps the colour shown on the watch: there is no separate save step. */
+    onclose: (choice: ColorChoice) => void;
   }
-  let { target, config, presets, onpreview, onapply, oncancel }: Props = $props();
+  let { target, config, presets, onpreview, onclose }: Props = $props();
   const initial = untrack(() => colorChoice(config, target));
   const initialHex = untrack(() =>
     initial.color === 'match' ? targetColor(config, target) : initial.color,
@@ -54,6 +54,11 @@
   const color = $derived(hsvToHex(hsv.h, hsv.s, hsv.v));
   const valid = $derived(!free || matched || normalizeHex(hexInput) !== null);
   const choice = $derived<ColorChoice>({ color: matched ? 'match' : color, finish });
+  const sameColor = (a: ColorChoice['color'], b: ColorChoice['color']) =>
+    a === b || (a !== 'match' && b !== 'match' && normalizeHex(a) === normalizeHex(b));
+  const changed = $derived(
+    choice.finish !== initial.finish || !sameColor(choice.color, initial.color),
+  );
   let previewTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingPreview: ColorChoice;
   function schedulePreview(next: ColorChoice) {
@@ -134,11 +139,18 @@
     event.preventDefault();
     chooseHsv(hsv.h, hsv.s + move[0], hsv.v + move[1]);
   }
-  function apply(event: SubmitEvent) {
-    event.preventDefault();
-    if (!valid) return;
+  /** Back to the colour the watch had when the panel opened. */
+  function restore() {
+    hsv = hexToHsv(initialHex);
+    hexInput = initialHex;
+    finish = initial.finish;
+    matched = initial.color === 'match';
+  }
+  // An unfinished HEX entry is ignored: the last valid colour, still shown on the watch, is kept.
+  function close() {
     clearTimeout(previewTimer);
-    if (free && !matched) {
+    previewTimer = undefined;
+    if (changed && free && !matched) {
       try {
         localStorage.setItem(
           RECENT_KEY,
@@ -148,7 +160,7 @@
         /* Optional convenience. */
       }
     }
-    onapply(choice);
+    onclose(changed ? choice : initial);
   }
   function backdrop(event: MouseEvent) {
     if (event.target !== dialog) return;
@@ -159,7 +171,7 @@
       event.clientY < rect.top ||
       event.clientY > rect.bottom
     )
-      oncancel();
+      close();
   }
 </script>
 
@@ -168,27 +180,27 @@
   aria-labelledby="color-title"
   oncancel={(event) => {
     event.preventDefault();
-    oncancel();
+    close();
   }}
   onkeydown={(event) => event.stopPropagation()}
   onclick={backdrop}
 >
-  <form onsubmit={apply}>
+  <form
+    onsubmit={(event) => {
+      event.preventDefault();
+      close();
+    }}
+  >
     <header>
       <div>
         <p class="eyebrow">PERSONNALISER</p>
         <h2 id="color-title" tabindex="-1" bind:this={heading}>{title}</h2>
       </div>
-      <button
-        type="button"
-        class="close"
-        aria-label="Annuler et fermer les couleurs"
-        onclick={oncancel}
-      >
+      <button type="button" class="close" aria-label="Fermer les couleurs" onclick={close}>
         ×
       </button>
     </header>
-    <p class="intro">Aperçu en direct sur votre montre.</p>
+    <p class="intro">Enregistré automatiquement sur votre montre.</p>
     <div class="body">
       {#if target === 'rehaut'}
         <div class="links" role="group" aria-label="Finition du réhaut">
@@ -372,8 +384,15 @@
       {/if}
     </div>
     <footer>
-      <button type="button" class="cancel" onclick={oncancel}>Annuler</button>
-      <button type="submit" class="apply" disabled={!valid}>Appliquer</button>
+      <button
+        type="button"
+        class="restore"
+        title="Revenir à la couleur d’origine"
+        disabled={!changed}
+        onclick={restore}
+      >
+        <span aria-hidden="true">↺</span> Rétablir
+      </button>
     </footer>
   </form>
 </dialog>
@@ -640,25 +659,24 @@
   }
   footer {
     display: flex;
-    gap: 10px;
-    justify-content: flex-end;
     margin-top: 24px;
   }
-  footer button {
+  .restore {
     min-height: 42px;
     border-radius: 10px;
-    padding: 10px 18px;
+    padding: 10px 16px;
     font-size: 12px;
-    border: 0;
-  }
-  .cancel {
+    border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
     background: transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
   }
-  .apply {
-    background: var(--ink);
-    color: var(--veil);
+  .restore span {
+    font-size: 15px;
+    line-height: 1;
   }
-  .apply:disabled {
+  .restore:disabled {
     opacity: 0.35;
     cursor: default;
   }

@@ -73,7 +73,7 @@ test('le tonneau noir conserve ses options et sa navigation', async ({ page }) =
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-lollipop');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#F2C230');
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await grid.focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('.live canvas')).toBeVisible();

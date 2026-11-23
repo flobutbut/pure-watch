@@ -38,7 +38,7 @@ test('la lunette tournante conserve sa couleur, sa graduation et sa position dan
   await page.keyboard.press('ArrowUp');
   await page.getByRole('button', { name: 'Couleur de la lunette', exact: true }).click();
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#316C4E');
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).q).toBe('#316C4E');
   await page.getByRole('grid').focus();
   await page.keyboard.press('Enter');

@@ -22,7 +22,7 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-arrow');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
   await page.getByRole('button', { name: 'Assortie aux aiguilles' }).click();
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   const shared = page.url();
   await page.reload();
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-leaf');
@@ -34,7 +34,7 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
     'aria-pressed',
     'true',
   );
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(page.url()).toBe(shared);
   const other = await context.newPage();
   await other.goto(shared);

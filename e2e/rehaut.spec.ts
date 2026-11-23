@@ -36,12 +36,13 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
   await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#C85432');
   expect(page.url()).toBe(saved);
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await page.getByRole('button', { name: 'Rétablir' }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(page.url()).toBe(saved);
   await trigger.click();
   await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#C85432');
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({
     a: 5,
     aa: 5,
@@ -54,12 +55,12 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
   await trigger.click();
   await page.getByRole('button', { name: 'Matière du boîtier', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).ad).toBe(2);
   await trigger.click();
   await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#C85432');
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('grid')).toHaveAttribute(

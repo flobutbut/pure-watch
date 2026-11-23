@@ -69,11 +69,12 @@ test('la couleur libre du lin se prévisualise et survit au passage par une tein
   await trigger.click();
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#DAB988');
   expect(page.url()).toBe(saved);
-  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await page.getByRole('button', { name: 'Rétablir' }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(page.url()).toBe(saved);
   await trigger.click();
   await page.getByRole('textbox', { name: 'Code HEX' }).fill('#DAB988');
-  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({ w: 11, x: '#DAB988' });
   await page.getByRole('grid').focus();
   await page.keyboard.press('Home');
