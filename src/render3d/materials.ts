@@ -81,6 +81,31 @@ function lookFor(finish: string, surface: MetalSurface): Look {
 
 export type CrystalQuality = 'transmission' | 'fallback';
 
+/**
+ * Verre poli : ce qu'on voit au travers est lu tel quel, sans flou.
+ *
+ * three.js impose une rugosité minimale (0,0525) même à un matériau parfaitement lisse ;
+ * pour la transmission, il lit alors l'image de la scène dans une mipmap intermédiaire
+ * (≈ 0,55 niveau) avec un filtre bicubique lissant. Derrière le cristal, le cadran, ses
+ * graduations et les aiguilles bavaient d'un à deux pixels. Le cristal d'une montre est
+ * poli comme un miroir : on lit l'image à pleine résolution, en bilinéaire.
+ */
+function polishedTransmission(material: THREE.MeshPhysicalMaterial): THREE.MeshPhysicalMaterial {
+  const sample = 'textureBicubic( transmissionSamplerMap, fragCoord.xy, lod )';
+  material.onBeforeCompile = (shader) => {
+    if (!THREE.ShaderChunk.transmission_pars_fragment.includes(sample)) return;
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <transmission_pars_fragment>',
+      THREE.ShaderChunk.transmission_pars_fragment.replace(
+        sample,
+        'textureLod( transmissionSamplerMap, fragCoord.xy, 0.0 )',
+      ),
+    );
+  };
+  material.customProgramCacheKey = () => 'polished-transmission';
+  return material;
+}
+
 export class MaterialLibrary {
   constructor(private readonly refined = true) {}
   private readonly cache = new Map<string, THREE.Material>();
@@ -446,7 +471,9 @@ export class MaterialLibrary {
         envMapIntensity: 1,
       };
       return quality === 'transmission'
-        ? new THREE.MeshPhysicalMaterial({ ...common, transmission: 1, thickness: 0.8 })
+        ? polishedTransmission(
+            new THREE.MeshPhysicalMaterial({ ...common, transmission: 1, thickness: 0.8 }),
+          )
         : new THREE.MeshPhysicalMaterial({
             ...common,
             transparent: true,

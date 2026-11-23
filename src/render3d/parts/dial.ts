@@ -11,7 +11,7 @@ import { fontFaceCss } from '../../render2d/fonts';
 import { latheZ } from '../lathe';
 import { profileGeometry, type Sample } from './profile';
 import type { MaterialLibrary } from '../materials';
-import { svgTexture } from '../textures';
+import { sharpPrint, svgTexture } from '../textures';
 
 export interface DialParts {
   dial: THREE.Group;
@@ -62,15 +62,17 @@ export function buildDial(
   const { texture, ready } = svgTexture(markup, options.printSize);
   // Découpe alpha plutôt que transparence : la passe de transmission du cristal ne voit
   // que les objets opaques ; une impression « transparente » disparaîtrait sous le verre.
-  const printMaterial = new THREE.MeshStandardMaterial({
-    map: texture,
-    alphaTest: 0.35,
-    alphaToCoverage: true,
-    roughness: 0.55,
-    metalness: 0,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-  });
+  const printMaterial = sharpPrint(
+    new THREE.MeshStandardMaterial({
+      map: texture,
+      alphaTest: 0.35,
+      alphaToCoverage: true,
+      roughness: 0.55,
+      metalness: 0,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+    }),
+  );
   const printMesh = new THREE.Mesh(dialSurface(d), printMaterial);
   printMesh.position.z = 0.01;
   print.add(printMesh);
