@@ -41,6 +41,8 @@ export interface LiveWatch {
   rotate(dAzDeg: number, dElDeg: number): void;
   /** Pause / lecture des aiguilles ; renvoie vrai si en pause. */
   togglePause(): boolean;
+  /** Enable direct dragging of the ring, leaving camera orbit available otherwise. */
+  setBezelControl(enabled: boolean, onchange: (angle: number) => void): void;
   /**
    * Échelle CSS appliquée par la page à l'élément de la montre (réduite dans la grille) :
    * le rendu se fait à la taille réellement affichée, pour rester net.

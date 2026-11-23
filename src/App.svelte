@@ -4,6 +4,7 @@
   import { parseCatalog } from './core/catalog/load';
   import { visibleRows } from './core/rules/visibility';
   import { configUrl, encodeConfigHash, readConfigUrl } from './core/config/url';
+  import { bezelAngle } from './core/config/bezel';
   import type { WatchConfig } from './core/config/types';
   import { withColorChoice, type ColorChoice, type ColorTarget } from './core/config/colors';
   import { applyVariant, selectionFromConfig, toRowViews } from './core/nav/selection';
@@ -217,6 +218,10 @@
     onclose={close}
     oncolor={(target) => {
       colorTarget = target;
+    }}
+    onbezel={(angle) => {
+      config = { ...config, bezel: { ...config.bezel, angleDeg: bezelAngle(angle) } };
+      linkNotice = '';
     }}
   />
   {#if colorTarget}

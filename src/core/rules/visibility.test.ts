@@ -7,6 +7,19 @@ import { evaluate, visibleRows } from './visibility';
 
 describe('visibilité des lignes', () => {
   const catalog = parseCatalog(rawCatalog);
+  it('a rotating ring exposes its scale and retains the hidden dial contour', () => {
+    const config = defaultConfig();
+    config.dial.shape = 'square';
+    config.bezel.type = 'rotating';
+    const ids = visibleRows(catalog.rows, config).map((r) => r.id);
+    expect(ids).toContain('bezel-scale');
+    expect(ids).not.toContain('dial-shape');
+    config.bezel.type = 'smooth';
+    const restored = visibleRows(catalog.rows, config).map((r) => r.id);
+    expect(restored).not.toContain('bezel-scale');
+    expect(restored).toContain('dial-shape');
+    expect(config.dial.shape).toBe('square');
+  });
 
   it('la typographie des chiffres n’apparaît que s’il y a des chiffres', () => {
     const config = defaultConfig();

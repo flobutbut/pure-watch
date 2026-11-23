@@ -21,6 +21,22 @@ export function bezelProfile(
   root: P2,
 ): ProfileRun<Surface>[] | null {
   const kind = effectiveBezelType(type);
+  if (kind === 'rotating') {
+    const { R, c, seat, rehautTop } = caseLevels(d);
+    const deck = seat - 0.12;
+    const shoulder: P2 = [R - c, deck];
+    return [
+      { surface: 'polished', points: [root, shoulder] },
+      { surface: 'brushed', points: [shoulder, [d.openingRadius, deck]] },
+      {
+        surface: 'brushed',
+        points: [
+          [d.openingRadius, deck],
+          [d.openingRadius, rehautTop],
+        ],
+      },
+    ];
+  }
   if (kind !== 'rounded' && kind !== 'stepped') return null;
   const { R, T, c, flankTop, seat, rehautTop } = caseLevels(d);
   const top = d.z.bezelTop;

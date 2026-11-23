@@ -19,7 +19,14 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
     caseback: 'solid',
   },
   crown: { style: 'onion', position: '3h', guard: false, screwed: true },
-  bezel: { type: 'smooth', insert: 'none', scale: 'none', color: '#101418', pip: 'none' },
+  bezel: {
+    type: 'smooth',
+    insert: 'none',
+    scale: 'none',
+    color: '#101418',
+    pip: 'none',
+    angleDeg: 0,
+  },
   crystal: { type: 'sapphire-domed', coating: 'none', cyclops: false },
   rehaut: { ...DEFAULT_REHAUT },
   dial: {

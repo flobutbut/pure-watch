@@ -1,0 +1,41 @@
+{
+  "checks": [
+    {
+      "shape": "round",
+      "scale": "dive-60",
+      "dialShape": "round",
+      "printed": true,
+      "rotation": 0,
+      "changed": true,
+      "reused": true
+    },
+    {
+      "shape": "square",
+      "scale": "24h",
+      "dialShape": "round",
+      "printed": true,
+      "rotation": -0.7853981633974483,
+      "changed": true,
+      "reused": true
+    },
+    {
+      "shape": "tonneau",
+      "scale": "12h",
+      "dialShape": "round",
+      "printed": true,
+      "rotation": -1.5707963267948966,
+      "changed": true,
+      "reused": true
+    },
+    {
+      "shape": "rectangle",
+      "scale": "dive-60",
+      "dialShape": "round",
+      "printed": true,
+      "rotation": -5.759586531581287,
+      "changed": true,
+      "reused": true
+    }
+  ],
+  "errors": []
+}

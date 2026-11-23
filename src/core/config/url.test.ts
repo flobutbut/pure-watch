@@ -11,6 +11,19 @@ const hash = (payload: unknown) =>
   `#v1.${btoa(JSON.stringify(payload)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')}`;
 
 describe('versioned watch links', () => {
+  it('retains the ring position, scale and insert colour without changing old links', () => {
+    expect(decodeConfigHash('#v1.e30', catalog).config.bezel.angleDeg).toBe(0);
+    const config = defaultConfig();
+    Object.assign(config.bezel, {
+      type: 'rotating',
+      scale: '24h',
+      color: '#254B3F',
+      angleDeg: 153,
+    });
+    config.case.shape = 'square';
+    config.dial.shape = 'square';
+    expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
+  });
   it('keeps historic bezel tokens and appends the two new profiles', () => {
     for (const [type, token] of Object.entries({
       smooth: 1,

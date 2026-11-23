@@ -19,6 +19,7 @@ describe('catalogue', () => {
       'crown',
       'crown-position',
       'bezel',
+      'bezel-scale',
       'crystal',
       'rehaut',
       'rehaut-scale',

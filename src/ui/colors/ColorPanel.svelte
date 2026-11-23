@@ -42,9 +42,11 @@
       ? 'Couleur du cadran'
       : target === 'hands'
         ? 'Matière des aiguilles'
-        : target === 'rehaut'
-          ? 'Matière et couleur du réhaut'
-          : 'Couleur de la trotteuse',
+        : target === 'bezel'
+          ? 'Couleur de la lunette'
+          : target === 'rehaut'
+            ? 'Matière et couleur du réhaut'
+            : 'Couleur de la trotteuse',
   );
   const free = $derived(
     target === 'rehaut' ? finish === 'custom' : target !== 'hands' || finish === 'lacquer',

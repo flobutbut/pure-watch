@@ -57,7 +57,9 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
   const openingFactor = dialOpeningFactor(config.dial.size);
   const requestedOpening = (caseRadius - nominalBezel) * openingFactor;
   const bezelWidth = openingFactor === 1 ? nominalBezel : caseRadius - requestedOpening;
-  const dialShape = effectiveDialShape(config.dial.shape);
+  // A turning bezel and its glass seat need a circular opening, on every case outline.
+  const dialShape =
+    config.bezel.type === 'rotating' ? 'round' : effectiveDialShape(config.dial.shape);
   // Circular apertures also need to fit the narrow sides of tonneau / rectangle cases.
   const available = caseRadius * contourExtents(config.case.shape).min - bezelWidth;
   const openingRadius =
