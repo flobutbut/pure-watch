@@ -4,7 +4,38 @@ import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { latheZ, type P2 } from '../lathe';
 import type { CrystalQuality, MaterialLibrary } from '../materials';
+import { shapeRadius } from '../../core/geometry/case-shape';
+import { buildCyclops } from './date';
 import { caseLevels, shapeAperture } from './levels';
+
+/** Côte du bord du verre et de sa calotte (rayon de sphère, flèche). */
+function crystalCap(d: WatchDimensions) {
+  const { seat } = caseLevels(d);
+  const Rc = d.openingRadius + 0.25;
+  const zEdge = seat + 0.05;
+  const h = Math.max(0.02, d.z.crystalTop - zEdge);
+  return { Rc, zEdge, h, sphere: (Rc * Rc + h * h) / (2 * h) };
+}
+
+/** Dessus du verre à l'aplomb d'un point du cadran (contour déformé compris). */
+export function crystalSurface(
+  config: WatchConfig,
+  d: WatchDimensions,
+  refined: boolean,
+): (x: number, y: number) => number {
+  const { Rc, zEdge, h, sphere } = crystalCap(d);
+  return (x, y) => {
+    const k =
+      d.dialShape === 'round' ? 1 : d.dialScale * shapeRadius(d.dialShape, Math.atan2(y, x));
+    const r = Math.min(Rc, Math.hypot(x, y) / k);
+    const dome = zEdge + h - (sphere - Math.sqrt(sphere * sphere - r * r));
+    if (!refined) return dome;
+    if (config.crystal.type === 'sapphire-flat' || config.crystal.type === 'mineral')
+      return d.z.crystalTop;
+    if (config.crystal.type === 'sapphire-box') return d.z.crystalTop - 0.35 * (r / Rc) ** 6;
+    return dome;
+  };
+}
 
 export function buildCrystal(
   config: WatchConfig,
@@ -13,17 +44,13 @@ export function buildCrystal(
   quality: CrystalQuality,
   refined = false,
 ): THREE.Group {
-  const { seat } = caseLevels(d);
-  const Rc = d.openingRadius + 0.25;
-  const zEdge = seat + 0.05;
-  const h = Math.max(0.02, d.z.crystalTop - zEdge);
+  const { Rc, zEdge, h, sphere } = crystalCap(d);
 
   // Du bord vers l'axe : normales vers l'avant.
   const points: P2[] = [
     [Rc, zEdge - 0.6],
     [Rc, zEdge],
   ];
-  const sphere = (Rc * Rc + h * h) / (2 * h);
   const steps = 32;
   for (let i = 1; i <= steps; i++) {
     const r = Rc * (1 - i / steps);
@@ -63,6 +90,15 @@ export function buildCrystal(
   const group = new THREE.Group();
   group.name = 'crystal';
   group.add(mesh);
+
+  const cyclops = buildCyclops(
+    config,
+    d,
+    // Le grossissement est dans l'image posée dessous : la loupe n'apporte que reflets et légère réfraction.
+    lib.crystal(config, quality, 0.15),
+    crystalSurface(config, d, refined),
+  );
+  if (cyclops) group.add(cyclops);
 
   // Joint sombre entre le verre et la lunette : souligne le sertissage.
   const gasket = new THREE.Mesh(

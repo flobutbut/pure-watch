@@ -457,11 +457,16 @@ export class MaterialLibrary {
    * Cristal saphir. La transmission (réfraction réelle) coûte une passe de rendu
    * supplémentaire : repli sur un verre transparent à reflets sur appareil modeste.
    */
-  crystal(config: WatchConfig, quality: CrystalQuality): THREE.MeshPhysicalMaterial {
+  crystal(
+    config: WatchConfig,
+    quality: CrystalQuality,
+    /** Épaisseur traversée pour la réfraction (la loupe de date en veut moins). */
+    thickness = 0.8,
+  ): THREE.MeshPhysicalMaterial {
     const ior =
       config.crystal.type === 'acrylic' ? 1.49 : config.crystal.type === 'mineral' ? 1.52 : 1.77;
     const tint = config.crystal.coating === 'ar-blue' ? '#e6eeff' : '#ffffff';
-    return this.cached(`crystal:${ior}:${tint}:${quality}`, () => {
+    return this.cached(`crystal:${ior}:${tint}:${quality}:${thickness}`, () => {
       const common = {
         color: tint,
         metalness: 0,
@@ -472,7 +477,7 @@ export class MaterialLibrary {
       };
       return quality === 'transmission'
         ? polishedTransmission(
-            new THREE.MeshPhysicalMaterial({ ...common, transmission: 1, thickness: 0.8 }),
+            new THREE.MeshPhysicalMaterial({ ...common, transmission: 1, thickness }),
           )
         : new THREE.MeshPhysicalMaterial({
             ...common,

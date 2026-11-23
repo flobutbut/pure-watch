@@ -1819,6 +1819,178 @@
           }
         }
       ]
+    },
+    {
+      "id": "date",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.date",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P0",
+      "i18n": {
+        "name": "Date"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": null,
+          "preview": "date/none.svg",
+          "i18n": {
+            "name": "Sans date"
+          }
+        },
+        {
+          "id": "3h",
+          "value": {
+            "position": "3h"
+          },
+          "preview": "date/3h.svg",
+          "i18n": {
+            "name": "À 3 h"
+          }
+        },
+        {
+          "id": "4h30",
+          "value": {
+            "position": "4h30"
+          },
+          "preview": "date/4h30.svg",
+          "i18n": {
+            "name": "À 4 h 30"
+          }
+        },
+        {
+          "id": "6h",
+          "value": {
+            "position": "6h"
+          },
+          "preview": "date/6h.svg",
+          "i18n": {
+            "name": "À 6 h"
+          }
+        },
+        {
+          "id": "12h",
+          "value": {
+            "position": "12h"
+          },
+          "preview": "date/12h.svg",
+          "i18n": {
+            "name": "À 12 h"
+          }
+        }
+      ]
+    },
+    {
+      "id": "date-window",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.date.window",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Guichet de date"
+      },
+      "visibleWhen": {
+        "path": "complications.date",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "framed",
+          "value": "framed",
+          "preview": "date-window/framed.svg",
+          "i18n": {
+            "name": "Cerclé"
+          }
+        },
+        {
+          "id": "plain",
+          "value": "plain",
+          "preview": "date-window/plain.svg",
+          "i18n": {
+            "name": "Nu"
+          }
+        }
+      ]
+    },
+    {
+      "id": "date-disc",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.date.disc",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Disque de date"
+      },
+      "visibleWhen": {
+        "path": "complications.date",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "white",
+          "value": "white",
+          "preview": "date-disc/white.svg",
+          "i18n": {
+            "name": "Blanc"
+          }
+        },
+        {
+          "id": "black",
+          "value": "black",
+          "preview": "date-disc/black.svg",
+          "i18n": {
+            "name": "Noir"
+          }
+        },
+        {
+          "id": "dial",
+          "value": "dial",
+          "preview": "date-disc/dial.svg",
+          "i18n": {
+            "name": "Assorti au cadran"
+          }
+        }
+      ]
+    },
+    {
+      "id": "date-loupe",
+      "group": "complications",
+      "kind": "enum",
+      "path": "crystal.cyclops",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Loupe de date"
+      },
+      "visibleWhen": {
+        "path": "complications.date",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": false,
+          "preview": "date-loupe/none.svg",
+          "i18n": {
+            "name": "Sans loupe"
+          }
+        },
+        {
+          "id": "cyclops",
+          "value": true,
+          "preview": "date-loupe/cyclops.svg",
+          "i18n": {
+            "name": "Loupe"
+          }
+        }
+      ]
     }
   ]
 }
