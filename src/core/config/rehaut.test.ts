@@ -37,8 +37,8 @@ it('shows graduations only on a compatible wide profile and preserves hidden sel
   config.rehaut.scale = '24h';
   expect(shown()).toContain('rehaut-scale');
   config.case.shape = 'rectangle';
-  expect(shown()).not.toContain('rehaut');
-  expect(shown()).not.toContain('rehaut-scale');
+  expect(shown()).toContain('rehaut');
+  expect(shown()).toContain('rehaut-scale');
   config.dial.shape = 'rectangle';
   expect(shown()).toContain('rehaut-scale');
   expect(config.rehaut.scale).toBe('24h');

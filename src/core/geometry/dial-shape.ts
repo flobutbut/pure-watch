@@ -33,7 +33,7 @@ export function fitAperture(
   R: number,
   opening: number,
 ): number {
-  if (dialShape === 'round') return 1; // Preserve historical round faces exactly.
+  if (dialShape === 'round') return 1; // Circular openings are fitted upstream in watchDimensions.
   const ratio = opening / R;
   const key = `${caseShape}:${dialShape}:${ratio.toFixed(8)}`;
   let scale = fits.get(key);

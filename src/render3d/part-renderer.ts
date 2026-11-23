@@ -15,18 +15,18 @@ import { LAYERS, type Layer } from './watch';
 /** Parties de la configuration dont dépend chaque calque (pour la clé de cache). */
 const LAYER_DEPENDENCIES: Record<
   Layer,
-  readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile')[]
+  readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size')[]
 > = {
-  case: ['case', 'crystal', 'dial.shape', 'bezel.type'],
+  case: ['case', 'crystal', 'dial.shape', 'bezel.type', 'dial.size'],
   rehaut: ['case', 'crystal', 'dial', 'rehaut'],
   lugs: ['case', 'crystal'],
   crown: ['crown', 'case', 'crystal'],
   dial: ['dial', 'case', 'rehaut.profile'],
   print: ['dial', 'case', 'rehaut.profile'],
   indices: ['dial', 'case', 'rehaut.profile'],
-  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile'],
-  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile'],
-  crystal: ['crystal', 'case', 'dial.shape'],
+  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
+  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
+  crystal: ['crystal', 'case', 'dial.shape', 'dial.size'],
 };
 
 /** Ne garde que ce qui influence l'aperçu : changer d'aiguilles ne régénère pas les cadrans. */
@@ -34,7 +34,9 @@ function relevantConfig(
   config: WatchConfig,
   layers: readonly Layer[] | null,
 ): Record<string, unknown> {
-  const keys = new Set<keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile'>();
+  const keys = new Set<
+    keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size'
+  >();
   for (const layer of layers ?? LAYERS) for (const key of LAYER_DEPENDENCIES[layer]) keys.add(key);
   const out: Record<string, unknown> = {};
   for (const key of [...keys].sort()) out[key] = getAtPath(config, key);
@@ -149,6 +151,7 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     },
   },
   'dial-shape': { layers: ['case', 'rehaut', 'dial', 'print', 'indices'], frame: headFrame },
+  'dial-size': { layers: ['case', 'rehaut', 'dial', 'print', 'indices'], frame: headFrame },
   'dial-finish': { layers: ['dial'], frame: dialFrame },
   'dial-color': { layers: ['dial'], frame: dialFrame },
   // Impression et index : montrés sur le cadran choisi, tels qu'ils seront (R6).

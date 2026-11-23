@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { BEZEL_TYPES, canMachineBezel, bezelTypeForConfig } from '../../core/config/bezel';
+import { BEZEL_TYPES, bezelTypeForConfig } from '../../core/config/bezel';
 import rawCatalog from '../../data/catalog.json';
 import { parseCatalog } from '../../core/catalog/load';
 import { visibleRows } from '../../core/rules/visibility';
@@ -32,7 +32,6 @@ describe('machined bezels', () => {
           const config = defaultConfig();
           config.case.shape = shape;
           config.dial.shape = dial;
-          if (!canMachineBezel(config)) continue;
           // Both ends of the supported size range, distributed across the combinations.
           Object.assign(config.case, proportionsForDiameter(dial === shape ? 22 : 48));
           const d = watchDimensions(config);
@@ -119,7 +118,7 @@ describe('machined bezels', () => {
     },
   );
 
-  it('hides incompatible legacy apertures, preserves the choice and restores it on a fitting dial', () => {
+  it('keeps machining available when the circular aperture is fitted to a rectangular case', () => {
     const rows = parseCatalog(rawCatalog).rows;
     const config = defaultConfig();
     config.bezel.type = 'fluted';
@@ -127,15 +126,8 @@ describe('machined bezels', () => {
       for (const dial of DIAL_SHAPES) {
         config.case.shape = shape;
         config.dial.shape = dial;
-        expect(visibleRows(rows, config).some((r) => r.id === 'bezel')).toBe(
-          canMachineBezel(config),
-        );
+        expect(visibleRows(rows, config).some((r) => r.id === 'bezel')).toBe(true);
+        expect(bezelTypeForConfig(config)).toBe('fluted');
       }
-    config.case.shape = 'rectangle';
-    config.dial.shape = 'round';
-    expect(bezelTypeForConfig(config)).toBe('smooth');
-    expect(config.bezel.type).toBe('fluted');
-    config.dial.shape = 'rectangle';
-    expect(bezelTypeForConfig(config)).toBe('fluted');
   });
 });

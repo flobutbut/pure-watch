@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.11.0",
+  "catalogVersion": "0.12.0",
   "rows": [
     {
       "id": "case-shape",
@@ -642,19 +642,7 @@
             "name": "Crantée"
           }
         }
-      ],
-      "visibleWhen": {
-        "any": [
-          {
-            "path": "case.shape",
-            "notEquals": "rectangle"
-          },
-          {
-            "path": "dial.shape",
-            "notEquals": "round"
-          }
-        ]
-      }
+      ]
     },
     {
       "id": "crystal",
@@ -713,18 +701,6 @@
       "i18n": {
         "name": "Réhaut"
       },
-      "visibleWhen": {
-        "any": [
-          {
-            "path": "case.shape",
-            "notEquals": "rectangle"
-          },
-          {
-            "path": "dial.shape",
-            "notEquals": "round"
-          }
-        ]
-      },
       "variants": [
         {
           "id": "classic",
@@ -772,24 +748,8 @@
         "name": "Graduations du réhaut"
       },
       "visibleWhen": {
-        "all": [
-          {
-            "any": [
-              {
-                "path": "case.shape",
-                "notEquals": "rectangle"
-              },
-              {
-                "path": "dial.shape",
-                "notEquals": "round"
-              }
-            ]
-          },
-          {
-            "path": "rehaut.profile",
-            "notEquals": "classic"
-          }
-        ]
+        "path": "rehaut.profile",
+        "notEquals": "classic"
       },
       "variants": [
         {
@@ -892,6 +852,44 @@
           "preview": "dial-shape/rectangle.svg",
           "i18n": {
             "name": "Rectangulaire"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dial-size",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.size",
+      "previewContext": "case-sample",
+      "looping": false,
+      "priority": "P1",
+      "i18n": {
+        "name": "Ouverture du cadran"
+      },
+      "variants": [
+        {
+          "id": "compact",
+          "value": "compact",
+          "preview": "dial-size/compact.svg",
+          "i18n": {
+            "name": "Compacte"
+          }
+        },
+        {
+          "id": "balanced",
+          "value": "balanced",
+          "preview": "dial-size/balanced.svg",
+          "i18n": {
+            "name": "Équilibrée"
+          }
+        },
+        {
+          "id": "open",
+          "value": "open",
+          "preview": "dial-size/open.svg",
+          "i18n": {
+            "name": "Ouverte"
           }
         }
       ]

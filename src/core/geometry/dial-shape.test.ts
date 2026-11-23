@@ -10,17 +10,18 @@ import { watchDimensions, proportionsForDiameter } from './dimensions';
 const catalog = parseCatalog(rawCatalog);
 
 describe('dial contours', () => {
-  it('places the new row immediately before dial finish and exposes all six shapes', () => {
+  it('places shape and aperture rows before dial finish and exposes all six shapes', () => {
     const i = catalog.rows.findIndex((row) => row.id === 'dial-shape');
-    expect(catalog.rows[i + 1]!.id).toBe('dial-finish');
+    expect(catalog.rows[i + 1]!.id).toBe('dial-size');
+    expect(catalog.rows[i + 2]!.id).toBe('dial-finish');
     expect(catalog.rows[i]!.variants.map((v) => v.value)).toEqual([...DIAL_SHAPES]);
   });
 
   it.each(CASE_SHAPES)(
-    '%s: all non-round dials fit with a metal wall and rotating-hand clearance',
+    '%s: all dials fit with a metal wall and rotating-hand clearance',
     (caseShape) => {
       for (const diameter of [22, 40, 48])
-        for (const shape of DIAL_SHAPES.filter((s) => s !== 'round')) {
+        for (const shape of DIAL_SHAPES) {
           const config = defaultConfig();
           config.case.shape = caseShape;
           config.dial.shape = shape;
@@ -34,7 +35,7 @@ describe('dial contours', () => {
               d.bezelWidth - 0.001,
             );
             expect(d.hands.second).toBeLessThan(dialRadiusAt(d, theta));
-            expect(dialRadiusAt(d, theta)).toBeLessThan(d.dialExtent);
+            expect(dialRadiusAt(d, theta)).toBeLessThanOrEqual(d.dialExtent + 1e-6);
           }
         }
     },

@@ -22,6 +22,7 @@ describe('catalogue', () => {
       'rehaut',
       'rehaut-scale',
       'dial-shape',
+      'dial-size',
       'dial-finish',
       'dial-color',
       'chapter-ring',

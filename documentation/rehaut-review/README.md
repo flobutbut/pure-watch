@@ -1,5 +1,8 @@
 # Réhauts configurables
 
+Mise à jour : le réglage d’ouverture ajuste désormais aussi les cadrans ronds aux boîtiers étroits. La restriction historique rectangle / cadran rond décrite ci-dessous est levée ; voir `documentation/dial-size/README.md`.
+
+
 La ligne « Réhaut » est placée après le cristal. Elle propose quatre profils : fin (géométrie historique), biseauté, concave et à palier.
 
 Les profils larges réservent 4,5 % du diamètre, entre 1 et 2,2 mm, à l'intérieur de l'ouverture existante. Le cadran, ses impressions, ses index et les longueurs d'aiguilles sont recalculés ensemble. Le boîtier, la lunette, le verre et le contour extérieur de l'ouverture restent identiques.
