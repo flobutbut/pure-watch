@@ -13,7 +13,7 @@ import { fontFaceCss } from '../../render2d/fonts';
 import { latheZ } from '../lathe';
 import { profileGeometry, type Sample } from './profile';
 import { buildDate, dateWindowRect, roundedRect } from './date';
-import { buildSubdial, circleOutline, subdialOf } from './subdial';
+import { buildCounters, buildSubdial, circleOutline, subdialOf } from './subdial';
 import { buildReservePrint } from './power-reserve';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
@@ -70,12 +70,14 @@ export function buildDial(
     indices.add(date.frame);
   }
   const seconds = buildSubdial(config, d, lib, { fontCss, print: options.print });
-  if (seconds) {
-    dial.add(seconds.surface);
-    print.add(seconds.print);
+  const counters = buildCounters(config, d, { fontCss, print: options.print });
+  for (const parts of [seconds, counters]) {
+    if (!parts) continue;
+    dial.add(parts.surface);
+    print.add(parts.print);
   }
-  const owned = [...(date?.owned ?? []), ...(seconds?.owned ?? [])];
-  const dateReady = Promise.all([date?.ready, seconds?.ready]).then(() => {});
+  const owned = [...(date?.owned ?? []), ...(seconds?.owned ?? []), ...(counters?.owned ?? [])];
+  const dateReady = Promise.all([date?.ready, seconds?.ready, counters?.ready]).then(() => {});
   const loupe = date?.loupe ?? new THREE.Group();
   if (!options.print) {
     return { dial, print, indices, loupe, ready: dateReady, owned };

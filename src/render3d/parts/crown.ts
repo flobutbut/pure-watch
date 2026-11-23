@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { chronograph } from '../../core/config/chronograph';
 import type { WatchConfig } from '../../core/config/types';
 import { clamp, type WatchDimensions } from '../../core/geometry/dimensions';
 import { crownMount, mountedSurface } from '../../core/geometry/crown-mount';
@@ -276,3 +277,80 @@ const CUSHION_ONION: CrownDesign = {
   }),
   segments: 144,
 };
+
+/**
+ * Poussoirs du chronographe, à 2 h et 4 h de part et d'autre de la couronne, posés sur le
+ * flanc comme elle. Ronds : bouton court et plat. Pompe : tige fine et chapeau bombé.
+ */
+export function buildPushers(
+  config: WatchConfig,
+  d: WatchDimensions,
+  lib: MaterialLibrary,
+  refined = false,
+): THREE.Group | null {
+  const chrono = chronograph(config);
+  if (!chrono) return null;
+  const { T } = caseLevels(d);
+  const r = d.crown.radius * 0.55;
+  const L = d.crown.length * 0.85;
+  const crownZ = d.z.back + 0.48 * T;
+  const material = lib.caseMetal(config, 'jewel');
+  const profile: Profile =
+    chrono.pushers === 'pump'
+      ? [
+          [r * 0.48, 0],
+          [r * 0.48, L * 0.42],
+          [r * 0.92, L * 0.48],
+          [r, L * 0.58],
+          [r, L * 0.8],
+          [r * 0.8, L * 0.93],
+          [r * 0.45, L * 0.99],
+          [0, L],
+        ]
+      : [
+          [r * 0.62, 0],
+          [r, L * 0.12],
+          [r, L * 0.5],
+          [r * 0.9, L * 0.6],
+          [r * 0.6, L * 0.64],
+          [0, L * 0.65],
+        ];
+  const surface =
+    effectiveCaseProfile(config.case.profile) === 'curved'
+      ? undefined
+      : profileAttachmentSurface(config, d, crownZ - r * 1.2, crownZ + r * 1.2, refined);
+  const tubeLength = 0.6;
+  const group = new THREE.Group();
+  group.name = 'pushers';
+  for (const position of ['2h', '4h']) {
+    const body = latheY(profile, 64);
+    body.deleteAttribute('uv');
+    const tube = new THREE.CylinderGeometry(r * 0.5, r * 0.55, tubeLength + 0.6, 32);
+    tube.translate(0, -(tubeLength + 0.6) / 2 + 0.05, 0);
+    const collar = latheY(
+      [
+        [r * 0.85, -tubeLength - 0.35],
+        [r * 0.85, -tubeLength + 0.06],
+        [r * 0.7, -tubeLength + 0.16],
+        [r * 0.55, -tubeLength + 0.2],
+      ],
+      48,
+    );
+    const head = new THREE.Group();
+    head.add(
+      new THREE.Mesh(body, material),
+      new THREE.Mesh(tube, material),
+      new THREE.Mesh(collar, material),
+    );
+    head.rotation.z = -Math.PI / 2; // axe local Y → +X
+    const mount = crownMount(d, config.case.shape, position, surface);
+    head.position.x = mount.reach + tubeLength;
+    const pivot = new THREE.Group();
+    pivot.name = `pusher-${position}`;
+    pivot.position.set(mount.x, mount.y, crownZ);
+    pivot.rotation.z = mount.angle;
+    pivot.add(head);
+    group.add(pivot);
+  }
+  return group;
+}

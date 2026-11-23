@@ -87,6 +87,7 @@ describe('fiche d’identité', () => {
       'Loupe de date : Sans loupe',
       'Petite seconde : Trotteuse au centre',
       'Réserve de marche : Sans indicateur',
+      'Chronographe : Sans chronographe',
     ]);
   });
 

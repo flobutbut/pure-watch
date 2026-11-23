@@ -42,6 +42,9 @@ describe('catalogue', () => {
       'small-seconds-style',
       'power-reserve',
       'power-reserve-style',
+      'chronograph',
+      'chronograph-counters',
+      'chronograph-pushers',
     ]);
   });
 

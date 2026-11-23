@@ -5,7 +5,8 @@ import { movementFit } from '../movement/compatibility';
 import { MOVEMENTS } from '../movement/movements';
 import { applyVariant, variantIndexFromConfig } from '../nav/selection';
 import { visibleRows } from '../rules/visibility';
-import { COMPLICATION_POSITIONS, complicationHours } from './complications';
+import { chronoCounters } from './chronograph';
+import { COMPLICATION_POSITIONS, complicationHours, resolveLayout } from './complications';
 import { DATE_POSITIONS, DATE_WINDOW_SIZE } from './date';
 import { defaultConfig } from './defaults';
 import {
@@ -83,57 +84,76 @@ describe('réserve de marche', () => {
   });
 });
 
-/** Boîte englobante de chaque complication, en fraction du rayon du cadran. */
-function box(type: string, position: string) {
+/** Boîtes englobantes de ce que dessine une complication, en fraction du rayon du cadran. */
+function boxes(type: string, position: string) {
+  const config = defaultConfig();
+  config.complications = [{ type, position }];
   if (type === 'date') {
     const [x, y] = DATE_POSITIONS[position]!;
     const { width, height } = DATE_WINDOW_SIZE;
-    return { x0: x - width / 2, x1: x + width / 2, y0: y - height / 2, y1: y + height / 2 };
+    return [{ x0: x - width / 2, x1: x + width / 2, y0: y - height / 2, y1: y + height / 2 }];
   }
   if (type === 'small-seconds') {
     const [x, y] = SMALL_SECONDS_POSITIONS[position]!;
     const r = SUBDIAL_RADIUS;
-    return { x0: x - r, x1: x + r, y0: y - r, y1: y + r };
+    return [{ x0: x - r, x1: x + r, y0: y - r, y1: y + r }];
   }
-  const config = defaultConfig();
-  config.complications = [{ type: 'power-reserve', position }];
+  if (type === 'chronograph')
+    return chronoCounters(config, 1).map((c) => ({
+      x0: c.x - c.r,
+      x1: c.x + c.r,
+      y0: c.y - c.r,
+      y1: c.y + c.r,
+    }));
   const g = reserveGauge(config, 1)!;
   const side = g.r * Math.sin((RESERVE_HALF_ANGLE * Math.PI) / 180);
-  return { x0: g.x - side, x1: g.x + side, y0: g.y - g.r * 0.25, y1: g.y + g.r };
+  return [{ x0: g.x - side, x1: g.x + side, y0: g.y - g.r * 0.25, y1: g.y + g.r }];
 }
 
 describe('emplacements des complications', () => {
   const types = Object.keys(COMPLICATION_POSITIONS);
+  // Paires qui peuvent coexister : heures occupées disjointes, et pas d'exclusion.
   const pairs = types.flatMap((a, i) =>
-    types
-      .slice(i + 1)
-      .flatMap((b) =>
-        COMPLICATION_POSITIONS[a]!.flatMap((pa) =>
-          COMPLICATION_POSITIONS[b]!.filter((pb) => pb !== pa).map((pb) => [a, pa, b, pb] as const),
-        ),
+    types.slice(i + 1).flatMap((b) =>
+      COMPLICATION_POSITIONS[a]!.flatMap((pa) =>
+        COMPLICATION_POSITIONS[b]!.filter((pb) => {
+          const config = defaultConfig();
+          config.complications = [
+            { type: a, position: pa },
+            { type: b, position: pb },
+          ];
+          return resolveLayout(config, a) === config;
+        }).map((pb) => [a, pa, b, pb] as const),
       ),
+    ),
   );
 
   it.each(pairs)('%s à %s et %s à %s ne se chevauchent pas', (a, pa, b, pb) => {
-    const p = box(a, pa);
-    const q = box(b, pb);
-    const apart = p.x1 <= q.x0 || q.x1 <= p.x0 || p.y1 <= q.y0 || q.y1 <= p.y0;
-    expect(apart).toBe(true);
+    for (const p of boxes(a, pa))
+      for (const q of boxes(b, pb)) {
+        const apart = p.x1 <= q.x0 || q.x1 <= p.x0 || p.y1 <= q.y0 || q.y1 <= p.y0;
+        expect(apart).toBe(true);
+      }
   });
 
   it('restent toutes dans le cadran, en deçà des index', () => {
     for (const type of types)
-      for (const position of COMPLICATION_POSITIONS[type]!) {
-        const b = box(type, position);
-        const corner = Math.max(
-          ...[b.x0, b.x1].flatMap((x) => [b.y0, b.y1].map((y) => Math.hypot(x, y))),
-        );
-        expect(corner).toBeLessThan(0.9);
-      }
+      for (const position of COMPLICATION_POSITIONS[type]!)
+        for (const b of boxes(type, position)) {
+          const corner = Math.max(
+            ...[b.x0, b.x1].flatMap((x) => [b.y0, b.y1].map((y) => Math.hypot(x, y))),
+          );
+          expect(corner).toBeLessThan(0.9);
+        }
   });
 
-  it('se rangent dans la position libre suivante', () => {
+  it('couvrent toutes les complications du catalogue', () => {
     expect(POWER_RESERVE_POSITIONS).toHaveProperty('9h');
-    expect(Object.keys(COMPLICATION_POSITIONS)).toEqual(['date', 'small-seconds', 'power-reserve']);
+    expect(Object.keys(COMPLICATION_POSITIONS)).toEqual([
+      'date',
+      'small-seconds',
+      'power-reserve',
+      'chronograph',
+    ]);
   });
 });

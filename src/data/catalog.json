@@ -627,7 +627,11 @@
             "name": "2 h"
           }
         }
-      ]
+      ],
+      "visibleWhen": {
+        "path": "complications.chronograph",
+        "equals": null
+      }
     },
     {
       "id": "bezel",
@@ -2052,7 +2056,11 @@
             "name": "À 12 h"
           }
         }
-      ]
+      ],
+      "visibleWhen": {
+        "path": "complications.chronograph",
+        "equals": null
+      }
     },
     {
       "id": "small-seconds-style",
@@ -2204,6 +2212,134 @@
           "preview": "power-reserve-style/fuel.svg",
           "i18n": {
             "name": "Jauge E – F"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chronograph",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.chronograph",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Chronographe"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": null,
+          "preview": "chronograph/none.svg",
+          "i18n": {
+            "name": "Sans chronographe"
+          }
+        },
+        {
+          "id": "bicompax",
+          "value": {
+            "position": "bicompax"
+          },
+          "preview": "chronograph/bicompax.svg",
+          "i18n": {
+            "name": "Bicompax · 3 h et 9 h"
+          }
+        },
+        {
+          "id": "tricompax",
+          "value": {
+            "position": "tricompax"
+          },
+          "preview": "chronograph/tricompax.svg",
+          "i18n": {
+            "name": "Tricompax · 3, 6 et 9 h"
+          }
+        },
+        {
+          "id": "vertical",
+          "value": {
+            "position": "vertical"
+          },
+          "preview": "chronograph/vertical.svg",
+          "i18n": {
+            "name": "Bicompax vertical · 6 h et 12 h"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chronograph-counters",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.chronograph.counters",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Compteurs"
+      },
+      "visibleWhen": {
+        "path": "complications.chronograph",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "match",
+          "value": "match",
+          "preview": "chronograph-counters/match.svg",
+          "i18n": {
+            "name": "Assortis au cadran"
+          }
+        },
+        {
+          "id": "black",
+          "value": "black",
+          "preview": "chronograph-counters/black.svg",
+          "i18n": {
+            "name": "Noirs (panda)"
+          }
+        },
+        {
+          "id": "light",
+          "value": "light",
+          "preview": "chronograph-counters/light.svg",
+          "i18n": {
+            "name": "Clairs (panda inversé)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "chronograph-pushers",
+      "group": "complications",
+      "kind": "enum",
+      "path": "complications.chronograph.pushers",
+      "previewContext": "case-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Poussoirs"
+      },
+      "visibleWhen": {
+        "path": "complications.chronograph",
+        "notEquals": null
+      },
+      "variants": [
+        {
+          "id": "round",
+          "value": "round",
+          "preview": "chronograph-pushers/round.svg",
+          "i18n": {
+            "name": "Ronds"
+          }
+        },
+        {
+          "id": "pump",
+          "value": "pump",
+          "preview": "chronograph-pushers/pump.svg",
+          "i18n": {
+            "name": "Pompe"
           }
         }
       ]

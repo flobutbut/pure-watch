@@ -23,7 +23,7 @@ const LAYER_DEPENDENCIES: Record<
   case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
   rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut'],
   lugs: ['case', 'crystal'],
-  crown: ['crown', 'case', 'crystal'],
+  crown: ['crown', 'case', 'crystal', 'complications'],
   dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
@@ -210,6 +210,20 @@ const PREVIEWS: Record<string, PreviewSpec> = {
   'small-seconds': { layers: ['dial', 'print', 'indices', 'seconds'], frame: dialFrame },
   // Réserve de marche : position sur le cadran entier, échelle en gros plan.
   'power-reserve': { layers: ['dial', 'print', 'indices', 'hands'], frame: dialFrame },
+  // Chronographe : disposition et compteurs sur le cadran, poussoirs sur le flanc.
+  chronograph: { layers: ['dial', 'print', 'indices', 'hands', 'seconds'], frame: dialFrame },
+  'chronograph-counters': {
+    layers: ['dial', 'print', 'indices', 'hands', 'seconds'],
+    frame: dialFrame,
+  },
+  'chronograph-pushers': {
+    layers: ['case', 'rehaut', 'lugs', 'crown', 'dial'],
+    context: neutralDial,
+    frame: (config) => {
+      const d = watchDimensions(config);
+      return { x: d.caseRadius * 0.95, y: 0, half: d.caseRadius * 0.55 };
+    },
+  },
   'power-reserve-style': {
     layers: ['dial', 'print', 'indices', 'hands'],
     frame: (c) => reserveFrame(c) ?? dialFrame(c),
