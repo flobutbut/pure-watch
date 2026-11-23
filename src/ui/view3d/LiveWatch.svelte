@@ -9,11 +9,20 @@
     config: WatchConfig;
     transient?: boolean;
     mode: 'grid' | 'inspect';
+    /** Échelle CSS appliquée à la montre par la grille (rendu à la taille affichée). */
+    displayScale?: number;
     /** Poignée exposée au parent (vues prédéfinies, rotation, pause). */
     handle?: LiveWatch | null;
   }
 
-  let { renderer, config, transient = false, mode, handle = $bindable(null) }: Props = $props();
+  let {
+    renderer,
+    config,
+    transient = false,
+    mode,
+    displayScale = 1,
+    handle = $bindable(null),
+  }: Props = $props();
   let container: HTMLDivElement;
   let live = $state.raw<LiveWatch | null>(null);
   $effect(() => {
@@ -46,6 +55,10 @@
 
   $effect(() => {
     live?.setMode(mode);
+  });
+
+  $effect(() => {
+    live?.setDisplayScale(displayScale);
   });
 </script>
 

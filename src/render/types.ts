@@ -41,6 +41,11 @@ export interface LiveWatch {
   rotate(dAzDeg: number, dElDeg: number): void;
   /** Pause / lecture des aiguilles ; renvoie vrai si en pause. */
   togglePause(): boolean;
+  /**
+   * Échelle CSS appliquée par la page à l'élément de la montre (réduite dans la grille) :
+   * le rendu se fait à la taille réellement affichée, pour rester net.
+   */
+  setDisplayScale(scale: number): void;
   destroy(): void;
 }
 

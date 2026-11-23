@@ -86,6 +86,11 @@ const SNAPSHOT_BUDGET_MS = 8;
  * attendent sous forme de simple demande : ni géométrie ni texture en mémoire.
  */
 const MAX_IN_FLIGHT = 6;
+/**
+ * Délai avant de baisser la résolution quand la montre rapetisse : la transition CSS
+ * (--dur-open, 450 ms) se joue encore sur l'image nette.
+ */
+const SHRINK_DELAY_MS = 500;
 /** En deçà (radians), la « respiration » ne bouge plus rien à l'écran. */
 const STILL = 1e-5;
 
@@ -147,6 +152,10 @@ export class Stage {
   private readonly floating = new THREE.Group();
   private readonly resizeObserver: ResizeObserver;
   private readonly reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  /** Densité de pixels de l'écran (plafonnée à 2), avant l'échelle d'affichage. */
+  private readonly basePixelRatio = Math.min(devicePixelRatio, 2);
+  private displayScale: number | null = null;
+  private shrinkTimer: ReturnType<typeof setTimeout> | undefined;
   /** Demandes d'instantanés pas encore construites. */
   private readonly pending: QueuedJob[] = [];
   /** Instantanés construits, textures et shaders prêts : il ne reste qu'à les dessiner. */
@@ -183,7 +192,7 @@ export class Stage {
 
   constructor(private readonly container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(this.basePixelRatio);
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.setClearColor(0x000000, 0);
@@ -312,6 +321,30 @@ export class Stage {
       az: base.az + dAzDeg * DEG,
       el: THREE.MathUtils.clamp(base.el + dElDeg * DEG, MIN_EL, MAX_EL),
     };
+  }
+
+  /**
+   * Échelle CSS que la page applique au canvas (montre réduite dans la grille). Sans elle,
+   * le canvas serait calculé à sa taille d'ouverture puis réduit par le navigateur, ce qui
+   * adoucit les détails et dessine bien plus de pixels que nécessaire. En grandissant, la
+   * résolution monte tout de suite ; en rapetissant, après la transition CSS.
+   */
+  setDisplayScale(scale: number): void {
+    const next = THREE.MathUtils.clamp(scale, 0.05, 1);
+    clearTimeout(this.shrinkTimer);
+    if (this.displayScale === null || next >= this.displayScale) {
+      this.applyDisplayScale(next);
+    } else {
+      this.shrinkTimer = setTimeout(() => this.applyDisplayScale(next), SHRINK_DELAY_MS);
+    }
+  }
+
+  private applyDisplayScale(scale: number): void {
+    this.displayScale = scale;
+    const ratio = this.basePixelRatio * scale;
+    if (ratio === this.renderer.getPixelRatio()) return;
+    this.renderer.setPixelRatio(ratio); // redimensionne le canvas, qui est alors effacé
+    this.dirty = true;
   }
 
   /** Met en pause ou relance les aiguilles ; renvoie vrai si elles sont en pause. */
@@ -674,6 +707,7 @@ export class Stage {
 
   dispose(): void {
     ++this.liveVersion;
+    clearTimeout(this.shrinkTimer);
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver.disconnect();
     for (const entry of [...this.pending, ...this.building, ...this.prepared]) {

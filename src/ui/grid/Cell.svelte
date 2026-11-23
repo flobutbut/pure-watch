@@ -7,9 +7,11 @@
   interface Props {
     renderer: PartRenderer | null;
     request: PartRequest;
+    /** Échelle CSS de la cellule (hiérarchie de la grille) : l'image est réduite ici, finement. */
+    displayScale?: number;
   }
 
-  let { renderer, request }: Props = $props();
+  let { renderer, request, displayScale = 1 }: Props = $props();
   let bitmap = $state.raw<ImageBitmap | null>(null);
 
   // Vue de chargement : les pièces qui entourent la montre doivent être prêtes avant
@@ -50,19 +52,30 @@
     return () => controller.abort();
   });
 
-  function paint(canvas: HTMLCanvasElement, source: ImageBitmap | null) {
-    const draw = (b: ImageBitmap | null) => {
+  /**
+   * L'instantané est rendu pour la cellule à pleine taille. Une cellule éloignée du centre
+   * est réduite par une transformation CSS : on dessine l'image directement à la taille
+   * affichée (lissage de haute qualité), pour que le navigateur n'ait plus à la réduire
+   * lui-même, ce qui l'adoucissait.
+   */
+  function paint(canvas: HTMLCanvasElement, params: { bitmap: ImageBitmap | null; scale: number }) {
+    const draw = ({ bitmap: b, scale }: { bitmap: ImageBitmap | null; scale: number }) => {
       if (!b) return;
-      canvas.width = b.width;
-      canvas.height = b.height;
-      canvas.getContext('2d')?.drawImage(b, 0, 0);
+      const w = Math.max(1, Math.round(b.width * Math.min(1, scale)));
+      const h = Math.max(1, Math.round(b.height * Math.min(1, scale)));
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(b, 0, 0, w, h);
     };
-    draw(source);
+    draw(params);
     return { update: draw };
   }
 </script>
 
-<canvas use:paint={bitmap} class:loaded={bitmap !== null}></canvas>
+<canvas use:paint={{ bitmap, scale: displayScale }} class:loaded={bitmap !== null}></canvas>
 {#if !bitmap}<span class="skeleton"></span>{/if}
 
 <style>
