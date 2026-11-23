@@ -1,72 +1,16 @@
 <script lang="ts">
-  import { onDestroy, tick } from 'svelte';
+  import AboutDialog from './AboutDialog.svelte';
+  import ShareDialog from './ShareDialog.svelte';
 
   let {
     url,
     inspecting,
     colorEditing,
   }: { url: string; inspecting: boolean; colorEditing: boolean } = $props();
-  let busy = $state(false);
-  let message = $state('');
-  let sharedUrl = $state('');
-  let manualCopy = $state(false);
   let shareButton: HTMLButtonElement;
-  let dialog: HTMLDialogElement;
-  let linkInput: HTMLInputElement;
-  let messageTimer: ReturnType<typeof setTimeout> | undefined;
-  onDestroy(() => clearTimeout(messageTimer));
-
-  function notify(text: string) {
-    clearTimeout(messageTimer);
-    message = text;
-    messageTimer = setTimeout(() => {
-      message = '';
-    }, 3000);
-  }
-  function closeShare() {
-    dialog.close();
-    shareButton.focus({ preventScroll: true });
-  }
-  async function copyLink(value: string): Promise<boolean> {
-    try {
-      await navigator.clipboard.writeText(value);
-      notify('Lien de la configuration copié');
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  async function share() {
-    if (busy) return;
-    busy = true;
-    const currentUrl = url;
-    try {
-      if (typeof navigator.share === 'function') {
-        try {
-          await navigator.share({
-            title: 'Épure · Ma montre',
-            text: 'Une montre composée dans l’atelier Épure.',
-            url: currentUrl,
-          });
-          return;
-        } catch (error) {
-          // Cancelling a native sheet must never copy or send anything afterwards.
-          if (error instanceof DOMException && error.name === 'AbortError') return;
-        }
-      }
-      if (await copyLink(currentUrl)) return;
-      sharedUrl = currentUrl;
-      manualCopy = false;
-      // Restore the trigger before opening the native dialog, for reliable focus return.
-      busy = false;
-      await tick();
-      dialog.showModal();
-      linkInput.focus();
-      linkInput.select();
-    } finally {
-      busy = false;
-    }
-  }
+  let aboutButton = $state<HTMLButtonElement>();
+  let shareDialog: ShareDialog;
+  let aboutDialog: AboutDialog;
 </script>
 
 <header class="app-header">
@@ -79,8 +23,8 @@
   <button
     class="share-button"
     bind:this={shareButton}
-    onclick={share}
-    disabled={busy}
+    onclick={() => shareDialog.open(url)}
+    aria-haspopup="dialog"
     aria-label="Partager la configuration"
   >
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -89,8 +33,6 @@
     <span>Partager</span>
   </button>
 </header>
-
-<div class="share-status" role="status" class:shown={message !== ''}>{message}</div>
 
 {#if !colorEditing}
   <footer aria-label="Aide à la navigation">
@@ -111,52 +53,19 @@
         ? 'Glisser pour tourner · Pincer pour zoomer'
         : 'Glisser pour explorer · Toucher la montre pour la voir en 3D'}
     </div>
+    <button
+      class="about-button"
+      bind:this={aboutButton}
+      onclick={() => aboutDialog.open()}
+      aria-haspopup="dialog"
+    >
+      À propos
+    </button>
   </footer>
 {/if}
 
-<dialog
-  bind:this={dialog}
-  aria-labelledby="share-title"
-  onkeydown={(event) => event.stopPropagation()}
-  oncancel={(event) => {
-    event.preventDefault();
-    closeShare();
-  }}
->
-  <div class="dialog-heading">
-    <h2 id="share-title">Partager votre montre</h2>
-    <button class="close" aria-label="Fermer le partage" onclick={closeShare}>×</button>
-  </div>
-  <p>Ce lien contient tous les choix de votre configuration.</p>
-  <label for="configuration-link">Lien de la configuration</label>
-  <input
-    id="configuration-link"
-    bind:this={linkInput}
-    value={sharedUrl}
-    readonly
-    onclick={() => linkInput.select()}
-  />
-  {#if manualCopy}<p role="status">
-      Le lien est sélectionné. Utilisez le menu Copier de votre appareil ou le raccourci clavier
-      habituel.
-    </p>{/if}
-  <div class="dialog-actions">
-    <button onclick={closeShare}>Fermer</button>
-    <button
-      class="copy"
-      onclick={async () => {
-        if (await copyLink(sharedUrl)) closeShare();
-        else {
-          manualCopy = true;
-          linkInput.focus();
-          linkInput.select();
-        }
-      }}
-    >
-      Copier le lien
-    </button>
-  </div>
-</dialog>
+<ShareDialog bind:this={shareDialog} onclose={() => shareButton.focus({ preventScroll: true })} />
+<AboutDialog bind:this={aboutDialog} onclose={() => aboutButton?.focus({ preventScroll: true })} />
 
 <style>
   .app-header {
@@ -197,8 +106,7 @@
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  button:focus-visible,
-  input:focus-visible {
+  button:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 4px;
   }
@@ -233,36 +141,33 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .share-status {
-    position: fixed;
-    top: var(--chrome-top);
-    right: calc(var(--chrome-gutter) + env(safe-area-inset-right));
-    z-index: 11;
-    max-width: calc(100vw - 40px);
-    padding: 10px 14px;
-    border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-    border-radius: 12px;
-    background: var(--veil);
-    font-size: 12px;
-    opacity: 0;
-    translate: 0 -4px;
-    transition:
-      opacity 180ms,
-      translate 180ms;
-    pointer-events: none;
-  }
-  .share-status.shown {
-    opacity: 1;
-    translate: 0 0;
-  }
   footer {
     position: fixed;
     inset: auto 0 calc(18px + env(safe-area-inset-bottom));
     z-index: 9;
     display: flex;
+    align-items: center;
     justify-content: center;
+    gap: 26px;
     padding: 8px 20px;
     pointer-events: none;
+  }
+  .about-button {
+    flex: none;
+    white-space: nowrap;
+    pointer-events: auto;
+    padding: 4px 2px;
+    border: 0;
+    background: transparent;
+    font-size: 10px;
+    color: color-mix(in srgb, var(--ink) 60%, var(--veil));
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent);
+    text-underline-offset: 3px;
+    transition: color 160ms;
+  }
+  .about-button:hover {
+    color: var(--ink);
   }
   .keyboard-hints {
     display: flex;
@@ -290,79 +195,6 @@
     font-size: 10px;
     text-align: center;
     color: color-mix(in srgb, var(--ink) 60%, var(--veil));
-  }
-  dialog {
-    margin: auto;
-    width: min(420px, calc(100vw - 40px));
-    padding: 24px;
-    border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-    border-radius: 20px;
-    background: var(--veil);
-    color: var(--ink);
-    box-shadow: 0 20px 100px #0003;
-  }
-  dialog::backdrop {
-    background: #0004;
-    backdrop-filter: blur(8px);
-  }
-  .dialog-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  h2 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 500;
-  }
-  dialog p {
-    margin: 16px 0 20px;
-    font-size: 12px;
-    line-height: 1.6;
-    opacity: 0.75;
-  }
-  .close {
-    border: 0;
-    background: transparent;
-    font-size: 26px;
-    line-height: 1;
-    min-width: 36px;
-    min-height: 36px;
-  }
-  dialog label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 11px;
-  }
-  dialog input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-    border-radius: 8px;
-    background: transparent;
-    color: inherit;
-    font:
-      12px ui-monospace,
-      monospace;
-  }
-  .dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 24px;
-  }
-  .dialog-actions button {
-    padding: 10px 14px;
-    min-height: 42px;
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-    font-size: 12px;
-  }
-  .dialog-actions .copy {
-    background: var(--ink);
-    color: var(--veil);
   }
   @media (hover: none) and (pointer: coarse) {
     .keyboard-hints {
@@ -404,14 +236,15 @@
     }
     footer {
       bottom: calc(10px + env(safe-area-inset-bottom));
+      gap: 12px;
     }
-    dialog input {
-      font-size: 16px;
+    .about-button {
+      font-size: 9px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
     .share-button,
-    .share-status {
+    .about-button {
       transition: none;
     }
   }
