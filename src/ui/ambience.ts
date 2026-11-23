@@ -66,6 +66,32 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
   const common = { base, tone, ink, veil: base };
 
   switch (dial.finish) {
+    case 'guilloche':
+    case 'clous-de-paris':
+    case 'linen':
+    case 'concentric':
+    case 'vertical-brushed':
+    case 'hammered': {
+      const line = rgba(tone === 'dark' ? '#ffffff' : '#000000', 0.025);
+      const patterns: Record<string, string> = {
+        guilloche: `repeating-radial-gradient(ellipse at 50% 46%, transparent 0px 8px, ${line} 9px 10px, transparent 11px 14px)`,
+        'clous-de-paris': `repeating-linear-gradient(45deg, ${line} 0px 1px, transparent 1px 10px), repeating-linear-gradient(-45deg, ${line} 0px 1px, transparent 1px 10px)`,
+        linen: `repeating-linear-gradient(0deg, ${line} 0px 1px, transparent 1px 5px), repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 7px)`,
+        concentric: `repeating-radial-gradient(circle at 50% 46%, transparent 0px 14px, ${line} 15px 16px)`,
+        'vertical-brushed': `repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 4px)`,
+        hammered: [
+          glow(25, 35, 24, 28, '#ffffff', 0.035),
+          glow(72, 62, 30, 24, '#ffffff', 0.04),
+          glow(58, 20, 20, 24, '#000000', 0.05),
+        ].join(', '),
+      };
+      return {
+        ...common,
+        key: `${dial.finish}:${dial.color}`,
+        drift: false,
+        layers: `${patterns[dial.finish]}, radial-gradient(70% 70% at 50% 45%, ${mix(base, '#ffffff', tone === 'dark' ? 0.1 : 0.2)}, transparent 75%)`,
+      };
+    }
     case 'iridescent-oil':
       // Film d'huile : violets, sarcelles, verts et ambres qui se fondent sur fond sombre.
       return {

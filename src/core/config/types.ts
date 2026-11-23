@@ -60,6 +60,13 @@ export interface DialConfig {
     | 'enamel'
     | 'iridescent-pearl'
     | 'iridescent-oil'
+    | 'lacquer'
+    | 'fume'
+    | 'clous-de-paris'
+    | 'linen'
+    | 'concentric'
+    | 'vertical-brushed'
+    | 'hammered'
   >;
   color: HexColor;
   pattern: string | null;

@@ -4,12 +4,15 @@
  */
 import * as THREE from 'three';
 import { effectiveDialShape } from '../core/geometry/dial-shape';
+import { watchDimensions } from '../core/geometry/dimensions';
+import { DIAL_PATTERN_SETTINGS, isDialPatternFinish } from './dial-patterns';
 import { isBlackTonneau } from '../core/config/instrument';
 import { effectiveDialColor } from '../core/config/dial';
 import type { WatchConfig } from '../core/config/types';
 import {
   forgedCarbonTexture,
   grainTextures,
+  dialPatternTextures,
   patinaTexture,
   radialAnisotropyTexture,
   radialGradientTexture,
@@ -250,6 +253,7 @@ export class MaterialLibrary {
 
   /** Ombre portée du rehaut sur le bord du cadran (carte d'occlusion radiale, partagée). */
   private readonly dialShadows = new Map<string, THREE.Texture>();
+  private readonly dialPatterns = new Map<string, ReturnType<typeof dialPatternTextures>>();
 
   /** Cadran, selon finition et couleur (spec §5.5, §9.4). */
   dial(config: WatchConfig): THREE.MeshPhysicalMaterial {
@@ -257,8 +261,11 @@ export class MaterialLibrary {
     const color = effectiveDialColor(config.dial);
     const refined = this.refined && config.case.shape === 'cushion';
     const shape = effectiveDialShape(config.dial.shape);
-    return this.cached(`dial:${finish}:${color}:${refined}:${shape}`, () => {
-      const material = this.dialMaterial(finish, color, refined, shape);
+    const span = isDialPatternFinish(finish)
+      ? Number((2 * watchDimensions(config).dialExtent).toFixed(3))
+      : 0;
+    return this.cached(`dial:${finish}:${color}:${refined}:${shape}:${span}`, () => {
+      const material = this.dialMaterial(finish, color, refined, shape, span);
       let shadow = this.dialShadows.get(shape);
       if (!shadow) {
         shadow = this.keep(radialOcclusionTexture(shape === 'round' ? 512 : 256, shape));
@@ -275,9 +282,32 @@ export class MaterialLibrary {
     color: string,
     refined: boolean,
     shape: string,
+    span: number,
   ): THREE.MeshPhysicalMaterial {
     const c = new THREE.Color(color);
     const light = c.getHSL({ h: 0, s: 0, l: 0 }).l > 0.45;
+    if (isDialPatternFinish(finish)) {
+      const key = `${finish}:${span}`;
+      let maps = this.dialPatterns.get(key);
+      if (!maps) {
+        maps = dialPatternTextures(finish, span);
+        this.keep(maps.normal);
+        this.keep(maps.roughness);
+        this.dialPatterns.set(key, maps);
+      }
+      return new THREE.MeshPhysicalMaterial({
+        color: c,
+        metalness: DIAL_PATTERN_SETTINGS[finish].metalness,
+        roughness: 1,
+        roughnessMap: maps.roughness,
+        normalMap: maps.normal,
+        normalScale: new THREE.Vector2(1, 1),
+        anisotropy: finish === 'vertical-brushed' ? 0.88 : 0,
+        anisotropyRotation: Math.PI / 2,
+        clearcoat: finish === 'hammered' ? 0.25 : 0,
+        clearcoatRoughness: 0.24,
+      });
+    }
     return (() => {
       switch (finish) {
         // L'iridescence colore la réflexion spéculaire : il faut un fond qui réfléchit
