@@ -12,6 +12,7 @@ import { bezelTypeForConfig } from '../../core/config/bezel';
 import { bezelProfile, bezelSegments, machineBezel } from './bezel';
 import { effectiveRehautProfile } from '../../core/config/rehaut';
 import { buildWideRehaut } from './rehaut';
+import { caseProfileRuns } from './case-profile';
 
 type Surface = 'brushed' | 'polished' | 'joint';
 
@@ -128,6 +129,8 @@ export function buildCushionCase(
   const bezelType = bezelTypeForConfig(config);
   const customBezel = bezelProfile(bezelType, d, [R - c * 1.05, flankTop]);
   if (customBezel) runs.splice(7, runs.length - 7, ...customBezel);
+  const midcase = caseProfileRuns(config.case.profile, d, true);
+  if (midcase) runs.splice(3, 4, ...midcase);
   group.name = 'case';
   const occlusion = caseOcclusion(config, d);
   const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
@@ -137,7 +140,7 @@ export function buildCushionCase(
     (run) => bezelSegments(bezelType, run.points, d),
   )) {
     machineBezel(mesh.geometry, bezelType, d);
-    shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth');
+    shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth', !!midcase);
     metricLatheUV(mesh.geometry, R);
     smoothTangents(mesh.geometry, (mesh.geometry as THREE.LatheGeometry).parameters.segments);
     if (mesh.name !== 'joint') applyOcclusion(mesh.geometry, occlusion);

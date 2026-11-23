@@ -37,6 +37,7 @@ export function shapeLathe(
   d: WatchDimensions,
   shape: string,
   linearFront = false,
+  profiledBody = false,
 ): void {
   if (shape === 'round' && d.dialShape === 'round') return;
   const R = d.caseRadius;
@@ -44,6 +45,9 @@ export function shapeLathe(
   const bodyInner = R - clamp(R * 2 * 0.065, 1.4, 3.2);
   const pos = geometry.getAttribute('position');
   const { c, flankTop, rehautTop } = caseLevels(d);
+  // New midcase sections use a constant contour offset across their full radial depth.
+  // The inset caseback still eases into that contour, without folding the side profile.
+  const bodyOuter = profiledBody ? R - c * 2.2 : R;
   const contours = new Map<number, { caseRadius: number; opening: number }>();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
@@ -51,7 +55,7 @@ export function shapeLathe(
     const r = Math.hypot(x, y);
     if (r < 1e-6) continue;
     const t = clamp((r - inner) / (R - inner), 0, 1);
-    const bodyT = clamp((r - bodyInner) / (R - bodyInner), 0, 1);
+    const bodyT = clamp((r - bodyInner) / (bodyOuter - bodyInner), 0, 1);
     const w = bodyT * bodyT * (3 - 2 * bodyT);
     const theta = Math.atan2(y, x);
     const caseFactor = shapeRadius(shape, theta);

@@ -8,6 +8,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
   movement: 'nh35',
   case: {
     shape: 'round',
+    profile: 'curved',
     diameterMm: 40,
     thicknessMm: 11,
     lugToLugMm: 47,

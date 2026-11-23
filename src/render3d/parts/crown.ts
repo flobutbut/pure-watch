@@ -8,7 +8,9 @@ import type { WatchConfig } from '../../core/config/types';
 import { clamp, type WatchDimensions } from '../../core/geometry/dimensions';
 import { crownMount, mountedSurface } from '../../core/geometry/crown-mount';
 import type { MaterialLibrary } from '../materials';
-import { caseLevels, flankRadiusAt } from './levels';
+import { caseLevels } from './levels';
+import { effectiveCaseProfile } from '../../core/config/case-profile';
+import { profileAttachmentSurface } from './case-profile';
 import { hornGeometry, surfaceY } from './lugs';
 
 type Profile = [r: number, y: number][];
@@ -185,7 +187,15 @@ export function buildCrown(
   // Axe local Y → +X.
   head.rotation.z = -Math.PI / 2;
   // Sur un boîtier non rond, la couronne se pose là où le flanc se trouve à son angle.
-  const mount = crownMount(d, config.case.shape, config.crown.position);
+  const crownZ = d.z.back + 0.48 * T;
+  const mount = crownMount(
+    d,
+    config.case.shape,
+    config.crown.position,
+    effectiveCaseProfile(config.case.profile) === 'curved'
+      ? undefined
+      : profileAttachmentSurface(config, d, crownZ - r * 0.66, crownZ + r * 0.66, refined),
+  );
   head.position.x = mount.reach + tubeLength;
 
   // Pivot autour de l'axe de la montre : 3 h, 4 h ou 2 h.
@@ -193,7 +203,7 @@ export function buildCrown(
   pivot.name = 'crown';
   pivot.position.x = mount.x;
   pivot.position.y = mount.y;
-  pivot.position.z = d.z.back + 0.48 * T;
+  pivot.position.z = crownZ;
   pivot.rotation.z = mount.angle;
   pivot.add(head);
 
@@ -208,7 +218,7 @@ export function buildCrown(
     const bottom = Math.max(-r * 1.25, d.z.back + c * 1.2 + 0.15 - crownZ);
     const band = { top, bottom };
     const material = lib.caseMetal(config, 'satin', true);
-    const flankAt = flankRadiusAt(d, config.case.shape);
+    const flankAt = profileAttachmentSurface(config, d, crownZ + bottom, crownZ + top, refined);
     for (const sx of [1, -1] as const) {
       const surface = mountedSurface(mount, flankAt, sx);
       const aIn = bodyRadius + 0.3;

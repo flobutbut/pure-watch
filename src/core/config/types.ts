@@ -13,6 +13,7 @@ export type ClockPosition = Open<'12h' | '3h' | '4h30' | '6h' | '9h' | '2h' | '4
 
 export interface CaseConfig {
   shape: Open<'round' | 'cushion' | 'tonneau' | 'octagon' | 'square' | 'rectangle' | 'asymmetric'>;
+  profile: Open<'straight' | 'curved' | 'faceted' | 'stepped'>;
   /** Diamètre du boîtier hors couronne (décision D5). Le cadran en découle. */
   diameterMm: number;
   thicknessMm: number;
