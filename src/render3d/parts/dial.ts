@@ -20,6 +20,8 @@ export interface DialParts {
   dial: THREE.Group;
   print: THREE.Group;
   indices: THREE.Group;
+  /** Image agrandie de la date, à poser avec le cristal (vide sans loupe). */
+  loupe: THREE.Group;
   /** Résolue quand la texture d'impression est dessinée. */
   ready: Promise<void>;
   /** Ressources propres à cette montre (non partagées par la bibliothèque). */
@@ -30,7 +32,13 @@ export function buildDial(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
-  options: { print: boolean; printSize: number; day?: number } = { print: true, printSize: 2048 },
+  options: {
+    print: boolean;
+    printSize: number;
+    day?: number;
+    /** Dessus du cristal, pour l'image agrandie par une loupe de date. */
+    crystalSurface?: (x: number, y: number) => number;
+  } = { print: true, printSize: 2048 },
 ): DialParts {
   const R = d.dialSafeRadius;
   const windowRect = dateWindowRect(config, d);
@@ -48,6 +56,7 @@ export function buildDial(
   const date = buildDate(config, d, lib, {
     day: options.day ?? new Date().getDate(),
     fontCss,
+    ...(options.crystalSurface ? { crystalSurface: options.crystalSurface } : {}),
   });
   if (date) {
     dial.add(date.recess);
@@ -55,8 +64,9 @@ export function buildDial(
   }
   const owned = date?.owned ?? [];
   const dateReady = date?.ready ?? Promise.resolve();
+  const loupe = date?.loupe ?? new THREE.Group();
   if (!options.print) {
-    return { dial, print, indices, ready: dateReady, owned };
+    return { dial, print, indices, loupe, ready: dateReady, owned };
   }
 
   // Impression : texture transparente posée juste au-dessus du disque, pour que la
@@ -97,6 +107,7 @@ export function buildDial(
     dial,
     print,
     indices,
+    loupe,
     ready: Promise.all([ready, dateReady]).then(() => {}),
     owned: [texture, printMaterial, ...owned],
   };

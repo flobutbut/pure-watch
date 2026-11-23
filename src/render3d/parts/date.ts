@@ -101,6 +101,8 @@ export interface DateParts {
   recess: THREE.Group;
   /** Cerclage appliqué (calque des index). */
   frame: THREE.Group;
+  /** Image agrandie sous la loupe (calque du cristal). */
+  loupe: THREE.Group;
   ready: Promise<void>;
   owned: { dispose(): void }[];
 }
@@ -148,7 +150,13 @@ export function buildDate(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
-  options: { day: number; fontCss: Promise<string>; textureSize?: number },
+  options: {
+    day: number;
+    fontCss: Promise<string>;
+    textureSize?: number;
+    /** Dessus du cristal : avec une loupe, l'image agrandie y est posée. */
+    crystalSurface?: SurfaceZ;
+  },
 ): DateParts | null {
   const date = dateComplication(config);
   const rect = dateWindowRect(config, d);
@@ -197,41 +205,56 @@ export function buildDate(
     frame.add(new THREE.Mesh(geometry, lib.polishedSteel()));
   }
 
-  return { recess, frame, ready, owned: [texture, discMaterial] };
+  const loupe = new THREE.Group();
+  loupe.name = 'date-loupe';
+  const owned: { dispose(): void }[] = [texture, discMaterial];
+  if (config.crystal.cyclops && options.crystalSurface) {
+    const magnified = magnifiedDisc(rect, span, texture, options.crystalSurface);
+    loupe.add(magnified.mesh);
+    owned.push(magnified.material);
+  }
+
+  return { recess, frame, loupe, ready, owned };
 }
 
 /**
- * Loupe (« cyclope ») collée sur le cristal au-dessus du guichet. `surfaceZ` donne la
- * hauteur du dessus du cristal à une position du cadran.
+ * Loupe (« cyclope ») : contour par rapport au guichet, et grossissement. Le guichet
+ * agrandi déborde de la loupe : on n'y voit que le disque et son chiffre, comme sur une
+ * loupe réelle (×2,5 chez les fabricants ; ×1,8 ici, pour que le chiffre de ce disque,
+ * plus grand, y tienne entier avec une marge).
  */
-export function buildCyclops(
-  config: WatchConfig,
-  d: WatchDimensions,
-  material: THREE.Material,
-  surfaceZ: (x: number, y: number) => number,
-): THREE.Mesh | null {
-  const rect = dateWindowRect(config, d);
-  if (!rect || !config.crystal.cyclops) return null;
+export const LOUPE = { width: 1.7, height: 1.75, magnification: 1.8 } as const;
+
+type SurfaceZ = (x: number, y: number) => number;
+
+/**
+ * Maillage en anneaux, du centre du guichet vers le contour de la loupe, posé sur le verre
+ * (il en suit le galbe). `height(t)` : hauteur au-dessus du verre, t = 0 au centre, 1 au bord.
+ */
+function lensGrid(
+  rect: DateWindowRect,
+  surfaceZ: SurfaceZ,
+  height: (t: number) => number,
+  uvAt?: (x: number, y: number) => [number, number],
+): THREE.BufferGeometry {
   const lens: DateWindowRect = {
-    x: 0,
-    y: 0,
-    width: rect.width * 1.7,
-    height: rect.height * 1.9,
+    x: rect.x,
+    y: rect.y,
+    width: rect.width * LOUPE.width,
+    height: rect.height * LOUPE.height,
     corner: rect.height * 0.8,
   };
-  const thickness = Math.min(1.1, rect.height * 0.32);
-  // Lentille bombée : anneaux du centre vers le contour, dessus presque plat, bord tombant.
-  const rim = roundedRect({ ...lens, x: rect.x, y: rect.y }, 0, 8);
+  const rim = roundedRect(lens, 0, 8);
   const rings = 14;
   const positions: number[] = [];
+  const uvs: number[] = [];
   for (let ring = 0; ring <= rings; ring++) {
     const t = ring / rings;
-    const height = thickness * Math.sqrt(Math.max(0, 1 - t ** 8));
     for (const b of rim) {
       const x = rect.x + (b.x - rect.x) * t;
       const y = rect.y + (b.y - rect.y) * t;
-      // Collée au verre : la loupe suit son galbe.
-      positions.push(x, y, surfaceZ(x, y) - 0.03 + height);
+      positions.push(x, y, surfaceZ(x, y) - 0.03 + height(t));
+      if (uvAt) uvs.push(...uvAt(x, y));
     }
   }
   const n = rim.length;
@@ -244,10 +267,60 @@ export function buildCyclops(
     }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  if (uvAt) geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** Lentille bombée collée sur le cristal au-dessus du guichet. */
+export function buildCyclops(
+  config: WatchConfig,
+  d: WatchDimensions,
+  material: THREE.Material,
+  surfaceZ: SurfaceZ,
+): THREE.Mesh | null {
+  const rect = dateWindowRect(config, d);
+  if (!rect || !config.crystal.cyclops) return null;
+  const thickness = Math.min(1.1, rect.height * 0.32);
+  // Dessus presque plat, bord tombant.
+  const geometry = lensGrid(rect, surfaceZ, (t) => thickness * Math.sqrt(Math.max(0, 1 - t ** 8)));
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = 'cyclops';
   mesh.renderOrder = 11;
   return mesh;
 }
+
+/**
+ * Image agrandie du disque, vue à travers la loupe : une pellicule à sa base, qui reprend la
+ * texture du disque avec le grossissement de la loupe. Dessinée après le cadran mais sans
+ * écrire la profondeur, pour que les aiguilles qui passent dessous restent visibles.
+ */
+function magnifiedDisc(
+  rect: DateWindowRect,
+  span: number,
+  texture: THREE.Texture,
+  surfaceZ: SurfaceZ,
+): { mesh: THREE.Mesh; material: THREE.Material } {
+  const k = 1 / (span * LOUPE.magnification);
+  const geometry = lensGrid(
+    rect,
+    surfaceZ,
+    () => 0.01,
+    (x, y) => [0.5 + (x - rect.x) * k, 0.5 + (y - rect.y) * k],
+  );
+  const material = new THREE.MeshStandardMaterial({
+    map: texture,
+    roughness: 0.6,
+    metalness: 0,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = 'magnified-date';
+  mesh.renderOrder = MAGNIFIED_ORDER;
+  return { mesh, material };
+}
+
+/** Ordre de dessin : image agrandie après les pièces opaques, aiguilles par-dessus. */
+export const MAGNIFIED_ORDER = 1;
+export const HANDS_ORDER = 2;

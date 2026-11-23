@@ -5,8 +5,9 @@ import { watchDimensions } from '../../core/geometry/dimensions';
 import { dialPrintSvg } from '../../render2d/dial-print';
 import { MaterialLibrary } from '../materials';
 import * as textures from '../textures';
-import { buildCrystal } from './crystal';
-import { dateDiscSvg, dateWindowRect } from './date';
+import { buildCrystal, crystalSurface } from './crystal';
+import { buildWatch } from '../watch';
+import { dateDiscSvg, dateWindowRect, HANDS_ORDER, LOUPE, MAGNIFIED_ORDER } from './date';
 import { buildDial } from './dial';
 
 vi.spyOn(textures, 'svgTexture').mockImplementation(() => ({
@@ -155,4 +156,64 @@ describe('guichet de date', () => {
       expect(buildCrystal(config, d, lib(), 'fallback').getObjectByName('cyclops')).toBeUndefined();
     },
   );
+
+  it('grossit le disque sous la loupe, sans montrer le bord du guichet', () => {
+    const config = dated('3h');
+    config.crystal.cyclops = true;
+    const d = watchDimensions(config);
+    const rect = dateWindowRect(config, d)!;
+    const surface = crystalSurface(config, d, false);
+    const parts = buildDial(config, d, lib(), {
+      print: false,
+      printSize: 1,
+      day: 23,
+      crystalSurface: surface,
+    });
+    const image = parts.loupe.getObjectByName('magnified-date') as THREE.Mesh;
+    expect(image.renderOrder).toBe(MAGNIFIED_ORDER);
+    expect((image.material as THREE.Material).depthWrite).toBe(false);
+
+    // Coordonnées de texture : un détail du disque y occupe LOUPE.magnification fois plus de place.
+    const p = image.geometry.getAttribute('position');
+    const uv = image.geometry.getAttribute('uv');
+    const span = Math.max(rect.width, rect.height) + 1.2;
+    let widest = 0;
+    for (let i = 0; i < p.count; i++) {
+      const dx = p.getX(i) - rect.x;
+      expect((uv.getX(i) - 0.5) * span * LOUPE.magnification).toBeCloseTo(dx, 5);
+      // Le point lu sur le disque reste dans le guichet : son bord n'apparaît pas.
+      expect(Math.abs(dx / LOUPE.magnification)).toBeLessThan(rect.width / 2);
+      expect(Math.abs((p.getY(i) - rect.y) / LOUPE.magnification)).toBeLessThan(rect.height / 2);
+      widest = Math.max(widest, Math.abs(dx));
+      // Posée sur le verre, sous la loupe.
+      expect(Math.abs(p.getZ(i) - surface(p.getX(i), p.getY(i)))).toBeLessThan(0.05);
+    }
+    expect(widest).toBeGreaterThan(rect.width * 0.8);
+
+    config.crystal.cyclops = false;
+    const plain = buildDial(config, d, lib(), {
+      print: false,
+      printSize: 1,
+      crystalSurface: surface,
+    });
+    expect(plain.loupe.children).toHaveLength(0);
+  });
+
+  it('pose l’image agrandie avec le cristal, aiguilles dessinées par-dessus', () => {
+    const config = dated('3h');
+    config.crystal.cyclops = true;
+    const watch = buildWatch(config, lib(), { quality: 'fallback' });
+    expect(watch.layers.crystal.getObjectByName('magnified-date')).toBeDefined();
+    expect(watch.layers.dial.getObjectByName('magnified-date')).toBeUndefined();
+    const orders = new Set<number>();
+    for (const layer of [watch.layers.hands, watch.layers.seconds])
+      layer.traverse((o) => o instanceof THREE.Mesh && orders.add(o.renderOrder));
+    expect([...orders]).toEqual([HANDS_ORDER]);
+    expect(HANDS_ORDER).toBeGreaterThan(MAGNIFIED_ORDER);
+    // Sans le calque du cristal (vignette du cadran), pas d'image agrandie flottante.
+    const dialOnly = buildWatch(config, lib(), { quality: 'fallback', layers: ['dial'] });
+    expect(dialOnly.root.getObjectByName('magnified-date')).toBeUndefined();
+    watch.dispose();
+    dialOnly.dispose();
+  });
 });

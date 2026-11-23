@@ -13,7 +13,8 @@ import type { Refinement } from './refinement';
 import { buildCushionCase } from './parts/cushion-case';
 import { buildCase } from './parts/case';
 import { buildCrown } from './parts/crown';
-import { buildCrystal } from './parts/crystal';
+import { buildCrystal, crystalSurface } from './parts/crystal';
+import { HANDS_ORDER } from './parts/date';
 import { buildDial } from './parts/dial';
 import { buildHands } from './parts/hands';
 import { buildLugs } from './parts/lugs';
@@ -75,9 +76,14 @@ export function buildWatch(
         ? buildCushionCase(config, d, lib)
         : buildCase(config, d, lib, instrument)
       : null;
+  const crystalRefined = refined || d.dialShape !== 'round';
   const dialParts =
     wanted('dial') || wanted('print') || wanted('indices')
-      ? buildDial(config, d, lib, { print: wanted('print'), printSize: options.printSize ?? 2048 })
+      ? buildDial(config, d, lib, {
+          print: wanted('print'),
+          printSize: options.printSize ?? 2048,
+          crystalSurface: crystalSurface(config, d, crystalRefined),
+        })
       : null;
   const rotatingBezel =
     config.bezel.type === 'rotating' && caseParts && wanted('case')
@@ -107,9 +113,15 @@ export function buildWatch(
     hands: wanted('hands') ? hands.group : empty('hands'),
     seconds: wanted('seconds') ? hands.seconds : empty('seconds'),
     crystal: wanted('crystal')
-      ? buildCrystal(config, d, lib, options.quality, refined || d.dialShape !== 'round')
+      ? buildCrystal(config, d, lib, options.quality, crystalRefined)
       : empty('crystal'),
   };
+  // L'image agrandie de la date va avec la loupe ; les aiguilles passent par-dessus.
+  if (dialParts && wanted('crystal')) layers.crystal.add(dialParts.loupe);
+  for (const layer of [layers.hands, layers.seconds])
+    layer.traverse((o) => {
+      if (o instanceof THREE.Mesh) o.renderOrder = HANDS_ORDER;
+    });
 
   // Pièces construites mais non retenues : libérées tout de suite.
   const discarded = [
@@ -118,6 +130,7 @@ export function buildWatch(
     caseParts && !wanted('case') && caseParts.case,
     caseParts && !wanted('rehaut') && caseParts.rehaut,
     dialParts && !wanted('indices') && dialParts.indices,
+    dialParts && !wanted('crystal') && dialParts.loupe,
   ];
   for (const object of discarded) if (object) disposeGeometries(object);
 
