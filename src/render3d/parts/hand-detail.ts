@@ -3,6 +3,47 @@ import * as THREE from 'three';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { normalize, type Sample } from './profile';
 
+/** Continuous plate with real cut-outs. The edge break stays within the hand's Z envelope. */
+export function piercedProfile(
+  samples: readonly Sample[],
+  holes: readonly (readonly Sample[])[],
+  thickness: number,
+): THREE.BufferGeometry {
+  const width = Math.max(...samples.map(([, w]) => w));
+  const bevel = Math.min(0.025, width * 0.025, thickness * 0.2);
+  const outline = new THREE.Shape();
+  const points = samples.map(
+    ([y, w], i) =>
+      [
+        y + (i === 0 ? bevel : i === samples.length - 1 ? -bevel : 0),
+        Math.max(0, w - bevel),
+      ] as const,
+  );
+  outline.moveTo(-points[0]![1], points[0]![0]);
+  for (const [y, w] of points.slice(1)) outline.lineTo(-w, y);
+  for (const [y, w] of [...points].reverse()) outline.lineTo(w, y);
+  outline.closePath();
+  for (const hole of holes) {
+    const path = new THREE.Path();
+    path.moveTo(-hole[0]![1], hole[0]![0]);
+    for (const [y, w] of hole.slice(1)) path.lineTo(-w, y);
+    for (const [y, w] of [...hole].reverse()) path.lineTo(w, y);
+    path.closePath();
+    outline.holes.push(path);
+  }
+  const raw = new THREE.ExtrudeGeometry(outline, {
+    depth: thickness - 2 * bevel,
+    bevelEnabled: true,
+    bevelSize: bevel,
+    bevelThickness: bevel,
+    bevelSegments: 1,
+    steps: 1,
+    curveSegments: 12,
+  });
+  raw.translate(0, 0, bevel);
+  return toCreasedNormals(normalize(raw), THREE.MathUtils.degToRad(22));
+}
+
 /** Preserve the existing ridge and outer contour; inset only the upper edge. */
 export function beveledProfile(
   samples: readonly Sample[],

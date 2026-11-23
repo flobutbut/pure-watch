@@ -1,0 +1,94 @@
+{
+  "browser": "149.0.7827.55",
+  "metrics": {
+    "hands/spear": {
+      "triangles": 1696,
+      "meshes": 4,
+      "calls": 6,
+      "renderedTriangles": 718,
+      "geometries": 4,
+      "textures": 2
+    },
+    "hands/pencil": {
+      "triangles": 1612,
+      "meshes": 4,
+      "calls": 6,
+      "renderedTriangles": 634,
+      "geometries": 4,
+      "textures": 2
+    },
+    "hands/spade": {
+      "triangles": 2144,
+      "meshes": 4,
+      "calls": 6,
+      "renderedTriangles": 1166,
+      "geometries": 4,
+      "textures": 2
+    },
+    "hands/art-deco": {
+      "triangles": 1780,
+      "meshes": 4,
+      "calls": 6,
+      "renderedTriangles": 802,
+      "geometries": 4,
+      "textures": 2
+    },
+    "hands/skeleton": {
+      "triangles": 1780,
+      "meshes": 4,
+      "calls": 6,
+      "renderedTriangles": 802,
+      "geometries": 4,
+      "textures": 2
+    },
+    "hands/cathedral": {
+      "triangles": 2052,
+      "meshes": 4,
+      "calls": 6,
+      "renderedTriangles": 1074,
+      "geometries": 4,
+      "textures": 2
+    },
+    "seconds/baton": {
+      "triangles": 1292,
+      "meshes": 4,
+      "calls": 2,
+      "renderedTriangles": 222,
+      "geometries": 2,
+      "textures": 2
+    },
+    "seconds/diamond": {
+      "triangles": 1328,
+      "meshes": 4,
+      "calls": 2,
+      "renderedTriangles": 258,
+      "geometries": 2,
+      "textures": 2
+    },
+    "seconds/teardrop": {
+      "triangles": 1347,
+      "meshes": 4,
+      "calls": 2,
+      "renderedTriangles": 277,
+      "geometries": 2,
+      "textures": 2
+    },
+    "seconds/ring-tail": {
+      "triangles": 1788,
+      "meshes": 4,
+      "calls": 2,
+      "renderedTriangles": 718,
+      "geometries": 2,
+      "textures": 2
+    },
+    "seconds/lightning": {
+      "triangles": 1316,
+      "meshes": 4,
+      "calls": 2,
+      "renderedTriangles": 246,
+      "geometries": 2,
+      "textures": 2
+    }
+  },
+  "errors": []
+}

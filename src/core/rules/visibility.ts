@@ -29,5 +29,8 @@ export function evaluate(rule: Record<string, unknown>, config: WatchConfig): bo
 }
 
 export function visibleRows(rows: readonly RowDef[], config: WatchConfig): RowDef[] {
-  return rows.filter((row) => !row.visibleWhen || evaluate(row.visibleWhen, config));
+  // Palette entries remain catalog metadata (presets and existing links), not grid rows.
+  return rows.filter(
+    (row) => row.kind !== 'palette' && (!row.visibleWhen || evaluate(row.visibleWhen, config)),
+  );
 }

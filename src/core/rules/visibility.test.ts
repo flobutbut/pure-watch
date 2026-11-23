@@ -15,14 +15,16 @@ describe('visibilité des lignes', () => {
     expect(visibleRows(catalog.rows, withNumerals).some((r) => r.id === 'numeral-font')).toBe(true);
   });
 
-  it('la couleur du cadran disparaît pour les matières à teinte propre (nacre, huile)', () => {
+  it('les palettes restent des préréglages du catalogue et quittent la navigation', () => {
     const config = defaultConfig();
     const has = (c: typeof config) =>
       visibleRows(catalog.rows, c).some((r) => r.id === 'dial-color');
-    expect(has(config)).toBe(true);
+    expect(catalog.rows.some((r) => r.id === 'dial-color')).toBe(true);
+    expect(has(config)).toBe(false);
     expect(has(setAtPath(config, 'dial.finish', 'iridescent-pearl'))).toBe(false);
     expect(has(setAtPath(config, 'dial.finish', 'iridescent-oil'))).toBe(false);
-    expect(has(setAtPath(config, 'dial.finish', 'sunburst'))).toBe(true);
+    expect(has(setAtPath(config, 'dial.finish', 'sunburst'))).toBe(false);
+    expect(visibleRows(catalog.rows, config).some((r) => r.id === 'seconds-color')).toBe(false);
   });
 
   it('la finition du boîtier disparaît pour la céramique et le carbone', () => {

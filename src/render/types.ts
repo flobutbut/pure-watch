@@ -32,7 +32,7 @@ export type PartImage = { kind: 'svg'; markup: string } | { kind: 'bitmap'; bitm
 export interface LiveWatch {
   /** Résolue quand la montre est assemblée et affichée pour la première fois. */
   ready: Promise<void>;
-  update(config: WatchConfig): void;
+  update(config: WatchConfig, transient?: boolean): void;
   /** « grid » : vue de face, immobile ; « inspect » : trois quarts, orbite au pointeur. */
   setMode(mode: 'grid' | 'inspect'): void;
   /** Vue inspectée : vue prédéfinie (0 = face, 1 = profil gauche, 2 = dessus, 3 = dos, 4 = trois quarts). */

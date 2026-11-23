@@ -1233,6 +1233,54 @@
           "i18n": {
             "name": "Seringue"
           }
+        },
+        {
+          "id": "spear",
+          "value": "spear",
+          "preview": "hands/spear.svg",
+          "i18n": {
+            "name": "Lance"
+          }
+        },
+        {
+          "id": "pencil",
+          "value": "pencil",
+          "preview": "hands/pencil.svg",
+          "i18n": {
+            "name": "Crayon"
+          }
+        },
+        {
+          "id": "spade",
+          "value": "spade",
+          "preview": "hands/spade.svg",
+          "i18n": {
+            "name": "Pique"
+          }
+        },
+        {
+          "id": "art-deco",
+          "value": "art-deco",
+          "preview": "hands/art-deco.svg",
+          "i18n": {
+            "name": "Art déco"
+          }
+        },
+        {
+          "id": "skeleton",
+          "value": "skeleton",
+          "preview": "hands/skeleton.svg",
+          "i18n": {
+            "name": "Ajourées"
+          }
+        },
+        {
+          "id": "cathedral",
+          "value": "cathedral",
+          "preview": "hands/cathedral.svg",
+          "i18n": {
+            "name": "Cathédrale"
+          }
         }
       ]
     },
@@ -1301,6 +1349,61 @@
           "preview": "seconds/triangle.svg",
           "i18n": {
             "name": "Triangle"
+          }
+        },
+        {
+          "id": "baton",
+          "value": {
+            "style": "baton",
+            "counterweight": false
+          },
+          "preview": "seconds/baton.svg",
+          "i18n": {
+            "name": "Bâton"
+          }
+        },
+        {
+          "id": "diamond",
+          "value": {
+            "style": "diamond",
+            "counterweight": false
+          },
+          "preview": "seconds/diamond.svg",
+          "i18n": {
+            "name": "Losange"
+          }
+        },
+        {
+          "id": "teardrop",
+          "value": {
+            "style": "teardrop",
+            "counterweight": true
+          },
+          "preview": "seconds/teardrop.svg",
+          "i18n": {
+            "name": "Goutte"
+          }
+        },
+        {
+          "id": "ring-tail",
+          "value": {
+            "style": "ring-tail",
+            "counterweight": true
+          },
+          "preview": "seconds/ring-tail.svg",
+          "i18n": {
+            "name": "Contrepoids ajouré"
+          }
+        },
+        {
+          "id": "lightning",
+          "value": {
+            "style": "lightning",
+            "counterweight": false
+          },
+          "preview": "seconds/lightning.svg",
+          "i18n": {
+            "name": "Éclair"
           }
         }
       ]

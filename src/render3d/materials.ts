@@ -201,6 +201,31 @@ export class MaterialLibrary {
     );
   }
 
+  handMaterial(
+    config: WatchConfig,
+    surface: 'face' | 'edge' | 'plain',
+  ): THREE.MeshPhysicalMaterial {
+    const { finish, color } = config.hands;
+    const metalColors: Record<string, string> = {
+      gold: '#D3AA54',
+      blued: '#253F79',
+      black: '#292E35',
+    };
+    if (finish !== 'lacquer' && !metalColors[finish])
+      return surface === 'plain' ? this.polishedSteel() : this.handSteel(surface);
+    return this.cached(
+      `hand-finish:${finish}:${finish === 'lacquer' ? color : ''}:${surface}`,
+      () =>
+        new THREE.MeshPhysicalMaterial({
+          color: finish === 'lacquer' ? color : metalColors[finish],
+          metalness: finish === 'lacquer' ? 0.05 : 1,
+          roughness: surface === 'face' ? 0.25 : 0.12,
+          clearcoat: finish === 'lacquer' ? 1 : 0,
+          clearcoatRoughness: 0.12,
+        }),
+    );
+  }
+
   private fineGrainCache: ReturnType<typeof grainTextures> | null = null;
 
   private grainCache: ReturnType<typeof grainTextures> | null = null;

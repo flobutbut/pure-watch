@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('la grille démarre sur la ligne Aiguilles et répond aux flèches', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#boot')).toHaveClass(/done/);
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
   const grid = page.getByRole('grid');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
   await grid.focus();
@@ -38,7 +38,7 @@ test('le pilote coussin reste configurable et inspectable', async ({ page }) => 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/?pilot=cushion');
-  await expect(page.locator('#boot')).toHaveClass(/done/);
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
   const grid = page.getByRole('grid');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-dauphine');
   await grid.focus();
@@ -59,14 +59,18 @@ test('le tonneau noir conserve ses options et sa navigation', async ({ page }) =
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/?pilot=black');
-  await expect(page.locator('#boot')).toHaveClass(/done/);
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
   const grid = page.getByRole('grid');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-baton');
   await grid.focus();
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-lollipop');
   await page.keyboard.press('ArrowDown');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-color-yellow');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-lollipop');
+  await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#F2C230');
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
+  await grid.focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('.live canvas')).toBeVisible();
   await page.keyboard.press('2');

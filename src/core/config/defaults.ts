@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
   hands: {
     set: 'sword',
     finish: 'polished',
+    color: '#E8EBF0',
     lume: null,
     second: { style: 'counterweight', color: '#F0561D', counterweight: true },
   },

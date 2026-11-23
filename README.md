@@ -42,3 +42,7 @@ Audit des six jeux d’aiguilles : [comparaisons, corrections et coût](document
 L’adresse `#v1.…` suit automatiquement les options choisies. Copier l’URL permet de retrouver la même montre après rechargement ou dans un autre onglet. Les anciens liens des pilotes restent compatibles. [Format et fonctionnement](documentation/liens-configuration.md).
 
 Formes indépendantes du cadran : [fonctionnement et contrôles](documentation/formes-cadran.md). Raccord des couronnes aux boîtiers : [correction et comparaisons](documentation/crown-review/README.md).
+
+Couleurs libres du cadran et des aiguilles : [panneau, matières et compatibilité](documentation/colors-review/README.md).
+
+Catalogue étendu à 12 jeux d’aiguilles et 10 trotteuses : [nouvelles formes et planches 3D](documentation/hand-variants/README.md).

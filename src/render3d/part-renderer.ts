@@ -197,7 +197,7 @@ export class PartRenderer3D implements PartRenderer {
     for (const wake of this.waiting.splice(0)) wake();
     return {
       ready,
-      update: (next) => void stage.setConfig(next),
+      update: (next, transient) => void stage.setConfig(next, transient),
       setMode: (mode) => stage.setMode(mode),
       view: (index) => stage.view(index),
       rotate: (dAz, dEl) => stage.rotate(dAz, dEl),

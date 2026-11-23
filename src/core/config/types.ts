@@ -93,10 +93,23 @@ export interface DialConfig {
 export interface HandsConfig {
   set: string;
   finish: string;
+  /** Couleur conservée pour la finition laquée, indépendamment des métaux. */
+  color: HexColor;
   lume: string | null;
   second: {
-    style: Open<'thin' | 'counterweight' | 'lollipop' | 'arrow' | 'triangle'>;
-    /** Couleur laquée, ou « match » : acier poli assorti aux aiguilles. */
+    style: Open<
+      | 'thin'
+      | 'counterweight'
+      | 'lollipop'
+      | 'arrow'
+      | 'triangle'
+      | 'baton'
+      | 'diamond'
+      | 'teardrop'
+      | 'ring-tail'
+      | 'lightning'
+    >;
+    /** Couleur laquée, ou « match » : même matière que les aiguilles. */
     color: HexColor | 'match';
     counterweight: boolean;
   };
