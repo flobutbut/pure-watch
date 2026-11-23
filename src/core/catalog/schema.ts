@@ -62,7 +62,7 @@ export const rowSchema = z
     /** Chemin dans WatchConfig, par exemple « hands.set ». */
     path: z.string().regex(/^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*$/, 'chemin pointé attendu'),
     previewContext: previewContextSchema,
-    looping: z.boolean().default(false),
+    looping: z.boolean().default(true),
     priority: prioritySchema,
     variants: z.array(variantSchema).min(1, 'une ligne a au moins une variante'),
     visibleWhen: ruleExprSchema.optional(),

@@ -7,7 +7,7 @@
       "kind": "enum",
       "path": "case.shape",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Forme du boîtier"
@@ -69,7 +69,7 @@
       "kind": "ordinal",
       "path": "case",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Taille",
@@ -266,7 +266,7 @@
       "kind": "enum",
       "path": "case.lugs",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Cornes"
@@ -344,7 +344,7 @@
       "kind": "enum",
       "path": "case.material",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P1",
       "i18n": {
         "name": "Matière du boîtier"
@@ -422,7 +422,7 @@
       "kind": "enum",
       "path": "case.finish",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P1",
       "i18n": {
         "name": "Finition du boîtier"
@@ -488,7 +488,7 @@
       "kind": "enum",
       "path": "crown.style",
       "previewContext": "case-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Couronne"
@@ -550,7 +550,7 @@
       "kind": "enum",
       "path": "crown.position",
       "previewContext": "case-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P1",
       "i18n": {
         "name": "Position de la couronne"
@@ -588,7 +588,7 @@
       "kind": "enum",
       "path": "crystal.type",
       "previewContext": "dial-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Cristal"
@@ -634,7 +634,7 @@
       "kind": "enum",
       "path": "dial.shape",
       "previewContext": "case-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Forme du cadran"
@@ -696,7 +696,7 @@
       "kind": "enum",
       "path": "dial.finish",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Finition du cadran"
@@ -872,7 +872,7 @@
       "kind": "enum",
       "path": "dial.chapterRing",
       "previewContext": "none",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Piste des minutes"
@@ -926,7 +926,7 @@
       "kind": "enum",
       "path": "dial.indices.style",
       "previewContext": "dial-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Index"
@@ -1004,7 +1004,7 @@
       "kind": "enum",
       "path": "dial.indices.numerals",
       "previewContext": "dial-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Chiffres"
@@ -1074,7 +1074,7 @@
       "kind": "enum",
       "path": "dial.indices.numeralFont",
       "previewContext": "dial-sample",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Typographie des chiffres"
@@ -1180,7 +1180,7 @@
       "kind": "enum",
       "path": "hands.set",
       "previewContext": "dark-disc",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Aiguilles"
@@ -1242,7 +1242,7 @@
       "kind": "enum",
       "path": "hands.second",
       "previewContext": "dark-disc",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Trotteuse"
@@ -1311,7 +1311,7 @@
       "kind": "palette",
       "path": "hands.second.color",
       "previewContext": "dark-disc",
-      "looping": false,
+      "looping": true,
       "priority": "P0",
       "i18n": {
         "name": "Couleur de trotteuse"

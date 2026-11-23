@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dragSteps, WheelStepper, wheelPixels } from './gestures';
-import { gridMetrics, hierarchy, visibleSlots } from './layout';
+import { gridMetrics, hierarchy, rowEnds, visibleSlots } from './layout';
 
 describe('gridMetrics', () => {
   it('reprend la grille Figma sur un écran de 1440 × 1024', () => {
@@ -101,5 +101,24 @@ describe('dragSteps', () => {
   });
   it("l'inertie est plafonnée à 3 cellules", () => {
     expect(dragSteps(-300, -20, pitch)).toBe(3);
+  });
+});
+
+describe('rowEnds', () => {
+  const rows = [
+    { variantCount: 6, looping: true },
+    { variantCount: 6 },
+    { variantCount: 1, looping: true },
+  ];
+
+  it('place un point entre la dernière et la première variante d’une ligne qui boucle', () => {
+    const slots = visibleSlots(rows, 0, (r) => [5, 5, 0][r]!, { colsHalf: 5, rowsHalf: 2 });
+    const ends = rowEnds(rows, slots);
+    expect(ends).toEqual([{ rowIndex: 0, dCol: 0.5, dRow: 0 }]);
+  });
+
+  it('ne marque rien quand la jonction est hors de la fenêtre', () => {
+    const slots = visibleSlots(rows, 0, (r) => [2, 0, 0][r]!, { colsHalf: 1, rowsHalf: 2 });
+    expect(rowEnds(rows, slots)).toEqual([]);
   });
 });

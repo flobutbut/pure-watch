@@ -7,7 +7,7 @@
   import Cell from './Cell.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
   import { commandFromKey } from './keyboard';
-  import { gridMetrics, hierarchy, visibleSlots, type CellSlot } from './layout';
+  import { gridMetrics, hierarchy, rowEnds, visibleSlots, type CellSlot } from './layout';
 
   interface Props {
     rows: readonly RowDef[];
@@ -35,13 +35,26 @@
   let lastCol: Record<string, number> = {};
 
   // Lignes et cellules montées : visibles + une de marge (« ce qu'on ne voit pas n'existe pas »).
+  const rowShapes = $derived(
+    rows.map((row) => ({ variantCount: row.variants.length, looping: row.looping })),
+  );
+  const slots = $derived(visibleSlots(rowShapes, nav.activeRow, selected, metrics));
+
+  /** Dernière position de chaque point de fin de ligne (même usage que lastCol). */
+  let lastEnd: Record<string, number> = {};
+  const ends = $derived.by(() => {
+    const seen: Record<string, number> = {};
+    const marks = rowEnds(rowShapes, slots).map((end) => {
+      const id = rows[end.rowIndex]!.id;
+      const previous = lastEnd[id];
+      seen[id] = end.dCol;
+      return { ...end, id, jump: previous !== undefined && Math.abs(previous - end.dCol) > 2 };
+    });
+    lastEnd = seen;
+    return marks;
+  });
+
   const visibleRows = $derived.by(() => {
-    const slots = visibleSlots(
-      rows.map((row) => ({ variantCount: row.variants.length, looping: row.looping })),
-      nav.activeRow,
-      selected,
-      metrics,
-    );
     // Les cellules arrivent triées par ligne : on les regroupe dans l'ordre.
     // Une cellule qui saute d'un bord à l'autre (ligne cyclique) ne traverse pas l'écran :
     // elle change de place sans transition.
@@ -320,6 +333,21 @@
       </div>
     {/each}
 
+    <!-- Fin de ligne : un point entre la dernière variante et la première (la ligne boucle). -->
+    {#each ends as end (end.id)}
+      {@const isActiveRow = end.dRow === 0}
+      <div
+        class="row-end"
+        class:jump={end.jump}
+        aria-hidden="true"
+        style:transform="translate({end.dCol * metrics.pitch + (isActiveRow ? dragX + bumpX : 0)}px, {end.dRow *
+          metrics.pitch +
+          dragY +
+          bumpY}px)"
+        style:opacity={hierarchy(Math.trunc(end.dCol), end.dRow).opacity * 0.4}
+      ></div>
+    {/each}
+
     <!-- Noms des lignes, fixes à gauche : ils suivent les changements de ligne mais pas le
          défilement des variantes. Un voile léger les garde lisibles au-dessus des cellules. -->
     <div class="label-veil" aria-hidden="true"></div>
@@ -525,7 +553,24 @@
     }
   }
 
+  .row-end {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    height: 3px;
+    margin: -1.5px 0 0 -1.5px;
+    border-radius: 50%;
+    background: var(--ink);
+    pointer-events: none;
+    transition:
+      transform var(--dur-row) var(--ease-out),
+      opacity var(--dur-row) var(--ease-out);
+  }
+
   .cell.jump,
+  .row-end.jump,
+  .grid.dragging .row-end,
   .grid.dragging .cell,
   .grid.dragging .live-slot {
     transition: none;

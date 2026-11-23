@@ -157,9 +157,9 @@ Une ligne a un nombre fini de variantes (de 1 à 12 aujourd'hui). Deux comportem
 | **Bord** (recommandée) | La sélection s'arrête à la dernière variante, les cellules au-delà n'existent pas | Honnête sur le nombre de variantes, pas de répétition | Les lignes courtes paraissent « vides » |
 | **Boucle** | La liste se répète indéfiniment | Pas de fin | Avec 3 variantes, on voit 7 cellules qui se répètent : confus |
 
-**Règle proposée :** bord par défaut. Boucle seulement pour les lignes cycliques par nature (ex. les 12 positions d'un cadran, la teinte). À trancher après test (§11).
+**Décision (23 nov.) :** toutes les lignes **bouclent**. Chaque variante n'apparaît qu'une fois à l'écran (pas de répétition, donc pas de confusion sur les lignes courtes), et un **petit point** discret, dans l'espace entre la dernière variante et la première, marque la fin de la ligne. `Début` / `Fin` vont toujours à la première / dernière variante.
 
-Sur un bord, un **effet de résistance** (léger rebond) confirme que le geste a été compris.
+Le champ `looping` du catalogue reste disponible (défaut `true`) : une ligne peut revenir au bord, avec l'**effet de résistance** (léger rebond) qui confirme que le geste a été compris.
 
 ### 2.6 Hiérarchie visuelle
 
@@ -1126,7 +1126,7 @@ Heures du monde, calendrier perpétuel, tourbillon, manette, vidéo 360°, image
 
 | # | Question | Options | Recommandation provisoire |
 |---|---|---|---|
-| 1 | Fin de ligne : bord ou boucle | Bord · boucle · mixte | Bord par défaut, boucle pour les lignes cycliques |
+| 1 | Fin de ligne : bord ou boucle | Bord · boucle · mixte | **Tranché :** boucle partout, point de fin de ligne (§2.5) |
 | 2 | Contenu d'une cellule : pièce seule ou montre complète avec la variante | Pièce seule (choix actuel) · montre complète | Pièce seule ; tester la montre complète sur quelques lignes (cadran, aiguilles) |
 | 3 | Nombre de lignes | ≈ 30 lignes possibles : navigation verticale longue | Regrouper (structure, face, mouvement, bracelet) et ajouter des **repères de groupe** discrets sur le bord |
 | 4 | Lignes sans équivalent visuel simple (réserve de marche, étanchéité) | Pictogrammes · aperçu dans le contexte | Aperçu dans le contexte (`dial-sample`) |

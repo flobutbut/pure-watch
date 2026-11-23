@@ -92,3 +92,32 @@ export function visibleSlots(
   }
   return slots;
 }
+
+export interface RowEnd {
+  rowIndex: number;
+  /** Position du point, en cellules depuis le centre : à mi-chemin entre deux cellules. */
+  dCol: number;
+  dRow: number;
+}
+
+/**
+ * Fin de ligne (spec §2.5) : sur une ligne qui boucle, un point discret marque l'endroit
+ * où la dernière variante est suivie de la première, dans l'espace entre les deux cellules.
+ */
+export function rowEnds(
+  rows: readonly { variantCount: number; looping?: boolean }[],
+  slots: readonly CellSlot[],
+): RowEnd[] {
+  const ends: RowEnd[] = [];
+  const byPosition = new Map<string, CellSlot>();
+  for (const slot of slots) byPosition.set(`${slot.rowIndex}:${slot.dCol}`, slot);
+  for (const slot of slots) {
+    const { variantCount: count, looping } = rows[slot.rowIndex]!;
+    if (!looping || count < 2 || slot.variantIndex !== count - 1) continue;
+    const next = byPosition.get(`${slot.rowIndex}:${slot.dCol + 1}`);
+    if (next?.variantIndex === 0) {
+      ends.push({ rowIndex: slot.rowIndex, dCol: slot.dCol + 0.5, dRow: slot.dRow });
+    }
+  }
+  return ends;
+}
