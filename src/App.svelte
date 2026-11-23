@@ -7,7 +7,12 @@
   import { bezelAngle } from './core/config/bezel';
   import type { WatchConfig } from './core/config/types';
   import { withColorChoice, type ColorChoice, type ColorTarget } from './core/config/colors';
-  import { applyVariant, selectionFromConfig, toRowViews } from './core/nav/selection';
+  import {
+    applyVariant,
+    selectionFromConfig,
+    syncSelection,
+    toRowViews,
+  } from './core/nav/selection';
   import {
     createNavState,
     selectedIndex,
@@ -161,13 +166,17 @@
     const index = selectedIndex(result.state, row.id);
     // Moving between rows is navigation, not an instruction to overwrite a custom
     // value loaded from a link with the first catalog variant.
+    let selectionByRow = result.state.selectionByRow;
     if (!rowChanged || command.type === 'goto') {
+      const before = config;
       config = applyVariant(config, row, index);
+      selectionByRow = syncSelection(catalog, before, config, selectionByRow, row.id);
       linkNotice = '';
     }
     // Une ligne a pu apparaître ou disparaître : on retrouve la ligne active par son identifiant.
     nav = {
       ...result.state,
+      selectionByRow,
       activeRow: Math.max(
         0,
         rows.findIndex((r) => r.id === row.id),

@@ -60,7 +60,8 @@ export const rowSchema = z
     group: groupSchema,
     kind: rowKindSchema,
     /** Chemin dans WatchConfig, par exemple « hands.set ». */
-    path: z.string().regex(/^[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*$/, 'chemin pointé attendu'),
+    // Segments en kebab-case acceptés : type d'une complication (« complications.small-seconds »).
+    path: z.string().regex(/^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*$/, 'chemin pointé attendu'),
     previewContext: previewContextSchema,
     looping: z.boolean().default(true),
     priority: prioritySchema,

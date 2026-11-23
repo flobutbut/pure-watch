@@ -4,6 +4,7 @@
  */
 import type { Catalog, RowDef, RowId } from '../catalog/types';
 import { getAtPath, matchesValue, setAtPath } from '../config/path';
+import { resolveLayout } from '../config/complications';
 import type { WatchConfig } from '../config/types';
 import type { RowView } from './state';
 
@@ -29,9 +30,35 @@ export function selectionFromConfig(catalog: Catalog, config: WatchConfig): Reco
   );
 }
 
-/** Écrit la valeur de la variante choisie dans la configuration. */
+/**
+ * Écrit la valeur de la variante choisie dans la configuration. Une complication placée
+ * sur une position occupée en déloge l'autre (voir resolveLayout).
+ */
 export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: number): WatchConfig {
   const variant = row.variants[variantIndex];
   if (!variant) return config;
-  return setAtPath(config, row.path, variant.value);
+  const next = setAtPath(config, row.path, variant.value);
+  const type = /^complications\.([^.]+)$/.exec(row.path)?.[1];
+  return type ? resolveLayout(next, type) : next;
+}
+
+/**
+ * Sélection des lignes dont la valeur a changé par contrecoup (une date délogée) :
+ * la grille repart de la variante réellement portée par la montre.
+ */
+export function syncSelection(
+  catalog: Catalog,
+  before: WatchConfig,
+  after: WatchConfig,
+  selection: Readonly<Record<RowId, number>>,
+  except: RowId,
+): Record<RowId, number> {
+  const out = { ...selection };
+  for (const row of catalog.rows) {
+    if (row.id === except) continue;
+    const was = JSON.stringify(getAtPath(before, row.path));
+    if (was !== JSON.stringify(getAtPath(after, row.path)))
+      out[row.id] = variantIndexFromConfig(row, after);
+  }
+  return out;
 }

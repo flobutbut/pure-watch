@@ -5,6 +5,7 @@
  * adapter pour monter le calibre dans ce boîtier, sans prétendre à un plan d'usinage.
  */
 import { dateComplication } from '../config/date';
+import { smallSeconds } from '../config/small-seconds';
 import type { WatchConfig } from '../config/types';
 import { contourExtents } from '../geometry/dial-shape';
 import { watchDimensions } from '../geometry/dimensions';
@@ -73,6 +74,11 @@ export function movementFit(config: WatchConfig, movement: MovementSpec): Moveme
       `Couronne à ${config.crown.position.replace('h', ' h')} : mouvement pivoté, cadran percé en conséquence.`,
     );
 
+  // Les NH3x portent leur trotteuse au centre ; une petite seconde demande un autre calibre.
+  if (smallSeconds(config))
+    blocking.push(
+      `Trotteuse au centre sur le ${movement.name} : la petite seconde demande un calibre qui la porte.`,
+    );
   const window = hasDateWindow(config);
   if (window && movement.calendar === 'none')
     blocking.push('Pas de date pour le guichet du cadran.');

@@ -38,6 +38,8 @@ describe('catalogue', () => {
       'date-window',
       'date-disc',
       'date-loupe',
+      'small-seconds',
+      'small-seconds-style',
     ]);
   });
 

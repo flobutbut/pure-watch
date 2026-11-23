@@ -48,17 +48,3 @@ export function dateComplication(config: WatchConfig): DateComplication | null {
     disc: raw['disc'] === 'black' || raw['disc'] === 'dial' ? raw['disc'] : 'white',
   };
 }
-
-/** Heure (0 = 12 h) dont l'index et le chiffre cèdent la place au guichet. */
-export function dateHour(config: WatchConfig): number | null {
-  switch (dateComplication(config)?.position) {
-    case '3h':
-      return 3;
-    case '6h':
-      return 6;
-    case '12h':
-      return 0;
-    default:
-      return null; // 4 h 30 tombe entre deux index
-  }
-}

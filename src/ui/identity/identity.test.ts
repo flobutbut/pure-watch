@@ -85,6 +85,17 @@ describe('fiche d’identité', () => {
       'Guichet de date : Cerclé',
       'Disque de date : Blanc',
       'Loupe de date : Sans loupe',
+      'Petite seconde : Trotteuse au centre',
     ]);
+  });
+
+  it('montre la petite seconde avec son style par défaut', () => {
+    const config = defaultConfig();
+    config.complications = [{ type: 'small-seconds', position: '6h' }];
+    const traits = identitySections(visibleRows(catalog.rows, config), config)
+      .find((s) => s.title === 'Complications')!
+      .traits.map((t) => `${t.label} : ${t.value}`);
+    expect(traits).toContain('Petite seconde : À 6 h');
+    expect(traits).toContain('Sous-cadran : Plat');
   });
 });

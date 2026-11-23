@@ -5,7 +5,8 @@ import { movementFit } from '../movement/compatibility';
 import { MOVEMENTS } from '../movement/movements';
 import { applyVariant, variantIndexFromConfig } from '../nav/selection';
 import { visibleRows } from '../rules/visibility';
-import { dateComplication, dateHour } from './date';
+import { complicationHours } from './complications';
+import { dateComplication } from './date';
 import { defaultConfig } from './defaults';
 import { decodeConfigHash, encodeConfigHash } from './url';
 import { getAtPath, setAtPath } from './path';
@@ -71,8 +72,14 @@ describe('date', () => {
   });
 
   it('retire l’index et le chiffre de l’heure occupée', () => {
-    const at = (id: string) => dateHour(pick(defaultConfig(), 'date', id));
-    expect([at('3h'), at('4h30'), at('6h'), at('12h'), at('none')]).toEqual([3, null, 6, 0, null]);
+    const at = (id: string) => complicationHours(pick(defaultConfig(), 'date', id));
+    expect([at('3h'), at('4h30'), at('6h'), at('12h'), at('none')]).toEqual([
+      [3],
+      [],
+      [6],
+      [0],
+      [],
+    ]);
   });
 
   it('voyage dans le lien de configuration', () => {
