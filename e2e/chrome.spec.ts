@@ -6,7 +6,7 @@ const link =
     'base64url',
   );
 
-test('le partage copie le lien courant, les aides suivent la vue et le favicon porte Épure', async ({
+test('le partage ouvre une modale qui copie le lien courant, les aides suivent la vue et le favicon porte Épure', async ({
   page,
   request,
 }, testInfo) => {
@@ -34,15 +34,27 @@ test('le partage copie le lien courant, les aides suivent la vue et le favicon p
     ),
   ).toBeVisible();
   const before = page.url();
+  const dialog = page.getByRole('dialog', { name: 'Partager votre montre' });
   await share.click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('textbox', { name: 'Lien de la configuration' })).toHaveValue(
+    before,
+  );
+  await dialog.getByRole('button', { name: 'Copier le lien', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-copied-link', before);
-  await expect(page.getByRole('status')).toHaveText('Lien de la configuration copié');
+  await expect(dialog.getByRole('status')).toHaveText('Lien de la configuration copié');
   expect(page.url()).toBe(before);
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(share).toBeFocused();
   await page.getByRole('grid').press('ArrowRight');
   const changed = page.url();
   expect(changed).not.toBe(before);
   await share.click();
+  await dialog.getByRole('button', { name: 'Copier le lien', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-copied-link', changed);
+  await dialog.getByRole('button', { name: 'Fermer le partage', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
   await page.getByRole('grid').press('Enter');
   const close = page.getByRole('button', { name: 'Fermer', exact: true });
   await expect(close).toBeVisible();
@@ -59,6 +71,57 @@ test('le partage copie le lien courant, les aides suivent la vue et le favicon p
   expect(icon.ok()).toBe(true);
   expect(await icon.text()).toContain('viewBox="0 0 40 40"');
   expect(await icon.text()).not.toContain('#863bff');
+});
+
+test('la modale de partage propose les réseaux sociaux et l’e-mail avec le lien courant', async ({
+  page,
+}) => {
+  await page.goto(link);
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
+  const current = page.url();
+  const encoded = encodeURIComponent(current);
+  await page.getByRole('button', { name: 'Partager la configuration', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Partager votre montre' });
+  for (const [name, prefix] of [
+    ['WhatsApp', 'https://wa.me/'],
+    ['Facebook', 'https://www.facebook.com/sharer/'],
+    ['X', 'https://x.com/intent/tweet'],
+    ['LinkedIn', 'https://www.linkedin.com/sharing/'],
+    ['Telegram', 'https://t.me/share/url'],
+  ]) {
+    const anchor = dialog.getByRole('link', { name: `Partager sur ${name}`, exact: true });
+    await expect(anchor).toHaveAttribute('target', '_blank');
+    await expect(anchor).toHaveAttribute('rel', /noopener/);
+    const href = (await anchor.getAttribute('href'))!;
+    expect(href.startsWith(prefix)).toBe(true);
+    expect(href).toContain(encoded);
+  }
+  const mail = dialog.getByRole('link', { name: 'Partager par e-mail', exact: true });
+  const mailHref = (await mail.getAttribute('href'))!;
+  expect(mailHref.startsWith('mailto:?subject=')).toBe(true);
+  expect(mailHref).toContain(encoded);
+});
+
+test('le pied de page ouvre la modale À propos avec le contact et les mentions légales', async ({
+  page,
+}) => {
+  await page.goto(link);
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
+  const about = page.getByRole('button', { name: 'À propos', exact: true });
+  await about.click();
+  const dialog = page.getByRole('dialog', { name: 'À propos d’Épure' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('Tous droits réservés', { exact: false })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Mentions légales' })).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'f.butour@gmail.com' }).first()).toHaveAttribute(
+    'href',
+    /^mailto:f\.butour@gmail\.com/,
+  );
+  const current = page.url();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(about).toBeFocused();
+  expect(page.url()).toBe(current);
 });
 
 test('un presse-papiers refusé affiche un lien sélectionné et Échap conserve la vue 3D', async ({
@@ -102,7 +165,7 @@ test('un presse-papiers refusé affiche un lien sélectionné et Échap conserve
   expect(page.url()).toBe(current);
 });
 
-test('le partage natif utilise la configuration et une annulation ne copie rien', async ({
+test('le partage natif reste accessible depuis la modale et une annulation ne copie rien', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -126,14 +189,18 @@ test('le partage natif utilise la configuration et une annulation ne copie rien'
   await page.goto(link);
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
   const share = page.getByRole('button', { name: 'Partager la configuration', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Partager votre montre' });
+  const more = dialog.getByRole('button', { name: 'Autres applications…', exact: true });
   await share.click();
+  await more.click();
   const sent = JSON.parse((await page.locator('html').getAttribute('data-native-share'))!);
   expect(sent).toMatchObject({ url: page.url(), title: 'Épure · Ma montre' });
+  await expect(dialog).not.toBeVisible();
   await page.evaluate(() => {
     document.documentElement.dataset.cancelShare = 'yes';
   });
   await share.click();
-  await expect(share).toBeEnabled();
-  await expect(page.getByRole('dialog')).not.toBeVisible();
+  await more.click();
+  await expect(dialog).toBeVisible();
   await expect(page.locator('html')).not.toHaveAttribute('data-unwanted-copy', 'yes');
 });
