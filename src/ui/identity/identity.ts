@@ -3,6 +3,7 @@ import type { RowDef } from '../../core/catalog/types';
 import { tint } from '../../core/color/names';
 import { bezelScale } from '../../core/config/bezel';
 import { HAND_FINISHES, handColor } from '../../core/config/colors';
+import { dateComplication } from '../../core/config/date';
 import { effectiveDialColor, hasIntrinsicColor } from '../../core/config/dial';
 import { getAtPath, matchesValue } from '../../core/config/path';
 import {
@@ -34,6 +35,7 @@ const GROUP_TITLES: Record<string, string> = {
   case: 'Boîtier',
   face: 'Cadran',
   hands: 'Aiguilles',
+  complications: 'Complications',
 };
 
 /** Values the renderer substitutes: the card shows what the watch actually wears. */
@@ -43,6 +45,9 @@ const EFFECTIVE: Record<string, (config: WatchConfig) => unknown> = {
   'rehaut-scale': effectiveRehautScale,
   // A rotating bezel needs a round opening, whatever the chosen dial outline.
   'dial-shape': (config) => watchDimensions(config).dialShape,
+  // Champs absents : le guichet porte ses valeurs par défaut.
+  'date-window': (config) => dateComplication(config)?.window,
+  'date-disc': (config) => dateComplication(config)?.disc,
 };
 
 function rowValue(row: RowDef, config: WatchConfig): string {

@@ -11,7 +11,13 @@ describe('fiche d’identité', () => {
   it('donne les cotes puis les pièces de la grille, couleurs comprises', () => {
     const config = defaultConfig();
     const sections = identitySections(visibleRows(catalog.rows, config), config);
-    expect(sections.map((s) => s.title)).toEqual(['Dimensions', 'Boîtier', 'Cadran', 'Aiguilles']);
+    expect(sections.map((s) => s.title)).toEqual([
+      'Dimensions',
+      'Boîtier',
+      'Cadran',
+      'Aiguilles',
+      'Complications',
+    ]);
     expect(sections[0]!.traits[0]).toEqual({ label: 'Diamètre', value: '40 mm' });
     const all = sections.flatMap((s) => s.traits);
     expect(all.find((t) => t.label === 'Taille')).toBeUndefined();
@@ -66,5 +72,19 @@ describe('fiche d’identité', () => {
     });
     expect(seconds?.value).not.toMatch(/#/);
     expect(all.find((t) => t.label === 'Diamètre')?.value).toBe('41 mm');
+  });
+
+  it('montre la date avec ses valeurs par défaut', () => {
+    const config = defaultConfig();
+    config.complications = [{ type: 'date', position: '3h' }];
+    const traits = identitySections(visibleRows(catalog.rows, config), config).find(
+      (s) => s.title === 'Complications',
+    )!.traits;
+    expect(traits.map((t) => `${t.label} : ${t.value}`)).toEqual([
+      'Date : À 3 h',
+      'Guichet de date : Cerclé',
+      'Disque de date : Blanc',
+      'Loupe de date : Sans loupe',
+    ]);
   });
 });

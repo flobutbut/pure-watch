@@ -2,14 +2,17 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { dialRadiusAt } from '../../core/geometry/dial-shape';
+import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
 import { effectiveDialColor } from '../../core/config/dial';
+import { dateHour } from '../../core/config/date';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { dialPrintSvg, inkForDial, numeralHours } from '../../render2d/dial-print';
 import { fontFaceCss } from '../../render2d/fonts';
 import { latheZ } from '../lathe';
 import { profileGeometry, type Sample } from './profile';
+import { buildDate, dateWindowRect, roundedRect } from './date';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 
@@ -27,25 +30,38 @@ export function buildDial(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
-  options: { print: boolean; printSize: number } = { print: true, printSize: 2048 },
+  options: { print: boolean; printSize: number; day?: number } = { print: true, printSize: 2048 },
 ): DialParts {
   const R = d.dialSafeRadius;
+  const windowRect = dateWindowRect(config, d);
+  const hole = windowRect ? roundedRect(windowRect) : null;
+  // Police de style éventuelle : chargée à la demande puis embarquée dans les SVG.
+  const fontCss = fontFaceCss(config.dial.indices.numeralFont);
 
   const dial = new THREE.Group();
   dial.name = 'dial';
-  dial.add(new THREE.Mesh(dialSurface(d), lib.dial(config)));
+  dial.add(new THREE.Mesh(dialSurface(d, hole), lib.dial(config)));
 
   const print = new THREE.Group();
   print.name = 'print';
   const indices = buildIndices(config, d, lib);
+  const date = buildDate(config, d, lib, {
+    day: options.day ?? new Date().getDate(),
+    fontCss,
+  });
+  if (date) {
+    dial.add(date.recess);
+    indices.add(date.frame);
+  }
+  const owned = date?.owned ?? [];
+  const dateReady = date?.ready ?? Promise.resolve();
   if (!options.print) {
-    return { dial, print, indices, ready: Promise.resolve(), owned: [] };
+    return { dial, print, indices, ready: dateReady, owned };
   }
 
   // Impression : texture transparente posée juste au-dessus du disque, pour que la
   // matière du cadran (iridescence, soleillé) reste visible dessous.
-  // Police de style éventuelle : chargée à la demande puis embarquée dans le SVG.
-  const markup = fontFaceCss(config.dial.indices.numeralFont).then((fontCss) =>
+  const markup = fontCss.then((fontCss) =>
     dialPrintSvg({
       fontCss,
       dialRadius: R,
@@ -57,6 +73,7 @@ export function buildDial(
       line2: config.dial.text.line2,
       numerals: config.dial.indices.numerals,
       numeralFont: config.dial.indices.numeralFont,
+      omitHours: hourList(dateHour(config)),
     }),
   );
   const { texture, ready } = svgTexture(markup, options.printSize);
@@ -72,12 +89,20 @@ export function buildDial(
       polygonOffsetFactor: -1,
     }),
   );
-  const printMesh = new THREE.Mesh(dialSurface(d), printMaterial);
+  const printMesh = new THREE.Mesh(dialSurface(d, hole), printMaterial);
   printMesh.position.z = 0.01;
   print.add(printMesh);
 
-  return { dial, print, indices, ready, owned: [texture, printMaterial] };
+  return {
+    dial,
+    print,
+    indices,
+    ready: Promise.all([ready, dateReady]).then(() => {}),
+    owned: [texture, printMaterial, ...owned],
+  };
 }
+
+const hourList = (hour: number | null) => (hour === null ? [] : [hour]);
 
 /* ---------- Index appliqués (spec §5.6) ---------- */
 
@@ -217,8 +242,11 @@ function buildIndices(config: WatchConfig, d: WatchDimensions, lib: MaterialLibr
   const design = indexDesign(config.dial.indices.style, d.dialSafeRadius);
   if (!design) return group;
 
-  // Les heures qui portent un chiffre n'ont pas d'index.
-  const skip = new Set(numeralHours(config.dial.indices.numerals));
+  // Les heures qui portent un chiffre, ou le guichet de date, n'ont pas d'index.
+  const skip = new Set([
+    ...numeralHours(config.dial.indices.numerals),
+    ...hourList(dateHour(config)),
+  ]);
   const unit = design.geometry();
   const parts: THREE.BufferGeometry[] = [];
   for (let hour = 0; hour < 12; hour++) {
@@ -250,8 +278,33 @@ function buildIndices(config: WatchConfig, d: WatchDimensions, lib: MaterialLibr
   return group;
 }
 
-/** Physical XY UVs keep glyphs and grain undistorted on a non-circular face. */
-function dialSurface(d: WatchDimensions): THREE.BufferGeometry {
+/**
+ * Physical XY UVs keep glyphs and grain undistorted on a non-circular face. With a date,
+ * the face is a contour pierced by the window (the window itself keeps its proportions).
+ */
+function dialSurface(
+  d: WatchDimensions,
+  hole: THREE.Vector2[] | null = null,
+): THREE.BufferGeometry {
+  if (hole) {
+    const outline = Array.from({ length: 160 }, (_, i) => {
+      const angle = (i / 160) * Math.PI * 2;
+      const k = d.dialShape === 'round' ? 1 : d.dialScale * shapeRadius(d.dialShape, angle);
+      return new THREE.Vector2(
+        d.dialRadius * k * Math.cos(angle),
+        d.dialRadius * k * Math.sin(angle),
+      );
+    });
+    const shape = new THREE.Shape(outline);
+    shape.holes.push(new THREE.Path(hole));
+    const geometry = new THREE.ShapeGeometry(shape);
+    const p = geometry.getAttribute('position');
+    const uv = geometry.getAttribute('uv');
+    for (let i = 0; i < p.count; i++)
+      uv.setXY(i, 0.5 + p.getX(i) / (2 * d.dialExtent), 0.5 + p.getY(i) / (2 * d.dialExtent));
+    uv.needsUpdate = true;
+    return geometry;
+  }
   const geometry = new THREE.CircleGeometry(d.dialRadius, 160);
   shapeAperture(geometry, d);
   if (d.dialShape !== 'round') {

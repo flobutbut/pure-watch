@@ -14,6 +14,8 @@ export interface DialPrintOptions {
   /** Jeu de chiffres (voir numeralHours) et famille typographique. */
   numerals?: string;
   numeralFont?: string;
+  /** Heures (0 = 12 h) dont le chiffre cède la place à une complication. */
+  omitHours?: readonly number[];
   /** Règles @font-face à embarquer (polices de style, voir fonts.ts). */
   fontCss?: string;
   brand?: string;
@@ -111,12 +113,13 @@ function numeralsMarkup(
   set: string | undefined,
   fontId: string | undefined,
   radiusAt?: (angle: number) => number,
+  omit: readonly number[] = [],
 ): string {
-  const hours = numeralHours(set);
+  const hours = numeralHours(set).filter((h) => !omit.includes(h));
   if (hours.length === 0) return '';
   const font = fontDef(fontId);
   const roman = set === 'roman';
-  const few = hours.length <= 4;
+  const few = numeralHours(set).length <= 4;
   const size = R * (roman ? 0.12 : few ? 0.2 : 0.14);
   const fraction = few ? 0.74 : 0.77;
   return hours
@@ -153,7 +156,7 @@ export function dialPrintSvg(options: DialPrintOptions): string {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${f(-extent)} ${f(-extent)} ${f(2 * extent)} ${f(2 * extent)}">` +
     (options.fontCss ? `<style>${options.fontCss}</style>` : '') +
     `<g stroke="${options.ink}" fill="${options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt)}</g>` +
-    `<g fill="${options.ink}">${text.join('')}${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt)}</g>` +
+    `<g fill="${options.ink}">${text.join('')}${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours)}</g>` +
     `</svg>`
   );
 }

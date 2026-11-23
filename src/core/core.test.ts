@@ -34,6 +34,10 @@ describe('catalogue', () => {
       'hands',
       'seconds',
       'seconds-color',
+      'date',
+      'date-window',
+      'date-disc',
+      'date-loupe',
     ]);
   });
 

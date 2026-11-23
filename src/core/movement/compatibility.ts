@@ -4,6 +4,7 @@
  * Règles volontairement simples et explicables : elles signalent ce qu'il faudrait
  * adapter pour monter le calibre dans ce boîtier, sans prétendre à un plan d'usinage.
  */
+import { dateComplication } from '../config/date';
 import type { WatchConfig } from '../config/types';
 import { contourExtents } from '../geometry/dial-shape';
 import { watchDimensions } from '../geometry/dimensions';
@@ -75,6 +76,11 @@ export function movementFit(config: WatchConfig, movement: MovementSpec): Moveme
   const window = hasDateWindow(config);
   if (window && movement.calendar === 'none')
     blocking.push('Pas de date pour le guichet du cadran.');
+  const datePosition = dateComplication(config)?.position;
+  if (datePosition && movement.calendar !== 'none' && datePosition !== movement.stem)
+    adapt.push(
+      `Date à ${datePosition.replace('h30', ' h 30').replace(/h$/, ' h')} : le ${movement.name} l’affiche face à la tige de remontoir, calibre ou module à adapter.`,
+    );
   if (!window && movement.calendar !== 'none')
     adapt.push(
       movement.calendar === 'day-date'

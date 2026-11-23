@@ -11,6 +11,7 @@ import { applyVariant } from '../core/nav/selection';
 import type { LiveWatch, PartImage, PartRenderer, PartRequest } from '../render/types';
 import { Stage, type SnapshotJob } from './stage';
 import { LAYERS, type Layer } from './watch';
+import { dateWindowRect } from './parts/date';
 
 /** Parties de la configuration dont dépend chaque calque (pour la clé de cache). */
 const LAYER_DEPENDENCIES: Record<
@@ -21,12 +22,12 @@ const LAYER_DEPENDENCIES: Record<
   rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut'],
   lugs: ['case', 'crystal'],
   crown: ['crown', 'case', 'crystal'],
-  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile'],
-  print: ['dial', 'case', 'dial.shape', 'rehaut.profile'],
-  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile'],
+  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
+  print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
+  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
   seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size'],
-  crystal: ['crystal', 'case', 'dial.shape', 'dial.size'],
+  crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications'],
 };
 
 /** Ne garde que ce qui influence l'aperçu : changer d'aiguilles ne régénère pas les cadrans. */
@@ -82,6 +83,14 @@ const handsFrame = (config: WatchConfig) => ({
   y: 0,
   half: watchDimensions(config).dialExtent * 1.14,
 });
+
+/** Gros plan sur le guichet de date (cadran entier s'il n'y en a pas). */
+const dateFrame = (config: WatchConfig) => {
+  const d = watchDimensions(config);
+  const rect = dateWindowRect(config, d);
+  if (!rect) return dialFrame(config);
+  return { x: rect.x, y: rect.y, half: Math.max(rect.width, rect.height) * 1.6 };
+};
 
 /** Quelles pièces montrer, et comment cadrer, pour chaque ligne (règles R1 à R4). */
 const PREVIEWS: Record<string, PreviewSpec> = {
@@ -177,6 +186,11 @@ const PREVIEWS: Record<string, PreviewSpec> = {
   hands: { layers: ['hands', 'seconds'], frame: handsFrame },
   seconds: { layers: ['seconds'], frame: handsFrame },
   'seconds-color': { layers: ['seconds'], frame: handsFrame },
+  // Date : la position se lit sur le cadran entier, le guichet et le disque en gros plan.
+  date: { layers: ['dial', 'print', 'indices'], frame: dialFrame },
+  'date-window': { layers: ['dial', 'print', 'indices'], frame: dateFrame },
+  'date-disc': { layers: ['dial', 'print', 'indices'], frame: dateFrame },
+  'date-loupe': { layers: ['dial', 'print', 'indices', 'crystal'], frame: dateFrame },
 };
 
 export class PartRenderer3D implements PartRenderer {

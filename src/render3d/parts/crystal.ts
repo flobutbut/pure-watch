@@ -4,6 +4,8 @@ import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { latheZ, type P2 } from '../lathe';
 import type { CrystalQuality, MaterialLibrary } from '../materials';
+import { shapeRadius } from '../../core/geometry/case-shape';
+import { buildCyclops } from './date';
 import { caseLevels, shapeAperture } from './levels';
 
 export function buildCrystal(
@@ -63,6 +65,21 @@ export function buildCrystal(
   const group = new THREE.Group();
   group.name = 'crystal';
   group.add(mesh);
+
+  // Dessus du verre au-dessus d'un point du cadran (contour déformé compris).
+  const surfaceZ = (x: number, y: number) => {
+    const k =
+      d.dialShape === 'round' ? 1 : d.dialScale * shapeRadius(d.dialShape, Math.atan2(y, x));
+    const r = Math.min(Rc, Math.hypot(x, y) / k);
+    const dome = zEdge + h - (sphere - Math.sqrt(sphere * sphere - r * r));
+    if (!refined) return dome;
+    if (config.crystal.type === 'sapphire-flat' || config.crystal.type === 'mineral')
+      return d.z.crystalTop;
+    if (config.crystal.type === 'sapphire-box') return d.z.crystalTop - 0.35 * (r / Rc) ** 6;
+    return dome;
+  };
+  const cyclops = buildCyclops(config, d, lib.crystal(config, quality), surfaceZ);
+  if (cyclops) group.add(cyclops);
 
   // Joint sombre entre le verre et la lunette : souligne le sertissage.
   const gasket = new THREE.Mesh(
