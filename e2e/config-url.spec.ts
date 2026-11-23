@@ -20,17 +20,21 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-lollipop');
   await page.keyboard.press('ArrowRight');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-arrow');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('ArrowRight');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-color-match');
+  await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
+  await page.getByRole('button', { name: 'Assortie aux aiguilles' }).click();
+  await page.getByRole('button', { name: 'Appliquer', exact: true }).click();
   const shared = page.url();
   await page.reload();
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-leaf');
   await grid.focus();
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-arrow');
-  await page.keyboard.press('ArrowDown');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-color-match');
+  await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Assortie aux aiguilles' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click();
   expect(page.url()).toBe(shared);
   const other = await context.newPage();
   await other.goto(shared);
@@ -47,8 +51,14 @@ test('naviguer entre les lignes ne réécrit pas les valeurs personnalisées du 
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
   const original = page.url();
   await grid.focus();
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowUp');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-color-black');
+  for (let i = 0; i < 12; i++) {
+    if ((await grid.getAttribute('aria-activedescendant'))?.startsWith('cell-dial-finish-')) break;
+    await page.keyboard.press('ArrowUp');
+  }
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-finish-matte');
+  await expect(
+    page.getByRole('button', { name: 'Couleur du cadran', exact: true }),
+  ).toHaveAttribute('title', '#123abc');
   expect(page.url()).toBe(original);
   await expect(page.getByRole('status')).toHaveCount(0);
 });
@@ -97,7 +107,11 @@ test('un choix masqué reste mémorisé lorsque la ligne réapparaît', async ({
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-baton');
   await grid.focus();
   for (let i = 0; i < 3; i++) await page.keyboard.press('PageUp');
-  await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < 6; i++) {
+    if ((await grid.getAttribute('aria-activedescendant'))?.startsWith('cell-case-material-'))
+      break;
+    await page.keyboard.press('ArrowDown');
+  }
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-case-material-ceramic');
   await page.keyboard.press('Home');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-case-material-steel');

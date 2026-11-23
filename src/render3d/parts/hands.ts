@@ -14,13 +14,14 @@ import type { HandAngles } from '../../core/clock/angles';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import type { MaterialLibrary } from '../materials';
-import { beveledProfile, piercedBreguet } from './hand-detail';
+import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
 
 interface HandDesign {
   samples: Sample[];
   ridge: number;
   extras?: THREE.BufferGeometry[];
+  cutouts?: Sample[][];
 }
 
 /* ---------- Jeux d'aiguilles ---------- */
@@ -105,6 +106,100 @@ const DESIGNS: Record<string, DesignFn> = {
       ],
     };
   },
+  spear: (len, k, s) => ({
+    samples: [
+      [-2 * k, 0.24 * k * s],
+      [0, 0.32 * k * s],
+      [0.48 * len, 0.28 * k * s],
+      [0.55 * len, 1.15 * k * s],
+      [0.64 * len, 1.0 * k * s],
+      [len, 0],
+    ],
+    ridge: 0.12 * k,
+  }),
+  pencil: (len, k, s) => ({
+    samples: [
+      [-2.1 * k, 0.55 * k * s],
+      [0.82 * len, 0.55 * k * s],
+      [len, 0],
+    ],
+    ridge: 0.06 * k,
+  }),
+  spade: (len, k, s) => {
+    const samples: Sample[] = [
+      [-2 * k, 0.22 * k * s],
+      [0, 0.3 * k * s],
+      [0.5 * len, 0.24 * k * s],
+    ];
+    for (let i = 0; i <= 18; i++) {
+      const t = i / 18;
+      samples.push([
+        (0.52 + t * 0.48) * len,
+        (0.24 * (1 - t) + 1.15 * Math.sin(Math.PI * t) ** 0.8) * k * s,
+      ]);
+    }
+    return { samples, ridge: 0.1 * k };
+  },
+  'art-deco': (len, k, s) => ({
+    samples: [
+      [-2 * k, 0.28 * k * s],
+      [0.08 * len, 0.28 * k * s],
+      [0.12 * len, 0.95 * k * s],
+      [0.28 * len, 0.95 * k * s],
+      [0.32 * len, 0.65 * k * s],
+      [0.54 * len, 0.65 * k * s],
+      [0.58 * len, 0.38 * k * s],
+      [0.88 * len, 0.38 * k * s],
+      [len, 0],
+    ],
+    ridge: 0.08 * k,
+  }),
+  skeleton: (len, k, s) => ({
+    samples: [
+      [-2 * k, 0.28 * k * s],
+      [0, 0.48 * k * s],
+      [0.18 * len, 0.95 * k * s],
+      [0.82 * len, 0.6 * k * s],
+      [len, 0],
+    ],
+    ridge: 0,
+    cutouts: [
+      [
+        [0.23 * len, 0.48 * k * s],
+        [0.73 * len, 0.3 * k * s],
+        [0.86 * len, 0],
+      ],
+    ],
+  }),
+  cathedral: (len, k, s) => ({
+    samples: [
+      [-2 * k, 0.35 * k * s],
+      [0, 0.55 * k * s],
+      [0.17 * len, 0.95 * k * s],
+      [0.4 * len, 0.95 * k * s],
+      [0.44 * len, 0.62 * k * s],
+      [0.68 * len, 0.62 * k * s],
+      [0.73 * len, 1.15 * k * s],
+      [0.79 * len, 1.05 * k * s],
+      [len, 0],
+    ],
+    ridge: 0,
+    cutouts: [
+      [
+        [0.21 * len, 0.46 * k * s],
+        [0.35 * len, 0.46 * k * s],
+      ],
+      [
+        [0.49 * len, 0.27 * k * s],
+        [0.64 * len, 0.27 * k * s],
+      ],
+      [
+        [0.735 * len, 0.45 * k * s],
+        [0.79 * len, 0.45 * k * s],
+        [0.89 * len, 0],
+      ],
+    ],
+  }),
 };
 
 function buildHand(
@@ -113,7 +208,9 @@ function buildHand(
   bossRadius: number,
 ): THREE.BufferGeometry {
   const parts = [
-    profileGeometry(design.samples, thickness, design.ridge),
+    design.cutouts
+      ? piercedProfile(design.samples, design.cutouts, thickness)
+      : profileGeometry(design.samples, thickness, design.ridge),
     ...(design.extras ?? []),
   ];
   parts.push(boss(bossRadius, thickness + 0.06));
@@ -201,6 +298,70 @@ const SECONDS: Record<string, SecondFn> = {
     ),
     extruded(disc(0, -tail * 0.62, 0.6 * k), t),
   ],
+  baton: (len, tail, k, t) => [beveledBaton(len, tail * 0.75, 0.17 * k, t)],
+  diamond: (len, tail, k, t) => [
+    beveledProfile(
+      [
+        [-tail * 0.65, 0.12 * k],
+        [0.65 * len, 0.12 * k],
+        [0.74 * len, 0.92 * k],
+        [0.83 * len, 0.12 * k],
+        [len, 0.055 * k],
+      ],
+      t,
+      0,
+    ),
+  ],
+  teardrop: (len, tail, k, t) => [
+    beveledProfile(
+      [
+        [-tail, 0],
+        [-tail * 0.88, 0.58 * k],
+        [-tail * 0.7, 0.8 * k],
+        [-tail * 0.5, 0.62 * k],
+        [-tail * 0.25, 0.12 * k],
+        [0, 0.12 * k],
+        [len, 0.055 * k],
+      ],
+      t,
+      0,
+      true,
+    ),
+  ],
+  'ring-tail': (len, tail, k, t) => {
+    const y = -tail * 0.7,
+      r = 0.95 * k,
+      w = 0.14 * k;
+    const joinY = y + Math.sqrt(r * r - w * w);
+    const shape = new THREE.Shape();
+    shape.moveTo(-w, joinY);
+    shape.lineTo(-0.055 * k, len);
+    shape.lineTo(0.055 * k, len);
+    shape.lineTo(w, joinY);
+    shape.absarc(0, y, r, Math.atan2(joinY - y, w), Math.atan2(joinY - y, -w), true);
+    shape.closePath();
+    const hole = new THREE.Path();
+    hole.absarc(0, y, 0.56 * k, 0, Math.PI * 2, false);
+    shape.holes.push(hole);
+    return [extruded(shape, t)];
+  },
+  lightning: (len, tail, k, t) => {
+    const points = [
+      [0, -tail * 0.65],
+      [0, 0],
+      [-0.7 * k, len * 0.28],
+      [0.7 * k, len * 0.43],
+      [-0.7 * k, len * 0.58],
+      [0.65 * k, len * 0.73],
+      [0, len],
+    ] as const;
+    const shape = new THREE.Shape();
+    shape.moveTo(points[0][0] - 0.11 * k, points[0][1]);
+    for (const [x, y] of points.slice(1)) shape.lineTo(x - 0.11 * k, y);
+    for (const [x, y] of [...points].reverse()) shape.lineTo(x + 0.11 * k, y);
+    shape.closePath();
+    return [extruded(shape, t)];
+  },
 };
 
 /* ---------- Montage ---------- */
@@ -226,11 +387,13 @@ export function buildHands(
 ): HandsParts {
   const k = d.dialSafeRadius / 20;
   const design = DESIGNS[config.hands.set] ?? DESIGNS['sword']!;
-  const steel = lib.polishedSteel();
+  const steel = lib.handMaterial(config, 'plain');
   const thick = refined ? 0.16 : 0.22;
 
   const machined = detailed || (instrument && config.hands.set === 'baton');
-  const materials = machined ? [lib.handSteel('face'), lib.handSteel('edge')] : steel;
+  const materials = machined
+    ? [lib.handMaterial(config, 'face'), lib.handMaterial(config, 'edge')]
+    : steel;
   const blade = (length: number, slimness: number, radius: number) =>
     detailed
       ? buildDetailedHand(config.hands.set, design, length, k, slimness, thick, radius)
@@ -338,7 +501,9 @@ function buildDetailedHand(
   else if (set === 'breguet') blade = piercedBreguet(length, k, slimness, thickness);
   else {
     const shape = design(length, k, slimness, thickness);
-    blade = beveledProfile(shape.samples, thickness, shape.ridge, set === 'leaf');
+    blade = shape.cutouts
+      ? piercedProfile(shape.samples, shape.cutouts, thickness)
+      : beveledProfile(shape.samples, thickness, shape.ridge, set === 'leaf' || set === 'spade');
   }
   const hub = boss(radius, thickness + 0.06);
   const merged = mergeGeometries([blade, hub]);

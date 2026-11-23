@@ -117,6 +117,8 @@ export class Stage {
   private readonly resizeObserver: ResizeObserver;
   private readonly queue: QueuedJob[] = [];
   private live: WatchModel | null = null;
+  /** Transient palettes must not accumulate every dragged colour in the shared cache. */
+  private liveMaterials: MaterialLibrary | null = null;
   private liveVersion = 0;
   private liveSteps = 0;
   private pilotFixedTime = false;
@@ -191,18 +193,31 @@ export class Stage {
   }
 
   /** Remplace la montre centrale ; l'ancienne reste affichée jusqu'à ce que la nouvelle soit prête. */
-  async setConfig(config: WatchConfig): Promise<void> {
+  async setConfig(config: WatchConfig, transient = false): Promise<void> {
     const version = ++this.liveVersion;
-    const model = buildWatch(config, this.materials, {
+    const materials = transient
+      ? new MaterialLibrary(this.refinement === 'refined')
+      : this.materials;
+    const model = buildWatch(config, materials, {
       quality: this.quality,
       refinement: this.refinement,
+      printSize: transient ? 1024 : undefined,
     });
-    await model.ready;
+    try {
+      await model.ready;
+    } catch (error) {
+      model.dispose();
+      if (transient) materials.dispose();
+      throw error;
+    }
     if (version !== this.liveVersion) {
       model.dispose();
+      if (transient) materials.dispose();
       return;
     }
     this.live?.dispose();
+    this.liveMaterials?.dispose();
+    this.liveMaterials = transient ? materials : null;
     this.live = model;
     this.liveSteps = movementStepsPerSecond(config.movement);
     this.pilotFixedTime =
@@ -512,6 +527,7 @@ export class Stage {
   }
 
   dispose(): void {
+    ++this.liveVersion;
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver.disconnect();
     for (const entry of this.queue) {
@@ -520,6 +536,7 @@ export class Stage {
     }
     this.queue.length = 0;
     this.live?.dispose();
+    this.liveMaterials?.dispose();
     this.controls.dispose();
     this.shadow.geometry.dispose();
     this.backdrop.geometry.dispose();

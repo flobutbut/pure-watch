@@ -7,12 +7,13 @@
   interface Props {
     renderer: PartRenderer | null;
     config: WatchConfig;
+    transient?: boolean;
     mode: 'grid' | 'inspect';
     /** Poignée exposée au parent (vues prédéfinies, rotation, pause). */
     handle?: LiveWatch | null;
   }
 
-  let { renderer, config, mode, handle = $bindable(null) }: Props = $props();
+  let { renderer, config, transient = false, mode, handle = $bindable(null) }: Props = $props();
   let container: HTMLDivElement;
   let live = $state.raw<LiveWatch | null>(null);
   $effect(() => {
@@ -39,7 +40,8 @@
 
   $effect(() => {
     const next = config;
-    untrack(() => live?.update(next));
+    const preview = transient;
+    untrack(() => live?.update(next, preview));
   });
 
   $effect(() => {

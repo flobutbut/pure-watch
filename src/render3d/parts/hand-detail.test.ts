@@ -13,7 +13,7 @@ function dispose(root: THREE.Object3D) {
   });
 }
 
-describe('hand finishing across all six designs', () => {
+describe('hand finishing across all designs', () => {
   it.each(HAND_SETS)(
     '%s: preserves reach, separation and finite material groups at all catalog sizes',
     (set) => {

@@ -5,6 +5,7 @@
   import { visibleRows } from './core/rules/visibility';
   import { configUrl, encodeConfigHash, readConfigUrl } from './core/config/url';
   import type { WatchConfig } from './core/config/types';
+  import { withColorChoice, type ColorChoice, type ColorTarget } from './core/config/colors';
   import { applyVariant, selectionFromConfig, toRowViews } from './core/nav/selection';
   import {
     createNavState,
@@ -17,6 +18,7 @@
   import type { PartRenderer } from './render/types';
   import Grid from './ui/grid/Grid.svelte';
   import Ambience from './ui/Ambience.svelte';
+  import ColorPanel from './ui/colors/ColorPanel.svelte';
   import { ambienceFor } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
 
@@ -27,6 +29,8 @@
   let linkNotice = $state(initialLink.notice);
   let lastConfigUrl = location.href;
   let config = $state.raw(initialConfig);
+  let colorTarget = $state<ColorTarget | null>(null);
+  let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
   const rows = $derived(visibleRows(catalog.rows, config));
   const rowViews = $derived(toRowViews(rows));
@@ -43,7 +47,31 @@
   let bump = $state.raw<{ dir: Bump; n: number }>({ dir: null, n: 0 });
   let announcement = $state('');
   let renderer = $state.raw<PartRenderer | null>(null);
-  const ambience = $derived(ambienceFor(config.dial));
+  const ambience = $derived(ambienceFor((previewConfig ?? config).dial));
+  const colorPresets = $derived(
+    (
+      catalog.rows.find(
+        (row) => row.id === (colorTarget === 'seconds' ? 'seconds-color' : 'dial-color'),
+      )?.variants ?? []
+    )
+      .filter((variant) => typeof variant.value === 'string' && variant.value.startsWith('#'))
+      .map((variant) => ({ name: variant.i18n.name, color: variant.value as string })),
+  );
+
+  function cancelColor() {
+    colorTarget = null;
+    previewConfig = null;
+  }
+  function previewColor(choice: ColorChoice) {
+    if (colorTarget) previewConfig = withColorChoice(config, colorTarget, choice);
+  }
+  function applyColor(choice: ColorChoice) {
+    if (!colorTarget) return;
+    config = withColorChoice(config, colorTarget, choice);
+    linkNotice = '';
+    announcement = 'Couleur appliquée';
+    cancelColor();
+  }
 
   // Couleur de fond du document (barre d'adresse mobile, débordements) et thème clair/sombre.
   $effect(() => {
@@ -64,6 +92,7 @@
 
   function followConfigUrl() {
     if (location.href === lastConfigUrl) return;
+    cancelColor();
     lastConfigUrl = location.href;
     const loaded = readConfigUrl(new URL(location.href), catalog);
     linkNotice = loaded.notice;
@@ -113,6 +142,7 @@
   });
 
   function run(command: NavCommand) {
+    if (colorTarget) return;
     const result = step(nav, rowViews, command);
     if (result.bump) bump = { dir: result.bump, n: bump.n + 1 };
     if (!result.changed) return;
@@ -141,6 +171,7 @@
   let modeTimer: ReturnType<typeof setTimeout> | undefined;
 
   function open() {
+    if (colorTarget) return;
     if (nav.mode !== 'grid') return;
     nav = transition(nav, 'open');
     announcement = 'Vue 3D : faites glisser pour tourner la montre, Échap pour revenir';
@@ -156,11 +187,42 @@
   }
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Escape' && close()} />
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key === 'Escape') {
+      if (colorTarget) cancelColor();
+      else close();
+    }
+  }}
+/>
 
 <main style:--ink={ambience.ink} style:--veil={ambience.veil}>
   <Ambience {ambience} />
-  <Grid {rows} {nav} {config} {renderer} {bump} oncommand={run} onopen={open} onclose={close} />
+  <Grid
+    {rows}
+    {nav}
+    {config}
+    {previewConfig}
+    {colorTarget}
+    {renderer}
+    {bump}
+    oncommand={run}
+    onopen={open}
+    onclose={close}
+    oncolor={(target) => {
+      colorTarget = target;
+    }}
+  />
+  {#if colorTarget}
+    <ColorPanel
+      target={colorTarget}
+      {config}
+      presets={colorPresets}
+      onpreview={previewColor}
+      onapply={applyColor}
+      oncancel={cancelColor}
+    />
+  {/if}
   <p class="sr-only" aria-live="polite">{announcement}</p>
   {#if linkNotice}<p class="link-notice" role="status">{linkNotice}</p>{/if}
 </main>

@@ -14,6 +14,7 @@ import frozenDefaults from './url-v1-defaults.json';
 const V1_DEFAULTS = {
   ...frozenDefaults,
   dial: { ...frozenDefaults.dial, shape: 'round' },
+  hands: { ...frozenDefaults.hands, color: '#E8EBF0' },
 } as WatchConfig;
 const MAX_HASH_LENGTH = 16_384;
 const id = z
@@ -190,7 +191,20 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   F: field('dial.text.brand', text),
   G: field('dial.text.line2', text),
   H: field('dial.text.position', id, POSITIONS),
-  I: field('hands.set', id, { baton: 1, dauphine: 2, sword: 3, leaf: 4, breguet: 5, syringe: 6 }),
+  I: field('hands.set', id, {
+    baton: 1,
+    dauphine: 2,
+    sword: 3,
+    leaf: 4,
+    breguet: 5,
+    syringe: 6,
+    spear: 7,
+    pencil: 8,
+    spade: 9,
+    'art-deco': 10,
+    skeleton: 11,
+    cathedral: 12,
+  }),
   J: field('hands.finish'),
   K: field('hands.lume', text.nullable()),
   L: field('hands.second.style', id, {
@@ -199,6 +213,11 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     lollipop: 3,
     arrow: 4,
     triangle: 5,
+    baton: 6,
+    diamond: 7,
+    teardrop: 8,
+    'ring-tail': 9,
+    lightning: 10,
   }),
   M: field('hands.second.color', z.union([hex, z.literal('match')])),
   N: bit('hands.second.counterweight'),
@@ -225,6 +244,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     square: 5,
     rectangle: 6,
   }),
+  ab: field('hands.color', hex),
 };
 
 function base64url(text: string): string {

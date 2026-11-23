@@ -8,7 +8,7 @@ import { blackTonneauPilot, cushionPilot } from '../core/config/pilot';
 import { handAngles, POSTER_TIME } from '../core/clock/angles';
 import { studioEnvironment } from '../render3d/environment';
 import { MaterialLibrary, type CrystalQuality } from '../render3d/materials';
-import { HAND_SETS } from '../render3d/parts/hands';
+import { HAND_SETS, SECOND_STYLES } from '../render3d/parts/hands';
 import { buildWatch, type WatchModel } from '../render3d/watch';
 import type { Refinement } from '../render3d/refinement';
 
@@ -25,6 +25,9 @@ if (requestedDial && DIAL_SHAPES.some((s) => s === requestedDial))
   config.dial.shape = requestedDial;
 const requestedHands = query.get('hands');
 if (requestedHands && HAND_SETS.includes(requestedHands)) config.hands.set = requestedHands;
+const requestedSeconds = query.get('seconds');
+if (requestedSeconds && SECOND_STYLES.includes(requestedSeconds))
+  config.hands.second.style = requestedSeconds;
 if (black) {
   document.title = 'Épure · contrôle du tonneau noir';
   document.querySelector('h1')!.textContent = 'Tonneau noir · aiguilles et finitions céramiques';
@@ -59,6 +62,12 @@ if (handScope) {
     leaf: 'Feuille',
     syringe: 'Seringue',
     breguet: 'Breguet',
+    spear: 'Lance',
+    pencil: 'Crayon',
+    spade: 'Pique',
+    'art-deco': 'Art déco',
+    skeleton: 'Ajourées',
+    cathedral: 'Cathédrale',
   };
   for (const id of HAND_SETS) select.add(new Option(names[id] ?? id, id));
   select.value = config.hands.set;

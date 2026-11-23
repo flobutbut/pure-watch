@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { RowDef } from '../../core/catalog/types';
   import type { WatchConfig } from '../../core/config/types';
+  import { targetColor, type ColorTarget } from '../../core/config/colors';
+  import { hasIntrinsicColor } from '../../core/config/dial';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
   import type { LiveWatch as LiveHandle, PartRenderer } from '../../render/types';
   import LiveWatch from '../view3d/LiveWatch.svelte';
@@ -13,15 +15,30 @@
     rows: readonly RowDef[];
     nav: NavState;
     config: WatchConfig;
+    previewConfig: WatchConfig | null;
+    colorTarget: ColorTarget | null;
     renderer: PartRenderer | null;
     /** Dernier rebond de bord, avec un compteur pour rejouer le même. */
     bump: { dir: Bump; n: number };
     oncommand: (command: NavCommand) => void;
     onopen: () => void;
     onclose: () => void;
+    oncolor: (target: ColorTarget) => void;
   }
 
-  let { rows, nav, config, renderer, bump, oncommand, onopen, onclose }: Props = $props();
+  let {
+    rows,
+    nav,
+    config,
+    previewConfig,
+    colorTarget,
+    renderer,
+    bump,
+    oncommand,
+    onopen,
+    onclose,
+    oncolor,
+  }: Props = $props();
 
   let width = $state(0);
   let height = $state(0);
@@ -97,7 +114,8 @@
   }
 
   function onpointerdown(event: PointerEvent) {
-    if (open || event.button > 0) return;
+    if (open || colorTarget || event.button > 0 || (event.target as HTMLElement).closest('button'))
+      return;
     const touch = event.pointerType !== 'mouse';
     // Zone de 20 px à gauche : réservée au geste « retour » du système (iOS).
     if (touch && event.clientX < 20) return;
@@ -172,7 +190,7 @@
   $effect(() => {
     // Écouteur non passif : on empêche le défilement de la page.
     const onwheel = (event: WheelEvent) => {
-      if (open) return;
+      if (open || colorTarget) return;
       event.preventDefault();
       const { dx, dy } = wheelPixels(event);
       const step = stepper.push(dx, dy, event.timeStamp);
@@ -223,6 +241,10 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
+    const target = event.target as HTMLElement;
+    if (colorTarget || target.closest('input, textarea, select')) return;
+    // Buttons retain their native activation; arrows still navigate after closing a colour panel.
+    if (target.closest('button') && (event.key === 'Enter' || event.key === ' ')) return;
     if (open) {
       if (inspectKey(event)) event.preventDefault();
       return;
@@ -264,6 +286,17 @@
 
   const openSize = $derived(Math.min(width, height) * 0.82);
   const liveScale = $derived(open ? 1 : metrics.watch / Math.max(1, openSize));
+  const colorWatchSize = $derived(
+    width >= 760
+      ? Math.min(width - 400, height * 0.76, 520)
+      : Math.min(width * 0.62, height * 0.28),
+  );
+  const watchScale = $derived(colorTarget ? colorWatchSize / Math.max(1, openSize) : liveScale);
+  const watchX = $derived(colorTarget && width >= 760 ? -175 : 0);
+  const watchY = $derived(colorTarget && width < 760 ? -height * 0.3 : dragY + bumpY);
+
+  const colorForRow = (id: string): ColorTarget | null =>
+    id === 'dial-finish' ? 'dial' : id === 'hands' ? 'hands' : id === 'seconds' ? 'seconds' : null;
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -274,6 +307,7 @@
   class="grid"
   class:dragging={drag?.axis}
   class:open
+  class:color-editing={colorTarget !== null}
   bind:this={grid}
   bind:clientWidth={width}
   bind:clientHeight={height}
@@ -289,7 +323,7 @@
   {onpointerup}
   onpointercancel={onpointerup}
 >
-  <div class="cells" inert={open}>
+  <div class="cells" inert={open || colorTarget !== null}>
     {#each visibleRows as { row, rowIndex, cells } (row.id)}
       <div class="row" role="row" aria-label={row.i18n.name}>
         {#each cells as slot (row.variants[slot.variantIndex]!.id)}
@@ -353,17 +387,48 @@
     <div class="label-veil" aria-hidden="true"></div>
     {#each visibleRows as { row, rowIndex } (row.id)}
       {@const dRow = rowIndex - nav.activeRow}
+      {@const target = colorForRow(row.id)}
       <div
         class="label"
         class:active={dRow === 0}
-        aria-hidden="true"
         data-row={rowIndex}
         data-variant={selected(rowIndex)}
         style:transform="translateY({dRow * metrics.pitch + dragY + bumpY}px)"
         style:opacity={dRow === 0 ? 1 : hierarchy(0, dRow).opacity * 0.75}
       >
-        <span class="label-name">{row.i18n.name}</span>
-        <span class="label-variant">{row.variants[selected(rowIndex)]?.i18n.name}</span>
+        <span class="label-name" aria-hidden="true">{row.i18n.name}</span>
+        <span class="label-variant" aria-hidden="true">
+          {row.variants[selected(rowIndex)]?.i18n.name}
+        </span>
+        {#if target}
+          {#if target === 'dial' && hasIntrinsicColor(config.dial.finish)}
+            <span class="natural" title="Cette finition possède sa propre coloration.">
+              Teinte naturelle
+            </span>
+          {:else}
+            <button
+              class="color-button"
+              type="button"
+              tabindex={dRow === 0 ? 0 : -1}
+              aria-label={target === 'dial'
+                ? 'Couleur du cadran'
+                : target === 'hands'
+                  ? 'Matière et couleur des aiguilles'
+                  : 'Couleur de la trotteuse'}
+              title={targetColor(config, target)}
+              onclick={() => oncolor(target)}
+            >
+              <span class="color-dot" style:background={targetColor(config, target)}></span>
+              <span>
+                Couleur <span class="color-value">
+                  · {target === 'seconds' && config.hands.second.color === 'match'
+                    ? 'Assortie'
+                    : targetColor(config, target).toUpperCase()}
+                </span>
+              </span>
+            </button>
+          {/if}
+        {/if}
       </div>
     {/each}
   </div>
@@ -405,11 +470,17 @@
     class="live-slot"
     style:width="{openSize}px"
     style:height="{openSize}px"
-    style:transform="translate(-50%, -50%) translate(0px, {dragY + bumpY}px) scale({liveScale})"
+    style:transform="translate(-50%, -50%) translate({watchX}px, {watchY}px) scale({watchScale})"
   >
     <!-- Double clic : réinitialise la vue (spec §3.3). -->
     <div class="live-hit" role="presentation" ondblclick={() => live?.view(4)}>
-      <LiveWatch {renderer} {config} mode={open ? 'inspect' : 'grid'} bind:handle={live} />
+      <LiveWatch
+        {renderer}
+        config={previewConfig ?? config}
+        transient={previewConfig !== null}
+        mode={open ? 'inspect' : 'grid'}
+        bind:handle={live}
+      />
     </div>
   </div>
 </div>
@@ -440,6 +511,53 @@
 
   .grid.open .cells {
     transform: scale(0.96);
+  }
+
+  .grid.color-editing .cells {
+    opacity: 0.12;
+    pointer-events: none;
+  }
+  .color-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--veil) 80%, transparent);
+    color: var(--ink);
+    padding: 5px 8px;
+    min-height: 32px;
+    max-width: 100%;
+    margin-top: 5px;
+    font: inherit;
+    font-size: 10px;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+  .color-button:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
+  .color-button > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .color-dot {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px #8885;
+  }
+  .color-value {
+    opacity: 0.65;
+  }
+  .natural {
+    font-size: 10px;
+    opacity: 0.65;
+    margin-top: 8px;
   }
 
   .focus-veil {
