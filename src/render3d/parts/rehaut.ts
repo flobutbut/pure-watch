@@ -62,8 +62,6 @@ export function decorateRehaut(
     new THREE.MeshStandardMaterial({
       map: texture,
       alphaTest: 0.35,
-      // MSAA alpha-to-coverage punctures these small, dark glyphs on light rings.
-      // Alpha testing keeps them opaque in the crystal's transmission pass.
       roughness: 0.7,
       metalness: 0,
       polygonOffset: true,

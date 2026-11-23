@@ -349,20 +349,13 @@ function contourGradient(source: THREE.CanvasTexture, shape: string): THREE.Canv
   return texture;
 }
 
-/**
- * Biais de niveau de mipmap des impressions (cadran, réhaut). Vue de face, la texture
- * d'impression est réduite d'un facteur 2 à 10 selon la taille de la montre à l'écran :
- * en filtrage trilinéaire, le GPU mélange alors une mipmap assez fine avec la suivante,
- * deux fois plus petite que l'écran, et les chiffres et graduations s'empâtent. Un biais
- * négatif décale le choix vers la mipmap la plus fine qui reste au moins aussi détaillée
- * que l'écran. Un demi-niveau suffit : au-delà, les traits fins scintilleraient quand la
- * montre bouge, pour un gain de netteté négligeable.
- */
-export const PRINT_LOD_BIAS = -0.5;
+/** Neutral filtering avoids accentuating tiny printed strokes at grid size. */
+export const PRINT_LOD_BIAS = 0;
 
-/** Applique PRINT_LOD_BIAS à la carte de couleur (et donc à l'alpha) d'un matériau. */
+/** Smooth only the ink's fringe; dense strokes must keep full sample coverage. */
 export function sharpPrint<T extends THREE.Material>(material: T): T {
   const bias = PRINT_LOD_BIAS.toFixed(2);
+  material.alphaToCoverage = true;
   material.onBeforeCompile = (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
@@ -371,7 +364,21 @@ export function sharpPrint<T extends THREE.Material>(material: T): T {
         `texture2D( map, vMapUv, ${bias} )`,
       ),
     );
+    // Three's unbounded fwidth ramp can make even alpha=1 partially transparent.
+    // A symmetric, bounded fringe reaches full coverage by alpha=0.5 at the latest.
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <alphatest_fragment>',
+      `#ifdef USE_ALPHATEST
+        #ifdef ALPHA_TO_COVERAGE
+          float inkFringe = clamp(0.5 * fwidth(diffuseColor.a), 0.04, 0.15);
+          diffuseColor.a = smoothstep(alphaTest - inkFringe, alphaTest + inkFringe, diffuseColor.a);
+          if (diffuseColor.a == 0.0) discard;
+        #else
+          if (diffuseColor.a < alphaTest) discard;
+        #endif
+      #endif`,
+    );
   };
-  material.customProgramCacheKey = () => `sharp-print:${bias}`;
+  material.customProgramCacheKey = () => `printed-ink:bounded-fringe:${bias}`;
   return material;
 }

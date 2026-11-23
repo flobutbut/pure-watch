@@ -66,9 +66,6 @@ export function buildDial(
     new THREE.MeshStandardMaterial({
       map: texture,
       alphaTest: 0.35,
-      // Coverage smoothing perforates fine dark ink on cream and white dials.
-      // Keep the strokes opaque, including in the crystal transmission pass.
-      alphaToCoverage: false,
       roughness: 0.55,
       metalness: 0,
       polygonOffset: true,
