@@ -1,0 +1,54 @@
+{
+  "browser": "149.0.7827.55",
+  "metrics": {
+    "guilloche": {
+      "triangles": 37992,
+      "meshes": 22,
+      "calls": 32,
+      "renderedTriangles": 37992,
+      "geometries": 22,
+      "textures": 6
+    },
+    "clous-de-paris": {
+      "triangles": 37992,
+      "meshes": 22,
+      "calls": 32,
+      "renderedTriangles": 37992,
+      "geometries": 22,
+      "textures": 6
+    },
+    "linen": {
+      "triangles": 37992,
+      "meshes": 22,
+      "calls": 32,
+      "renderedTriangles": 37992,
+      "geometries": 22,
+      "textures": 6
+    },
+    "concentric": {
+      "triangles": 37992,
+      "meshes": 22,
+      "calls": 32,
+      "renderedTriangles": 37992,
+      "geometries": 22,
+      "textures": 6
+    },
+    "vertical-brushed": {
+      "triangles": 37992,
+      "meshes": 22,
+      "calls": 32,
+      "renderedTriangles": 37992,
+      "geometries": 22,
+      "textures": 6
+    },
+    "hammered": {
+      "triangles": 37992,
+      "meshes": 22,
+      "calls": 32,
+      "renderedTriangles": 37992,
+      "geometries": 22,
+      "textures": 6
+    }
+  },
+  "errors": []
+}

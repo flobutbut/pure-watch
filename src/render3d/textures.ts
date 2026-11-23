@@ -2,6 +2,23 @@
 import * as THREE from 'three';
 import { shapeRadius } from '../core/geometry/case-shape';
 import { contourExtents } from '../core/geometry/dial-shape';
+import { dialPatternData, type DialPatternFinish } from './dial-patterns';
+
+/** Shared, colourless relief maps. UVs already describe a physical XY square. */
+export function dialPatternTextures(finish: DialPatternFinish, spanMm: number, size = 512) {
+  const pixels = dialPatternData(finish, spanMm, size);
+  const texture = (data: Uint8Array) => {
+    const map = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+    map.flipY = true;
+    map.generateMipmaps = true;
+    map.minFilter = THREE.LinearMipmapLinearFilter;
+    map.magFilter = THREE.LinearFilter;
+    map.anisotropy = 8;
+    map.needsUpdate = true;
+    return map;
+  };
+  return { normal: texture(pixels.normal), roughness: texture(pixels.roughness) };
+}
 
 function canvas2d(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const canvas = document.createElement('canvas');

@@ -148,7 +148,8 @@ test('la teinte naturelle remplace le réglage sans perdre la couleur personnell
   await page.goto(`/#v1.${Buffer.from(JSON.stringify({ x: '#124578' })).toString('base64url')}`);
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
   await dialRow(page);
-  await page.keyboard.press('End');
+  await page.keyboard.press('Home');
+  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
     'cell-dial-finish-iridescent-oil',

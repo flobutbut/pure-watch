@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.8.0",
+  "catalogVersion": "0.9.1",
   "rows": [
     {
       "id": "case-shape",
@@ -757,6 +757,54 @@
           "i18n": {
             "name": "Huile"
           }
+        },
+        {
+          "id": "guilloche",
+          "value": "guilloche",
+          "preview": "dial-finish/guilloche.svg",
+          "i18n": {
+            "name": "Guilloché"
+          }
+        },
+        {
+          "id": "clous-de-paris",
+          "value": "clous-de-paris",
+          "preview": "dial-finish/clous-de-paris.svg",
+          "i18n": {
+            "name": "Clous de Paris"
+          }
+        },
+        {
+          "id": "linen",
+          "value": "linen",
+          "preview": "dial-finish/linen.svg",
+          "i18n": {
+            "name": "Lin"
+          }
+        },
+        {
+          "id": "concentric",
+          "value": "concentric",
+          "preview": "dial-finish/concentric.svg",
+          "i18n": {
+            "name": "Cerclé"
+          }
+        },
+        {
+          "id": "vertical-brushed",
+          "value": "vertical-brushed",
+          "preview": "dial-finish/vertical-brushed.svg",
+          "i18n": {
+            "name": "Brossé vertical"
+          }
+        },
+        {
+          "id": "hammered",
+          "value": "hammered",
+          "preview": "dial-finish/hammered.svg",
+          "i18n": {
+            "name": "Martelé"
+          }
         }
       ]
     },
@@ -930,6 +978,10 @@
       "priority": "P0",
       "i18n": {
         "name": "Index"
+      },
+      "visibleWhen": {
+        "path": "dial.indices.numerals",
+        "notIn": ["all", "roman"]
       },
       "variants": [
         {
