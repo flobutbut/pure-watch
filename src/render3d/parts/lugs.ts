@@ -13,7 +13,8 @@ import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.j
 import type { WatchConfig } from '../../core/config/types';
 import { clamp, type WatchDimensions } from '../../core/geometry/dimensions';
 import type { MaterialLibrary } from '../materials';
-import { caseLevels, flankRadiusAt } from './levels';
+import { caseLevels } from './levels';
+import { profileAttachmentSurface } from './case-profile';
 import { applyOcclusion, lugRoot } from './occlusion';
 
 export interface HornSpec {
@@ -365,7 +366,7 @@ export function buildLugs(
   const tipBottom = zb + style.tipBottom * T;
   const thickness = d.lugThickness;
   // Boîtiers non ronds : la corne part de là où le flanc se trouve réellement.
-  const surface = flankRadiusAt(d, config.case.shape);
+  const surface = profileAttachmentSurface(config, d, root.bottom, root.top, refined);
   const yFlank = surfaceY(d.lugWidth / 2 + thickness, surface);
   const roundFlank = surfaceY(d.lugWidth / 2 + thickness, () => R - c * 0.6 - 0.05);
   const yJunction = R * 0.9 + (yFlank - roundFlank);

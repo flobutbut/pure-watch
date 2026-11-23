@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.12.0",
+  "catalogVersion": "0.13.0",
   "rows": [
     {
       "id": "case-shape",
@@ -59,6 +59,53 @@
           "preview": "case-shape/rectangle.svg",
           "i18n": {
             "name": "Rectangulaire"
+          }
+        }
+      ]
+    },
+    {
+      "id": "case-profile",
+      "group": "case",
+      "kind": "enum",
+      "path": "case.profile",
+      "previewContext": "case-sample",
+      "looping": true,
+      "priority": "P0",
+      "i18n": {
+        "name": "Profil du boîtier",
+        "hint": "Silhouette de la carrure vue de côté"
+      },
+      "variants": [
+        {
+          "id": "straight",
+          "value": "straight",
+          "preview": "case-profile/straight.svg",
+          "i18n": {
+            "name": "Droit"
+          }
+        },
+        {
+          "id": "curved",
+          "value": "curved",
+          "preview": "case-profile/curved.svg",
+          "i18n": {
+            "name": "Galbé"
+          }
+        },
+        {
+          "id": "faceted",
+          "value": "faceted",
+          "preview": "case-profile/faceted.svg",
+          "i18n": {
+            "name": "Facetté"
+          }
+        },
+        {
+          "id": "stepped",
+          "value": "stepped",
+          "preview": "case-profile/stepped.svg",
+          "i18n": {
+            "name": "Étagé"
           }
         }
       ]
@@ -1173,88 +1220,6 @@
       ]
     },
     {
-      "id": "indices",
-      "group": "face",
-      "kind": "enum",
-      "path": "dial.indices.style",
-      "previewContext": "dial-sample",
-      "looping": true,
-      "priority": "P0",
-      "i18n": {
-        "name": "Index"
-      },
-      "visibleWhen": {
-        "path": "dial.indices.numerals",
-        "notIn": ["all", "roman"]
-      },
-      "variants": [
-        {
-          "id": "baton",
-          "value": "baton",
-          "preview": "indices/baton.svg",
-          "i18n": {
-            "name": "Bâtons"
-          }
-        },
-        {
-          "id": "baton-facet",
-          "value": "baton-facet",
-          "preview": "indices/baton-facet.svg",
-          "i18n": {
-            "name": "Bâtons facettés"
-          }
-        },
-        {
-          "id": "dauphine",
-          "value": "dauphine",
-          "preview": "indices/dauphine.svg",
-          "i18n": {
-            "name": "Dauphine"
-          }
-        },
-        {
-          "id": "dots",
-          "value": "dots",
-          "preview": "indices/dots.svg",
-          "i18n": {
-            "name": "Points"
-          }
-        },
-        {
-          "id": "triangles",
-          "value": "triangles",
-          "preview": "indices/triangles.svg",
-          "i18n": {
-            "name": "Triangles"
-          }
-        },
-        {
-          "id": "baguettes",
-          "value": "baguettes",
-          "preview": "indices/baguettes.svg",
-          "i18n": {
-            "name": "Baguettes"
-          }
-        },
-        {
-          "id": "drops",
-          "value": "drops",
-          "preview": "indices/drops.svg",
-          "i18n": {
-            "name": "Gouttes"
-          }
-        },
-        {
-          "id": "none",
-          "value": "none",
-          "preview": "indices/none.svg",
-          "i18n": {
-            "name": "Aucun"
-          }
-        }
-      ]
-    },
-    {
       "id": "numerals",
       "group": "face",
       "kind": "enum",
@@ -1426,6 +1391,88 @@
           "preview": "numeral-font/italic.svg",
           "i18n": {
             "name": "Italique"
+          }
+        }
+      ]
+    },
+    {
+      "id": "indices",
+      "group": "face",
+      "kind": "enum",
+      "path": "dial.indices.style",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P0",
+      "i18n": {
+        "name": "Index"
+      },
+      "visibleWhen": {
+        "path": "dial.indices.numerals",
+        "notIn": ["all", "roman"]
+      },
+      "variants": [
+        {
+          "id": "baton",
+          "value": "baton",
+          "preview": "indices/baton.svg",
+          "i18n": {
+            "name": "Bâtons"
+          }
+        },
+        {
+          "id": "baton-facet",
+          "value": "baton-facet",
+          "preview": "indices/baton-facet.svg",
+          "i18n": {
+            "name": "Bâtons facettés"
+          }
+        },
+        {
+          "id": "dauphine",
+          "value": "dauphine",
+          "preview": "indices/dauphine.svg",
+          "i18n": {
+            "name": "Dauphine"
+          }
+        },
+        {
+          "id": "dots",
+          "value": "dots",
+          "preview": "indices/dots.svg",
+          "i18n": {
+            "name": "Points"
+          }
+        },
+        {
+          "id": "triangles",
+          "value": "triangles",
+          "preview": "indices/triangles.svg",
+          "i18n": {
+            "name": "Triangles"
+          }
+        },
+        {
+          "id": "baguettes",
+          "value": "baguettes",
+          "preview": "indices/baguettes.svg",
+          "i18n": {
+            "name": "Baguettes"
+          }
+        },
+        {
+          "id": "drops",
+          "value": "drops",
+          "preview": "indices/drops.svg",
+          "i18n": {
+            "name": "Gouttes"
+          }
+        },
+        {
+          "id": "none",
+          "value": "none",
+          "preview": "indices/none.svg",
+          "i18n": {
+            "name": "Aucun"
           }
         }
       ]

@@ -36,12 +36,12 @@ test('la ligne Index disparaît avec tous les chiffres et retrouve le choix mém
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-roman');
   await page.keyboard.press('Home');
   await expect(indices).toHaveCount(1);
-  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-baguettes');
   await page.keyboard.press('End');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-none');
   await expect(indices).toHaveCount(1);
-  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowUp');
   for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-all');
   await expect(indices).toHaveCount(0);
@@ -49,7 +49,9 @@ test('la ligne Index disparaît avec tous les chiffres et retrouve le choix mém
   await page.keyboard.press('Home');
   await page.keyboard.press('ArrowRight');
   await expect(indices).toHaveCount(1);
-  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numeral-font-sans');
+  await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-none');
   expect(errors).toEqual([]);
 });
@@ -73,7 +75,9 @@ test('un lien avec index masqués se recharge et restaure les index avec des chi
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-cardinal');
   await expect(indices).toHaveCount(1);
   await grid.focus();
-  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numeral-font-sans');
+  await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-triangles');
   expect(payload(page)).toMatchObject({ A: 5, D: 3 });
   await page.goto(link({ A: 5, D: 2 }));

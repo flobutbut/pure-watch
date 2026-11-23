@@ -14,6 +14,7 @@ import { bezelTypeForConfig } from '../../core/config/bezel';
 import { bezelProfile, bezelSegments, machineBezel } from './bezel';
 import { effectiveRehautProfile } from '../../core/config/rehaut';
 import { buildWideRehaut } from './rehaut';
+import { caseProfileRuns } from './case-profile';
 
 type CaseSurface = 'brushed' | 'polished' | 'joint';
 
@@ -118,6 +119,8 @@ export function buildCase(
   const bezelType = bezelTypeForConfig(config);
   const customBezel = bezelProfile(bezelType, d, flankEnd);
   if (customBezel) runs.splice(3, runs.length - 3, ...customBezel);
+  const midcase = caseProfileRuns(config.case.profile, d);
+  if (midcase) runs.splice(1, 2, ...midcase);
   const metal = (surface: CaseSurface) =>
     surface === 'joint' ? lib.matte('#090B0E') : lib.caseMetal(config, surface, true);
   const caseGroup = new THREE.Group();
@@ -126,7 +129,7 @@ export function buildCase(
   const occlusion = caseOcclusion(config, d);
   for (const mesh of buildRuns(runs, metal, (run) => bezelSegments(bezelType, run.points, d))) {
     machineBezel(mesh.geometry, bezelType, d);
-    shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth');
+    shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth', !!midcase);
     metricLatheUV(mesh.geometry, R);
     applyOcclusion(mesh.geometry, occlusion);
     caseGroup.add(mesh);
@@ -134,7 +137,7 @@ export function buildCase(
   for (const mesh of buildRuns([{ surface: 'brushed' as const, points: back }], (s) =>
     lib.caseMetal(config, s, true),
   )) {
-    shapeLathe(mesh.geometry, d, config.case.shape);
+    shapeLathe(mesh.geometry, d, config.case.shape, false, !!midcase);
     metricLatheUV(mesh.geometry, R);
     applyOcclusion(mesh.geometry, occlusion);
     caseGroup.add(mesh);

@@ -2,13 +2,16 @@
 import { shapeRadius } from './case-shape';
 import { crownAngle, type WatchDimensions } from './dimensions';
 
-export function crownMount(d: WatchDimensions, shape: string, position: string) {
+export function crownMount(
+  d: WatchDimensions,
+  shape: string,
+  position: string,
+  surface = (theta: number) => d.caseRadius * shapeRadius(shape, theta),
+) {
   const theta = crownAngle(position);
-  const radius = d.caseRadius * shapeRadius(shape, theta);
+  const radius = surface(theta);
   const delta = 0.0001;
-  const derivative =
-    (d.caseRadius * (shapeRadius(shape, theta + delta) - shapeRadius(shape, theta - delta))) /
-    (2 * delta);
+  const derivative = (surface(theta + delta) - surface(theta - delta)) / (2 * delta);
   const angle = theta - Math.atan2(derivative, radius);
   const x = radius * Math.cos(theta);
   const y = radius * Math.sin(theta);

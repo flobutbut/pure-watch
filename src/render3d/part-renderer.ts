@@ -88,6 +88,13 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     context: neutralDial,
     frame: headFrame,
   },
+  'case-profile': {
+    layers: ['case', 'lugs'],
+    frame: (config) => {
+      const d = watchDimensions(config);
+      return { x: 0, y: d.z.back + d.caseThickness * 0.4, half: d.caseRadius * 0.95, view: 'side' };
+    },
+  },
   // Matière et finition : gros plan sur le quart haut-droit (lunette, corne, flanc).
   'case-material': {
     layers: ['case', 'rehaut', 'lugs', 'crown', 'dial'],
