@@ -4,7 +4,7 @@
   import { targetColor, type ColorTarget } from '../../core/config/colors';
   import { tint } from '../../core/color/names';
   import { hasIntrinsicColor } from '../../core/config/dial';
-  import { hasBezelInsert, turnBezel } from '../../core/config/bezel';
+  import { turnBezel } from '../../core/config/bezel';
   import { matchesValue } from '../../core/config/path';
   import { mm } from '../../core/movement/compatibility';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
@@ -428,7 +428,7 @@
   const colorForRow = (id: string): ColorTarget | null =>
     id === 'lugs' && config.case.lugs !== 'none'
       ? 'lugs'
-      : id === 'bezel' && hasBezelInsert(config)
+      : id === 'bezel'
         ? 'bezel'
         : id === 'dial-finish'
           ? 'dial'
@@ -608,16 +608,18 @@
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if target === 'numerals' || target === 'indices' || target === 'lugs'}
+              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs'].includes(target)}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
               <span>
-                {target === 'numerals' || target === 'indices' || target === 'lugs'
+                {['numerals', 'indices', 'hands', 'bezel', 'lugs'].includes(target)
                   ? t().grid.settings
                   : t().grid.color}
-                {#if target !== 'indices' && target !== 'lugs'}<span class="color-value">
+                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs'}<span
+                    class="color-value"
+                  >
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'
                       ? config.rehaut.finish === 'metal'
                         ? t().grid.caseMatch

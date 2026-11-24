@@ -62,13 +62,17 @@ describe('fiche d’identité', () => {
     expect(all.find((t) => t.label === 'Couleur des chiffres')?.swatch).toBe('#D7262E');
   });
 
-  it('détaille la taille et la position des index', () => {
+  it('détaille la longueur, la largeur et la position des index', () => {
     const config = defaultConfig();
     config.dial.indices.indexRadius = 0.85;
+    config.dial.indices.indexWidth = 1.3;
     const all = identitySections(visibleRows(catalog.rows, config), config).flatMap(
       (s) => s.traits,
     );
-    expect(all.find((t) => t.label === 'Taille des index')?.value).toBe('Standard');
+    expect(all.find((t) => t.label === 'Longueur des index')?.value).toBe('Standard');
+    expect(all.find((t) => t.label === 'Largeur des index')?.value).toBe(
+      '130 % de la largeur standard',
+    );
     expect(all.find((t) => t.label === 'Position des index')?.value).toBe(
       '85 % de la distance standard',
     );

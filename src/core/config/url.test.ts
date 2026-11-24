@@ -152,7 +152,8 @@ describe('versioned watch links', () => {
     config.dial.indices.numeralSize = 1.45;
     config.dial.indices.numeralRadius = 0.73;
     config.dial.indices.numeralColor = '#C9A24A';
-    config.dial.indices.indexSize = 1.25;
+    config.dial.indices.indexLength = 1.25;
+    config.dial.indices.indexWidth = 0.8;
     config.dial.indices.indexRadius = 0.9;
     const back = decodeConfigHash(encodeConfigHash(config), catalog);
     expect(back.notice).toBe('');
@@ -161,7 +162,8 @@ describe('versioned watch links', () => {
       numeralSize: 1.45,
       numeralRadius: 0.73,
       numeralColor: '#C9A24A',
-      indexSize: 1.25,
+      indexLength: 1.25,
+      indexWidth: 0.8,
       indexRadius: 0.9,
     });
     // Older links have none of these fields: the reference layout and ink are kept.
@@ -170,9 +172,18 @@ describe('versioned watch links', () => {
       numeralSize: 1,
       numeralRadius: 1,
       numeralColor: 'match',
-      indexSize: 1,
+      indexLength: 1,
+      indexWidth: 1,
       indexRadius: 1,
     });
+    // Before the split, one index size scaled both directions: it still does.
+    const legacy = decodeConfigHash(hash({ am: 1.3 }), catalog);
+    expect(legacy.notice).toBe('');
+    expect(legacy.config.dial.indices).toMatchObject({ indexLength: 1.3, indexWidth: 1.3 });
+    const encoded = encodeConfigHash(legacy.config).slice(4).replaceAll('-', '+');
+    const payload: unknown = JSON.parse(atob(encoded.replaceAll('_', '/')));
+    expect(payload).toMatchObject({ bc: 1.3, bd: 1.3 });
+    expect(payload).not.toHaveProperty('am');
   });
 
   it('defaults invalid fields independently and ignores unknown keys', () => {

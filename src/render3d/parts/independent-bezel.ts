@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { bezelTypeForConfig } from '../../core/config/bezel';
+import { bezelShape, bezelMetalConfig, bezelTypeForConfig } from '../../core/config/bezel';
 import type { WatchConfig } from '../../core/config/types';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
@@ -17,11 +17,11 @@ export function buildIndependentBezel(
   const group = new THREE.Group();
   group.name = 'independent-bezel';
   const type = bezelTypeForConfig(config),
-    shape = config.case.shape;
+    shape = bezelShape(config);
   const { c, seat } = caseLevels(d);
   const outer = d.bezelRadius - 0.08;
   const inner = d.openingRadius + 0.285;
-  const bottom = seat + 0.035;
+  const bottom = seat - 0.2 * d.caseThickness * (d.bezelHeight - 1) + 0.035;
   const top = d.z.bezelTop - 0.045;
   const bevel = Math.min(c * 0.3, (outer - inner) * 0.15);
   const left: P2 = [outer - bevel, top - bevel];
@@ -73,9 +73,10 @@ export function buildIndependentBezel(
       { surface: 'polished', points: [[inner + 2 * bevel, top], right] },
     );
   runs.push({ surface: 'polished', points: [right, [inner, top - 2 * bevel], [inner, bottom]] });
+  const metal = bezelMetalConfig(config);
   const segments = ['fluted', 'coin', 'notched'].includes(type) ? 576 : 192;
   const ringD = { ...d, caseRadius: outer, openingRadius: inner, bezelWidth: outer - inner };
-  for (const mesh of buildRuns(runs, (s) => lib.caseMetal(config, s), segments)) {
+  for (const mesh of buildRuns(runs, (s) => lib.caseMetal(metal, s), segments)) {
     machineBezel(mesh.geometry, type, ringD);
     const p = mesh.geometry.getAttribute('position');
     for (let i = 0; i < p.count; i++) {

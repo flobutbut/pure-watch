@@ -3,6 +3,8 @@ import { rehautColor } from './rehaut';
 import { normalizeNumerals, numeralSystem, type NumeralSystem } from './numerals';
 import { lumeChoice, withLume, type LumeChoice } from './lume';
 import type { HexColor, WatchConfig } from './types';
+import { handAdjustment, type HandLayout } from './hands';
+import { bezelLayout, type BezelLayout } from './bezel';
 import { lugJoin, type LugJoin } from './lugs';
 
 /** Pièces réglées dans le panneau latéral. */
@@ -10,10 +12,15 @@ export type ColorTarget =
   'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel' | 'numerals' | 'indices' | 'lugs';
 export interface ColorChoice {
   lugJoin?: LugJoin;
+  handLayout?: HandLayout;
+  bezelLayout?: BezelLayout;
   color: HexColor | 'match';
   finish: string;
-  /** Chiffres : le même panneau règle aussi leur taille et leur distance au centre. */
-  layout?: { size: number; radius: number };
+  /**
+   * Chiffres et index : le même panneau règle aussi leur taille et leur distance au centre.
+   * Pour les index, `size` est la longueur et `width` la largeur, réglées séparément.
+   */
+  layout?: { size: number; radius: number; width?: number };
   numeralSystem?: NumeralSystem;
   lume?: LumeChoice;
 }
@@ -21,7 +28,8 @@ export interface ColorChoice {
 /** Plages des curseurs de taille et de position des chiffres (facteurs de la référence). */
 export const NUMERAL_SIZE_RANGE = { min: 0.7, max: 1.75 } as const;
 export const NUMERAL_RADIUS_RANGE = { min: 0.6, max: 1.1 } as const;
-export const INDEX_SIZE_RANGE = { min: 0.6, max: 1.6 } as const;
+export const INDEX_LENGTH_RANGE = { min: 0.6, max: 1.6 } as const;
+export const INDEX_WIDTH_RANGE = { min: 0.6, max: 1.8 } as const;
 export const INDEX_RADIUS_RANGE = { min: 0.6, max: 1.1 } as const;
 export const HAND_FINISHES = [
   { id: 'polished', name: 'Acier', color: '#E8EBF0' },
@@ -65,14 +73,19 @@ export function handColor(config: WatchConfig): HexColor {
 export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
   if (target === 'lugs')
     return { color: targetColor(config, target) as HexColor, finish: '', lugJoin: lugJoin(config) };
-  if (target === 'bezel') return { color: config.bezel.color, finish: 'ceramic' };
+  if (target === 'bezel')
+    return { color: config.bezel.color, finish: 'ceramic', bezelLayout: bezelLayout(config) };
   if (target === 'rehaut') return { color: config.rehaut.color, finish: config.rehaut.finish };
   if (target === 'indices')
     return {
       color: config.dial.indices.color,
       finish: config.dial.indices.finish,
       lume: lumeChoice(config.dial.indices),
-      layout: { size: config.dial.indices.indexSize, radius: config.dial.indices.indexRadius },
+      layout: {
+        size: config.dial.indices.indexLength,
+        width: config.dial.indices.indexWidth,
+        radius: config.dial.indices.indexRadius,
+      },
     };
   if (target === 'numerals')
     return {
@@ -89,7 +102,15 @@ export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoi
           ? config.hands.color
           : config.hands.second.color,
     finish: config.hands.finish,
-    ...(target === 'hands' ? { lume: lumeChoice(config.hands) } : {}),
+    ...(target === 'hands'
+      ? {
+          lume: lumeChoice(config.hands),
+          handLayout: {
+            hour: handAdjustment(config.hands, 'hour'),
+            minute: handAdjustment(config.hands, 'minute'),
+          },
+        }
+      : {}),
   };
 }
 
@@ -107,7 +128,7 @@ export function withColorChoice(
       ? config
       : {
           ...config,
-          bezel: { ...config.bezel, color: choice.color },
+          bezel: { ...config.bezel, color: choice.color, ...choice.bezelLayout },
         };
   if (target === 'rehaut')
     return {
@@ -123,6 +144,7 @@ export function withColorChoice(
       ...config,
       hands: {
         ...config.hands,
+        ...choice.handLayout,
         finish: choice.finish,
         color: choice.color === 'match' ? config.hands.color : choice.color,
         ...withLume(choice.lume),
@@ -139,7 +161,11 @@ export function withColorChoice(
           color: choice.color === 'match' ? config.dial.indices.color : choice.color,
           ...withLume(choice.lume),
           ...(choice.layout
-            ? { indexSize: choice.layout.size, indexRadius: choice.layout.radius }
+            ? {
+                indexLength: choice.layout.size,
+                indexWidth: choice.layout.width ?? config.dial.indices.indexWidth,
+                indexRadius: choice.layout.radius,
+              }
             : {}),
         },
       },

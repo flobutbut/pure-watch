@@ -76,9 +76,13 @@ describe('free colours', () => {
     const indices = withColorChoice(config, 'indices', {
       color: '#D7262E',
       finish: config.dial.indices.finish,
-      layout: { size: 1.2, radius: 0.8 },
+      layout: { size: 1.2, width: 0.7, radius: 0.8 },
     });
-    expect(indices.dial.indices).toMatchObject({ indexSize: 1.2, indexRadius: 0.8 });
+    expect(indices.dial.indices).toMatchObject({
+      indexLength: 1.2,
+      indexWidth: 0.7,
+      indexRadius: 0.8,
+    });
     expect(indices.dial.indices.numeralColor).toBe('match');
     expect(indices.dial.color).toBe(config.dial.color);
   });

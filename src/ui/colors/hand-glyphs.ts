@@ -1,0 +1,20 @@
+/** Lightweight silhouettes for the picker; the live watch remains the physical 3D preview. */
+export const HAND_GLYPHS: Record<string, string> = {
+  baton: 'M-1.7 8V-60H1.7V8Z',
+  sword: 'M-1.4 8L-2 0L-3.8-18L-2-51L0-62L2-51L3.8-18L2 0L1.4 8Z',
+  dauphine: 'M-1.2 8L-2 0L-4.8-12L0-62L4.8-12L2 0L1.2 8Z',
+  leaf: 'M-1.2 8L-1.4 0C-2-15-7-34 0-62C7-34 2-15 1.4 0L1.2 8Z',
+  breguet:
+    'M-1.1 8V-38H1.1V8ZM0-38A5 5 0 1 0 0-48A5 5 0 1 0 0-38ZM0-40A3 3 0 1 1 0-46A3 3 0 1 1 0-40ZM-1.2-48L0-62L1.2-48Z',
+  syringe: 'M-1.2 8V-7H-3.2V-48H-1V-56L0-62L1-56V-48H3.2V-7H1.2V8Z',
+  spear: 'M-1 8L-1.3-29L-5-34L-4-40L0-62L4-40L5-34L1.3-29L1 8Z',
+  pencil: 'M-2.5 8V-49L0-62L2.5-49V8Z',
+  spade: 'M-1 8L-1.2-30C-1.2-34-6-39-5-47C-4-54-1-58 0-62C1-58 4-54 5-47C6-39 1.2-34 1.2-30L1 8Z',
+  'art-deco': 'M-1 8V-6H-4V-17H-2.8V-32H-1.5V-52L0-62L1.5-52V-32H2.8V-17H4V-6H1V8Z',
+  skeleton:
+    'M-1.2 8L-2 0L-4.4-12L-3-50L0-62L3-50L4.4-12L2 0L1.2 8ZM-2-16L-1.3-45L0-52L1.3-45L2-16Z',
+  cathedral:
+    'M-1.4 8L-2.5-10H-4.5V-24H-2.7V-41H-5L-4.5-48L0-62L4.5-48L5-41H2.7V-24H4.5V-10H2.5L1.4 8ZM-2.3-13V-21H2.3V-13ZM-1.2-28V-37H1.2V-28ZM-2.3-44L0-54L2.3-44Z',
+  mercedes:
+    'M-1.2 8L-1.6-32A7 7 0 1 1 1.6-32L1.2 8ZM-1.3-46L0-62L1.3-46ZM-0.8-44A5 5 0 0 0-4.5-37.8L-0.8-40ZM0.8-44V-40L4.5-37.8A5 5 0 0 0 0.8-44ZM-4-36.5A5 5 0 0 0 4-36.5L0-39Z',
+};

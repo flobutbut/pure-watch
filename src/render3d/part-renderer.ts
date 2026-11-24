@@ -22,15 +22,15 @@ const LAYER_DEPENDENCIES: Record<
   readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size')[]
 > = {
   case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
-  rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut'],
-  lugs: ['case', 'crystal', 'dial.shape', 'dial.size', 'bezel.type'],
-  crown: ['crown', 'case', 'crystal', 'complications'],
-  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
-  print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
-  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
-  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications'],
-  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications'],
-  crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications'],
+  rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut', 'bezel'],
+  lugs: ['case', 'crystal', 'bezel'],
+  crown: ['crown', 'case', 'crystal', 'complications', 'bezel'],
+  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel'],
+  print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel'],
+  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel'],
+  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications', 'bezel'],
+  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications', 'bezel'],
+  crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications', 'bezel'],
 };
 
 /** Ne garde que ce qui influence l'aperçu : changer d'aiguilles ne régénère pas les cadrans. */
@@ -43,8 +43,20 @@ function relevantConfig(
   >();
   for (const layer of layers ?? LAYERS) for (const key of LAYER_DEPENDENCIES[layer]) keys.add(key);
   const out: Record<string, unknown> = {};
+  const dimensions = watchDimensions(config);
   for (const key of [...keys].sort())
-    out[key] = key === 'dial.shape' && hasBezelInsert(config) ? 'round' : getAtPath(config, key);
+    out[key] =
+      key === 'bezel' && layers && !layers.includes('case')
+        ? {
+            opening: dimensions.openingRadius,
+            scale: dimensions.dialScale,
+            shape: dimensions.dialShape,
+            top: dimensions.z.bezelTop,
+            back: dimensions.z.back,
+          }
+        : key === 'dial.shape' && hasBezelInsert(config)
+          ? 'round'
+          : getAtPath(config, key);
   return out;
 }
 

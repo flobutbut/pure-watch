@@ -7,9 +7,12 @@ const link = (payload: object) =>
 const payload = (page: Page) =>
   JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
 const handsPanel = (page: Page) =>
-  page.getByRole('button', { name: 'Matière et couleur des aiguilles', exact: true });
+  page.getByRole('button', { name: 'Paramètres des aiguilles', exact: true });
 const indicesPanel = (page: Page) =>
-  page.getByRole('button', { name: 'Paramètres des index : taille et position', exact: true });
+  page.getByRole('button', {
+    name: 'Paramètres des index : longueur, largeur et position',
+    exact: true,
+  });
 const closePanel = (page: Page) =>
   page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
 
@@ -172,7 +175,7 @@ test('un ancien lien libre est converti vers un pigment sans aucun accès aux co
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
   expect(page.url()).toBe(saved);
   await page.getByRole('button', { name: 'English', exact: true }).click();
-  await page.getByRole('button', { name: 'Hands material and color', exact: true }).click();
+  await page.getByRole('button', { name: 'Hand settings', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Custom', exact: true })).toHaveCount(0);
   await expect(page.locator('input[type="color"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'BGW9', exact: true }).click();

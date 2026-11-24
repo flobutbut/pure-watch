@@ -75,7 +75,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
 }, info) => {
   await page.goto('/');
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
-  const hands = page.getByRole('button', { name: 'Matière et couleur des aiguilles', exact: true });
+  const hands = page.getByRole('button', { name: 'Paramètres des aiguilles', exact: true });
   await hands.click();
   await page.getByRole('button', { name: 'Or', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveCount(0);
@@ -122,7 +122,7 @@ test('les champs et le clavier restent dans le panneau, un code invalide ne s’
   await grid.focus();
   await page.keyboard.press('Tab');
   await expect(
-    page.getByRole('button', { name: 'Matière et couleur des aiguilles', exact: true }),
+    page.getByRole('button', { name: 'Paramètres des aiguilles', exact: true }),
   ).toBeFocused();
   await page.keyboard.press('Enter');
   await page.getByRole('button', { name: 'Laqué', exact: true }).click();
@@ -180,13 +180,16 @@ test('la palette se glisse avec un aperçu avant le relâchement et laisse la mo
   });
   await expect(page.locator('html')).not.toHaveAttribute('style', before!);
   await page.mouse.up();
-  const watch = await page.locator('.live-slot').boundingBox();
-  const panel = await page.getByRole('dialog').boundingBox();
-  expect(watch).not.toBeNull();
-  expect(panel).not.toBeNull();
-  const overlap =
-    Math.min(watch!.x + watch!.width, panel!.x + panel!.width) > Math.max(watch!.x, panel!.x) &&
-    Math.min(watch!.y + watch!.height, panel!.y + panel!.height) > Math.max(watch!.y, panel!.y);
-  expect(overlap).toBe(false);
+  // The watch deliberately moves while the sheet opens; assess its settled position.
+  await expect
+    .poll(async () => {
+      const watch = (await page.locator('.live-slot').boundingBox())!;
+      const panel = (await page.getByRole('dialog').boundingBox())!;
+      return (
+        Math.min(watch.x + watch.width, panel.x + panel.width) > Math.max(watch.x, panel.x) &&
+        Math.min(watch.y + watch.height, panel.y + panel.height) > Math.max(watch.y, panel.y)
+      );
+    })
+    .toBe(false);
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
 });

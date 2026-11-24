@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { WatchConfig } from '../../core/config/types';
-import { bezelAngle } from '../../core/config/bezel';
+import { bezelAngle, bezelMetalConfig } from '../../core/config/bezel';
 import { contourExtents } from '../../core/geometry/dial-shape';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { bezelPrintSvg } from '../../render2d/bezel-print';
@@ -21,7 +21,7 @@ export function rotatingBezelDimensions(config: WatchConfig, d: WatchDimensions)
     inner: d.openingRadius + 0.285,
     insertOuter: outer - c * 0.36,
     insertInner: d.openingRadius + 0.285 + c * 0.18,
-    bottom: seat + 0.035,
+    bottom: seat - 0.2 * d.caseThickness * (d.bezelHeight - 1) + 0.035,
     top: d.z.bezelTop - 0.045,
   };
 }
@@ -35,6 +35,7 @@ export function buildGraduatedBezel(
 ) {
   const group = new THREE.Group();
   const rotating = config.bezel.type === 'rotating';
+  const metalConfig = bezelMetalConfig(config);
   group.name = rotating ? 'rotating-bezel' : 'fixed-bezel';
   const { outer, inner, insertOuter, insertInner, bottom, top } = rotatingBezelDimensions(
     config,
@@ -69,7 +70,7 @@ export function buildGraduatedBezel(
   ];
   for (const mesh of buildRuns(
     runs,
-    (surface) => lib.caseMetal(config, surface),
+    (surface) => lib.caseMetal(metalConfig, surface),
     rotating ? 720 : 192,
   )) {
     const p = mesh.geometry.getAttribute('position');

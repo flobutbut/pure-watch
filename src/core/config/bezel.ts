@@ -2,20 +2,75 @@ import type { WatchConfig } from './types';
 import { shapeRadius } from '../geometry/case-shape';
 import { continuousLugs } from './lugs';
 
-/** A separate ring exposes the flat case shoulder for flush and blended lug roots. */
-export function independentBezel(config: WatchConfig): boolean {
-  return continuousLugs(config) && !hasBezelInsert(config);
+export const DEFAULT_BEZEL_LAYOUT = { shape: 'case', width: 1, height: 1, finish: 'case' };
+export const BEZEL_SHAPES = [
+  'case',
+  'round',
+  'cushion',
+  'octagon',
+  'square',
+  'rectangle',
+  'tonneau',
+] as const;
+export const BEZEL_FINISHES = [
+  'case',
+  'mixed',
+  'polished',
+  'brushed',
+  'sandblasted',
+  'pvd-black',
+] as const;
+export type BezelLayout = typeof DEFAULT_BEZEL_LAYOUT;
+export function bezelLayout(config: WatchConfig): BezelLayout {
+  const b = config.bezel;
+  const bounded = (v: number, lo: number, hi: number) =>
+    Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : 1;
+  return {
+    shape: BEZEL_SHAPES.some((s) => s === b.shape) ? b.shape : 'case',
+    finish: BEZEL_FINISHES.some((s) => s === b.finish) ? b.finish : 'case',
+    width: bounded(b.width, 0.7, 1.8),
+    height: bounded(b.height, 1, 1.6),
+  };
 }
-
-/** Keep the ring just inside the case outline; detached lugs retain their old dimensions. */
+export function independentBezel(config: WatchConfig): boolean {
+  const b = bezelLayout(config);
+  return (
+    !hasBezelInsert(config) &&
+    (b.shape !== 'case' ||
+      b.width !== 1 ||
+      b.height !== 1 ||
+      b.finish !== 'case' ||
+      continuousLugs(config))
+  );
+}
+export function bezelShape(config: WatchConfig): string {
+  const b = bezelLayout(config);
+  return hasBezelInsert(config) ? 'round' : b.shape === 'case' ? config.case.shape : b.shape;
+}
+export function bezelMetalConfig(config: WatchConfig): WatchConfig {
+  const { finish } = bezelLayout(config);
+  return finish === 'case' ? config : { ...config, case: { ...config.case, finish } };
+}
+const envelopes = new Map<string, number>();
+/** Largest centred bezel that stays on the case shoulder at every angle. */
 export function bezelEnvelopeRadius(config: WatchConfig, radius: number): number {
   if (!independentBezel(config)) return radius;
+  const shape = bezelShape(config),
+    key = `${config.case.shape}:${shape}:${radius}`;
+  const cached = envelopes.get(key);
+  if (cached !== undefined) return cached;
   let result = Infinity;
   for (let i = 0; i < 1024; i++) {
     const angle = (i * Math.PI * 2) / 1024;
-    result = Math.min(result, radius - 0.1 / shapeRadius(config.case.shape, angle));
+    result = Math.min(
+      result,
+      (radius * shapeRadius(config.case.shape, angle) - 0.1) / shapeRadius(shape, angle),
+    );
   }
-  return result * 0.998;
+  result *= 0.998;
+  if (envelopes.size >= 128) envelopes.delete(envelopes.keys().next().value!);
+  envelopes.set(key, result);
+  return result;
 }
 
 /** Available fixed profiles and the independent rotating ring. */

@@ -1,6 +1,8 @@
 import type { WatchConfig } from './types';
 import { DEFAULT_REHAUT } from './rehaut';
 import { DEFAULT_LUME } from './lume';
+import { DEFAULT_HAND_LAYOUT } from './hands';
+import { DEFAULT_BEZEL_LAYOUT } from './bezel';
 
 /** Montre de départ : ronde, acier, 40 mm, cadran noir mat, aiguilles épée. */
 export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
@@ -22,6 +24,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
   },
   crown: { style: 'onion', position: '3h', guard: false, screwed: true },
   bezel: {
+    ...DEFAULT_BEZEL_LAYOUT,
     type: 'smooth',
     insert: 'none',
     scale: 'none',
@@ -51,12 +54,14 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
       numeralSize: 1,
       numeralRadius: 1,
       numeralColor: 'match',
-      indexSize: 1,
+      indexLength: 1,
+      indexWidth: 1,
       indexRadius: 1,
     },
     text: { brand: '', line2: '', position: '12h' },
   },
   hands: {
+    ...DEFAULT_HAND_LAYOUT,
     set: 'sword',
     finish: 'polished',
     color: '#E8EBF0',

@@ -4,7 +4,7 @@ import { effectiveBezelType } from '../../core/config/bezel';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { clamp } from '../../core/geometry/dimensions';
 import type { P2, ProfileRun } from '../lathe';
-import { caseLevels } from './levels';
+import { caseLevels, caseDeckTop } from './levels';
 
 type Surface = 'brushed' | 'polished' | 'joint';
 const patterned = (type: string) => ['fluted', 'coin', 'notched'].includes(type);
@@ -22,8 +22,8 @@ export function bezelProfile(
 ): ProfileRun<Surface>[] | null {
   const kind = effectiveBezelType(type);
   if (kind === 'rotating' || kind === 'fixed-scale') {
-    const { R, c, seat, rehautTop } = caseLevels(d);
-    const deck = seat - 0.12;
+    const { R, c, rehautTop } = caseLevels(d);
+    const deck = caseDeckTop(d);
     const shoulder: P2 = [R - c, deck];
     return [
       { surface: 'polished', points: [root, shoulder] },

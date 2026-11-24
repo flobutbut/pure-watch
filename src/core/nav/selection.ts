@@ -51,6 +51,15 @@ export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: num
   const variant = row.variants[variantIndex];
   if (!variant) return config;
   let next = setAtPath(config, row.path, variant.value);
+  if (row.id === 'hands')
+    next = {
+      ...next,
+      hands: {
+        ...next.hands,
+        hour: { ...next.hands.hour, style: 'match' },
+        minute: { ...next.hands.minute, style: 'match' },
+      },
+    };
   if (row.id === 'case-size' && next.case.lugWidthMm !== config.case.lugWidthMm)
     next = { ...next, strap: { ...next.strap, widthMm: next.case.lugWidthMm } };
   if (row.id === 'seconds') next = withoutSeconds(next);
