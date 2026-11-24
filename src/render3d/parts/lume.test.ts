@@ -84,7 +84,8 @@ describe('inserts lumineux construits en géométrie', () => {
       style,
       lume: 'custom',
       numerals: 'twelve',
-      indexSize: 1.6,
+      indexLength: 1.6,
+      indexWidth: 1.8,
       indexRadius: 1.1,
     });
     config.complications = [

@@ -9,6 +9,8 @@ import frozenDefaults from './url-v1-defaults.json';
 import { withoutSeconds } from './seconds';
 import { normalizeNumerals } from './numerals';
 import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
+import { HAND_STYLES } from './hands';
+import { BEZEL_SHAPES, BEZEL_FINISHES } from './bezel';
 import { LUG_JOINS } from './lugs';
 
 // Wire defaults and identifiers are immutable for v1. Changing application defaults
@@ -18,7 +20,14 @@ import { LUG_JOINS } from './lugs';
 const V1_DEFAULTS = {
   ...frozenDefaults,
   case: { ...frozenDefaults.case, profile: 'curved', lugJoin: 'detached' },
-  bezel: { ...frozenDefaults.bezel, angleDeg: 0 },
+  bezel: {
+    ...frozenDefaults.bezel,
+    angleDeg: 0,
+    shape: 'case',
+    width: 1,
+    height: 1,
+    finish: 'case',
+  },
   dial: {
     ...frozenDefaults.dial,
     shape: 'round',
@@ -31,11 +40,18 @@ const V1_DEFAULTS = {
       numeralSize: 1,
       numeralRadius: 1,
       numeralColor: 'match',
-      indexSize: 1,
+      indexLength: 1,
+      indexWidth: 1,
       indexRadius: 1,
     },
   },
-  hands: { ...frozenDefaults.hands, color: '#E8EBF0', ...DEFAULT_LUME },
+  hands: {
+    ...frozenDefaults.hands,
+    color: '#E8EBF0',
+    ...DEFAULT_LUME,
+    hour: { style: 'match', length: 1, width: 1 },
+    minute: { style: 'match', length: 1, width: 1 },
+  },
   rehaut: { profile: 'classic', finish: 'dial', color: '#111317', scale: 'none' },
 } as WatchConfig;
 const MAX_HASH_LENGTH = 16_384;
@@ -297,7 +313,6 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   aj: field('dial.indices.numeralSize', z.number().finite().min(0.5).max(2)),
   ak: field('dial.indices.numeralRadius', z.number().finite().min(0.4).max(1.2)),
   al: field('dial.indices.numeralColor', z.union([hex, z.literal('match')])),
-  am: field('dial.indices.indexSize', z.number().finite().min(0.5).max(2)),
   an: field('dial.indices.indexRadius', z.number().finite().min(0.4).max(1.2)),
   ao: field('dial.indices.numeralSystem', z.enum(['arabic', 'roman']), { arabic: 1, roman: 2 }),
   ap: field('dial.indices.color', hex),
@@ -305,7 +320,44 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   ar: field('dial.indices.lumeEmission', hex),
   as: field('hands.lumeColor', hex),
   at: field('hands.lumeEmission', hex),
+  au: field(
+    'hands.hour',
+    z
+      .object({
+        style: z.enum(['match', ...HAND_STYLES]),
+        length: z.number().finite().min(0.65).max(1.35),
+        width: z.number().finite().min(0.6).max(1.8),
+      })
+      .strict(),
+  ),
+  av: field(
+    'hands.minute',
+    z
+      .object({
+        style: z.enum(['match', ...HAND_STYLES]),
+        length: z.number().finite().min(0.65).max(1.05),
+        width: z.number().finite().min(0.6).max(1.8),
+      })
+      .strict(),
+  ),
+  aw: field('bezel.shape', z.enum(BEZEL_SHAPES)),
+  ax: field('bezel.width', z.number().finite().min(0.7).max(1.8)),
+  ay: field('bezel.height', z.number().finite().min(1).max(1.6)),
+  az: field('bezel.finish', z.enum(BEZEL_FINISHES)),
   ba: field('case.lugJoin', z.enum(LUG_JOINS), { detached: 1, flush: 2, blended: 3 }),
+  bc: field('dial.indices.indexLength', z.number().finite().min(0.5).max(2)),
+  bd: field('dial.indices.indexWidth', z.number().finite().min(0.5).max(2)),
+};
+
+/**
+ * Identifiers retired from the encoder but still read: `am` was the single index size,
+ * applied to both length and width before they were split.
+ */
+const LEGACY_V1: Readonly<Record<string, { paths: readonly string[]; schema: z.ZodType }>> = {
+  am: {
+    paths: ['dial.indices.indexLength', 'dial.indices.indexWidth'],
+    schema: z.number().finite().min(0.5).max(2),
+  },
 };
 
 function base64url(text: string): string {
@@ -373,6 +425,13 @@ export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
     let adjusted = false;
     const fields = new Map(Object.entries(FIELDS_V1));
     for (const [key, raw] of Object.entries(payload)) {
+      if (Object.hasOwn(LEGACY_V1, key)) {
+        const legacy = LEGACY_V1[key]!;
+        const checked = legacy.schema.safeParse(raw);
+        if (!checked.success) adjusted = true;
+        else for (const path of legacy.paths) config = setAtPath(config, path, checked.data);
+        continue;
+      }
       const descriptor = fields.get(key);
       if (!descriptor) {
         adjusted = true;

@@ -395,6 +395,7 @@
   }
 
   .link-notice {
+    pointer-events: none;
     position: fixed;
     left: 50%;
     bottom: calc(64px + env(safe-area-inset-bottom));

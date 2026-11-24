@@ -54,7 +54,7 @@ test('la lunette fixe partage ses graduations et sa couleur sans proposer de rot
   }
   await page.keyboard.press('Home');
   await page.keyboard.press('ArrowUp');
-  await page.getByRole('button', { name: 'Couleur de la lunette', exact: true }).click();
+  await page.getByRole('button', { name: 'Paramètres de la lunette', exact: true }).click();
   await (await hexField(page)).fill('#3A6382');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({ n: 10, p: 5, q: '#3A6382' });
@@ -86,8 +86,8 @@ test('la lunette fixe partage ses graduations et sa couleur sans proposer de rot
   await page.keyboard.press('Home');
   expect(payload(page)).toMatchObject({ a: 5, aa: 5, q: '#3A6382', p: 5 });
   await expect(
-    page.getByRole('button', { name: 'Couleur de la lunette', exact: true }),
-  ).toHaveCount(0);
+    page.getByRole('button', { name: 'Paramètres de la lunette', exact: true }),
+  ).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 

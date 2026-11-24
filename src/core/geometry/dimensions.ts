@@ -9,7 +9,13 @@ import { contourExtents, effectiveDialShape, fitAperture } from './dial-shape';
 import type { WatchConfig } from '../config/types';
 import { dialOpeningFactor } from '../config/dial-size';
 import { effectiveRehautProfile } from '../config/rehaut';
-import { hasBezelInsert, bezelEnvelopeRadius } from '../config/bezel';
+import {
+  hasBezelInsert,
+  bezelLayout,
+  bezelEnvelopeRadius,
+  independentBezel,
+  bezelShape,
+} from '../config/bezel';
 
 export interface WatchDimensions {
   /** Rayon extérieur du boîtier (hors couronne). */
@@ -17,8 +23,8 @@ export interface WatchDimensions {
   caseThickness: number;
   /** Largeur de la lunette vue de face. */
   bezelWidth: number;
-  /** Radius of the separate ring above a continuous lug shoulder. */
   bezelRadius: number;
+  bezelHeight: number;
   /** Rayon de l'ouverture de lunette (bord du cristal visible). */
   openingRadius: number;
   /** Rayon du cadran (sous le rehaut). */
@@ -56,15 +62,22 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
   const diameter = config.case.diameterMm;
   const thickness = config.case.thicknessMm;
   const caseRadius = diameter / 2;
+  const layout = bezelLayout(config);
+  const separate = independentBezel(config);
   const bezelRadius = bezelEnvelopeRadius(config, caseRadius);
-  const nominalBezel = clamp(diameter * 0.065, 1.4, 3.2);
+  const supportShape = separate ? bezelShape(config) : config.case.shape;
+  const nominalBezel = clamp(
+    clamp(diameter * 0.065, 1.4, 3.2) * layout.width,
+    hasBezelInsert(config) ? 1.4 : 0.9,
+    5.5,
+  );
   const openingFactor = dialOpeningFactor(config.dial.size);
   const requestedOpening = (bezelRadius - nominalBezel) * openingFactor;
   const bezelWidth = openingFactor === 1 ? nominalBezel : bezelRadius - requestedOpening;
   // Graduated inserts and their glass seat need a circular opening on every case outline.
   const dialShape = hasBezelInsert(config) ? 'round' : effectiveDialShape(config.dial.shape);
   // Circular apertures also need to fit the narrow sides of tonneau / rectangle cases.
-  const available = bezelRadius * contourExtents(config.case.shape).min - bezelWidth;
+  const available = bezelRadius * contourExtents(supportShape).min - bezelWidth;
   const openingRadius =
     dialShape === 'round' && available < requestedOpening ? available * 0.998 : requestedOpening;
   // Le rehaut (anneau incliné entre lunette et cadran) mange ≈ 0,6 mm.
@@ -74,7 +87,7 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
       : clamp(diameter * 0.045, 1, 2.2);
   const dialRadius = openingRadius - rehautWidth;
 
-  const dialScale = fitAperture(config.case.shape, dialShape, bezelRadius, openingRadius);
+  const dialScale = fitAperture(supportShape, dialShape, bezelRadius, openingRadius);
   const extents = contourExtents(dialShape);
   const dialSafeRadius =
     dialShape === 'round' ? dialRadius : dialRadius * dialScale * extents.min * 0.998;
@@ -82,7 +95,7 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
     dialShape === 'round' ? dialRadius : dialRadius * dialScale * extents.max * 1.002;
 
   // L'épaisseur annoncée va du fond au sommet du cristal.
-  const bezelTop = 0.24 * thickness;
+  const bezelTop = 0.24 * thickness + 0.2 * thickness * (layout.height - 1);
   const dome = (DOME_HEIGHT_RATIO[config.crystal.type] ?? 0.08) * thickness;
   const back = bezelTop + dome - thickness;
 
@@ -94,6 +107,7 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
     caseThickness: thickness,
     bezelWidth,
     bezelRadius,
+    bezelHeight: layout.height,
     openingRadius,
     dialRadius,
     dialShape,

@@ -22,6 +22,8 @@ import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
 import { hasLume } from '../../core/config/lume';
 import { bladeInsert, insertShape } from './inserts';
+import { handAdjustment, handStyle } from '../../core/config/hands';
+import { threeSpokeHand } from './three-spoke-hand';
 
 interface HandDesign {
   samples: Sample[];
@@ -392,7 +394,6 @@ export function buildHands(
   detailed = false,
 ): HandsParts {
   const k = d.dialSafeRadius / 20;
-  const design = DESIGNS[config.hands.set] ?? DESIGNS['sword']!;
   const steel = lib.handMaterial(config, 'plain');
   const thick = refined ? 0.16 : 0.22;
 
@@ -401,20 +402,30 @@ export function buildHands(
     ? [lib.handMaterial(config, 'face'), lib.handMaterial(config, 'edge')]
     : steel;
   const luminous = hasLume(config.hands);
-  const blade = (length: number, slimness: number, radius: number) => {
-    if (luminous)
-      return buildLuminousHand(config.hands.set, design, length, k, slimness, thick, radius);
+  const blade = (
+    part: 'hour' | 'minute',
+    referenceLength: number,
+    slimness: number,
+    radius: number,
+  ) => {
+    const adjustment = handAdjustment(config.hands, part);
+    const set = handStyle(config.hands, part);
+    const length = referenceLength * adjustment.length;
+    slimness *= adjustment.width;
+    if (set === 'mercedes') return threeSpokeHand(length, k, slimness, thick, radius);
+    const design = DESIGNS[set] ?? DESIGNS['sword']!;
+    if (luminous) return buildLuminousHand(set, design, length, k, slimness, thick, radius);
     return {
       blade: detailed
-        ? buildDetailedHand(config.hands.set, design, length, k, slimness, thick, radius)
+        ? buildDetailedHand(set, design, length, k, slimness, thick, radius)
         : machined
           ? buildMachinedBaton(length, k, slimness, thick, radius)
           : buildHand(design(length, k, slimness, thick), thick, radius),
       insert: null,
     };
   };
-  const hourParts = blade(d.hands.hour, 1, (refined ? 0.88 : 1.45) * k);
-  const minuteParts = blade(d.hands.minute, 0.78, (refined ? 0.65 : 1.15) * k);
+  const hourParts = blade('hour', d.hands.hour, 1, (refined ? 0.88 : 1.45) * k);
+  const minuteParts = blade('minute', d.hands.minute, 0.78, (refined ? 0.65 : 1.15) * k);
   const hour = new THREE.Mesh(hourParts.blade, materials);
   const minute = new THREE.Mesh(minuteParts.blade, materials);
 
@@ -455,8 +466,8 @@ export function buildHands(
     ['minute', minuteParts, pivots.minute],
   ] as const) {
     if (!parts.insert) continue;
-    const mesh = new THREE.Mesh(parts.insert, lib.luminous(config.hands));
-    mesh.name = `${name}-lume`;
+    const mesh = new THREE.Mesh(parts.insert, luminous ? lib.luminous(config.hands) : steel);
+    mesh.name = `${name}-${luminous ? 'lume' : 'inset'}`;
     pivot.add(mesh);
   }
   if (second) pivots.second.add(second);

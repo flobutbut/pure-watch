@@ -7,14 +7,14 @@ export function caseLevels(d: WatchDimensions) {
   const R = d.caseRadius;
   const T = d.caseThickness;
   const c = clamp(R * 0.034, 0.3, 0.65); // taille des chanfreins
-  const flankTop = d.z.bezelTop - 0.2 * T; // haut de la carrure, début de la lunette
+  const flankTop = d.z.bezelTop - 0.2 * T * d.bezelHeight; // fixed shoulder; bezel can rise above it
   const seat = d.z.bezelTop - 0.012 * T - c; // appui du cristal sous la lunette
   return { R, T, c, flankTop, seat, rehautTop: Math.min(0.6, seat - 0.2) };
 }
 
-/** Flat case shoulder under the separate bezel. */
+/** Flat shoulder below a separate bezel; independent of the bezel's added height. */
 export function caseDeckTop(d: WatchDimensions): number {
-  return caseLevels(d).seat - 0.12;
+  return caseLevels(d).seat - 0.2 * d.caseThickness * (d.bezelHeight - 1) - 0.12;
 }
 
 /**

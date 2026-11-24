@@ -44,7 +44,9 @@ test('chaque panneau se ferme d’un clic dans le vide, pas d’un clic dedans n
   // Paramètres des index : le clic ne fait que refermer, la grille ne bouge pas.
   await row(page, 'indices');
   const active = await grid.getAttribute('aria-activedescendant');
-  await page.getByRole('button', { name: 'Paramètres des index : taille et position' }).click();
+  await page
+    .getByRole('button', { name: 'Paramètres des index : longueur, largeur et position' })
+    .click();
   const indices = page.getByRole('dialog', { name: 'Index', exact: true });
   await expect(indices).toBeVisible();
   await indices.getByRole('heading', { name: 'Index' }).click();
@@ -117,7 +119,9 @@ test('la croix reste atteignable dans une petite fenêtre', async ({ page }, inf
 
   // Un panneau plus haut que la fenêtre : l'en-tête reste visible, seul le corps défile.
   await row(page, 'indices');
-  await page.getByRole('button', { name: 'Paramètres des index : taille et position' }).click();
+  await page
+    .getByRole('button', { name: 'Paramètres des index : longueur, largeur et position' })
+    .click();
   const indices = page.getByRole('dialog', { name: 'Index', exact: true });
   const closeIndices = indices.getByRole('button', { name: 'Fermer les couleurs', exact: true });
   await closeReachable(page, closeIndices);

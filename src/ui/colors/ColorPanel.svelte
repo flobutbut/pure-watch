@@ -9,7 +9,8 @@
     hsvToHex,
     normalizeHex,
     INDEX_RADIUS_RANGE,
-    INDEX_SIZE_RANGE,
+    INDEX_LENGTH_RANGE,
+    INDEX_WIDTH_RANGE,
     NUMERAL_RADIUS_RANGE,
     NUMERAL_SIZE_RANGE,
     targetColor,
@@ -24,7 +25,10 @@
   import RestoreButton from '../kit/RestoreButton.svelte';
   import Sheet from '../sheet/Sheet.svelte';
   import LumeControls from './LumeControls.svelte';
+  import HandSettings from './HandSettings.svelte';
+  import BezelSettings from './BezelSettings.svelte';
   import LugSettings from './LugSettings.svelte';
+  import { hasBezelInsert } from '../../core/config/bezel';
   import { tint } from '../../core/color/names';
   import { i18n, t } from '../i18n.svelte';
 
@@ -55,11 +59,17 @@
   let hexInput = $state(initialHex);
   let finish = $state(initial.finish);
   let matched = $state(initial.color === 'match');
-  /** Chiffres : taille et distance au centre, réglées dans le même panneau. */
+  /**
+   * Chiffres et index : taille et distance au centre, réglées dans le même panneau. Pour les
+   * index, `size` est la longueur et `width` la largeur.
+   */
   let size = $state(initial.layout?.size ?? 1);
+  let width = $state(initial.layout?.width ?? 1);
   let radius = $state(initial.layout?.radius ?? 1);
   let numeralSystem = $state<NumeralSystem>(initial.numeralSystem ?? 'arabic');
   let lume = $state(initial.lume);
+  let handLayout = $state(initial.handLayout);
+  let bezelLayout = $state(initial.bezelLayout);
   let lugJoin = $state(initial.lugJoin);
   let recent = $state<HexColor[]>([]);
   let spectrum = $state<HTMLButtonElement>();
@@ -71,30 +81,37 @@
   const title = $derived(t().colors[target]);
   const ranges = $derived(
     target === 'indices'
-      ? { size: INDEX_SIZE_RANGE, radius: INDEX_RADIUS_RANGE }
-      : { size: NUMERAL_SIZE_RANGE, radius: NUMERAL_RADIUS_RANGE },
+      ? { size: INDEX_LENGTH_RANGE, width: INDEX_WIDTH_RANGE, radius: INDEX_RADIUS_RANGE }
+      : { size: NUMERAL_SIZE_RANGE, width: null, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
     target === 'lugs'
       ? false
-      : target === 'indices'
-        ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
-        : target === 'rehaut'
-          ? finish === 'custom'
-          : target !== 'hands' || finish === 'lacquer',
+      : target === 'bezel'
+        ? hasBezelInsert(config)
+        : target === 'indices'
+          ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
+          : target === 'rehaut'
+            ? finish === 'custom'
+            : target !== 'hands' || finish === 'lacquer',
   );
   const color = $derived(hsvToHex(hsv.h, hsv.s, hsv.v));
   const valid = $derived(!free || matched || normalizeHex(hexInput) !== null);
   const choice = $derived<ColorChoice>({
     color: matched ? 'match' : color,
     finish,
-    ...(initial.layout ? { layout: { size, radius } } : {}),
+    ...(initial.layout
+      ? { layout: { size, radius, ...(initial.layout.width !== undefined ? { width } : {}) } }
+      : {}),
     ...(target === 'numerals' ? { numeralSystem } : {}),
     ...(lume ? { lume } : {}),
+    ...(handLayout ? { handLayout } : {}),
+    ...(bezelLayout ? { bezelLayout } : {}),
     ...(lugJoin ? { lugJoin } : {}),
   });
   const sameLayout = (a: ColorChoice['layout'], b: ColorChoice['layout']) =>
     Math.abs((a?.size ?? 1) - (b?.size ?? 1)) < 0.005 &&
+    Math.abs((a?.width ?? 1) - (b?.width ?? 1)) < 0.005 &&
     Math.abs((a?.radius ?? 1) - (b?.radius ?? 1)) < 0.005;
   /** Slider wording: the reference value is named, the rest read as a share of it. */
   const factor = (value: number) =>
@@ -110,6 +127,8 @@
       !sameColor(choice.color, initial.color) ||
       choice.numeralSystem !== initial.numeralSystem ||
       JSON.stringify(choice.lume) !== JSON.stringify(initial.lume) ||
+      JSON.stringify(choice.handLayout) !== JSON.stringify(initial.handLayout) ||
+      JSON.stringify(choice.bezelLayout) !== JSON.stringify(initial.bezelLayout) ||
       choice.lugJoin !== initial.lugJoin ||
       !sameLayout(choice.layout, initial.layout),
   );
@@ -195,9 +214,12 @@
     finish = initial.finish;
     matched = initial.color === 'match';
     size = initial.layout?.size ?? 1;
+    width = initial.layout?.width ?? 1;
     radius = initial.layout?.radius ?? 1;
     numeralSystem = initial.numeralSystem ?? 'arabic';
     lume = initial.lume;
+    handLayout = initial.handLayout;
+    bezelLayout = initial.bezelLayout;
     lugJoin = initial.lugJoin;
   }
   // An unfinished HEX entry is ignored: the last valid colour, still shown on the watch, is kept.
@@ -227,6 +249,16 @@
   inertPage={false}
   onclose={close}
 >
+  {#if handLayout}
+    <HandSettings
+      value={handLayout}
+      baseStyle={config.hands.set}
+      onchange={(value) => (handLayout = value)}
+    />
+  {/if}
+  {#if bezelLayout}
+    <BezelSettings value={bezelLayout} {config} onchange={(value) => (bezelLayout = value)} />
+  {/if}
   {#if lugJoin}<LugSettings value={lugJoin} onchange={(value) => (lugJoin = value)} />{/if}
   {#if target === 'rehaut'}
     <div class="links" role="group" aria-label={t().colors.rehautFinish}>
@@ -243,6 +275,7 @@
     </div>
   {/if}
   {#if target === 'hands'}
+    <p class="settings-heading">{t().colors.handsFinish}</p>
     <div class="finishes" role="group" aria-label={t().colors.handsFinish}>
       {#each HAND_FINISHES as item (item.id)}
         <Button
@@ -302,7 +335,9 @@
   {#if initial.layout}
     <div class="layout">
       <label class="slider">
-        <span class="slider-head">{t().colors.size} <span>{factor(size)}</span></span>
+        <span class="slider-head">
+          {ranges.width ? t().colors.length : t().colors.size} <span>{factor(size)}</span>
+        </span>
         <input
           type="range"
           min={ranges.size.min}
@@ -314,6 +349,21 @@
           oninput={(event) => (size = Number(event.currentTarget.value))}
         />
       </label>
+      {#if ranges.width}
+        <label class="slider">
+          <span class="slider-head">{t().colors.width} <span>{factor(width)}</span></span>
+          <input
+            type="range"
+            min={ranges.width.min}
+            max={ranges.width.max}
+            step="0.01"
+            value={width}
+            style:--fill={fill(width, ranges.width)}
+            aria-valuetext={factor(width)}
+            oninput={(event) => (width = Number(event.currentTarget.value))}
+          />
+        </label>
+      {/if}
       <label class="slider">
         <span class="slider-head">{t().colors.position} <span>{factor(radius)}</span></span>
         <input
@@ -356,7 +406,9 @@
   {/if}
 
   {#if lume}
-    <LumeControls value={lume} onchange={(value) => (lume = value)} {night} {onnight} />
+    <div class:hand-lume={target === 'hands'}>
+      <LumeControls value={lume} onchange={(value) => (lume = value)} {night} {onnight} />
+    </div>
   {/if}
 
   {#if free}
@@ -492,7 +544,9 @@
   {/if}
   {#snippet footer()}
     <RestoreButton
-      title={initial.layout || lugJoin ? t().colors.restoreSettings : t().colors.restoreColor}
+      title={initial.layout || handLayout || bezelLayout || lugJoin
+        ? t().colors.restoreSettings
+        : t().colors.restoreColor}
       disabled={!changed}
       onclick={restore}
     />
@@ -500,6 +554,18 @@
 </Sheet>
 
 <style>
+  .settings-heading {
+    font-size: var(--text-m);
+    font-weight: 600;
+    margin: 8px 0 10px;
+    border-top: 1px solid var(--control-line);
+    padding-top: 20px;
+  }
+  .hand-lume {
+    border-top: 1px solid var(--control-line);
+    padding-top: 20px;
+    margin-top: 20px;
+  }
   .finishes,
   .links {
     display: flex;

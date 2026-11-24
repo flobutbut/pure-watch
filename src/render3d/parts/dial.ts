@@ -290,7 +290,8 @@ export function buildIndices(
     ...numeralHours(config.dial.indices.numerals),
     ...complicationHours(config),
   ]);
-  const { indexSize: size, indexRadius: factor } = config.dial.indices;
+  // Longueur dans l'axe du rayon (Y de la forme), largeur en travers (X).
+  const { indexLength: length, indexWidth: width, indexRadius: factor } = config.dial.indices;
   const luminous = hasLume(config.dial.indices);
   const printed = config.dial.indices.finish === 'printed';
   const units = new Map<
@@ -331,15 +332,15 @@ export function buildIndices(
         unit = plate.base;
         insert = plate.insert;
       }
-      if (size !== 1) {
-        unit.scale(size, size, 1);
-        insert?.scale(size, size, 1);
+      if (length !== 1 || width !== 1) {
+        unit.scale(width, length, 1);
+        insert?.scale(width, length, 1);
       }
       unit.computeBoundingBox();
       const half =
         Math.max(-unit.boundingBox!.min.y, unit.boundingBox!.max.y) * Math.max(1, design.big ?? 1);
       // Agrandis ou repoussés, les index peuvent recouvrir la minuterie jusqu'au réhaut.
-      const outer = Math.max(design.radius + half / size, d.dialSafeRadius * INDEX_REACH);
+      const outer = Math.max(design.radius + half / length, d.dialSafeRadius * INDEX_REACH);
       // Au-delà de 100 %, la position glisse vers le bord : au maximum du curseur, le bout
       // de l'index touche la limite, quelles que soient sa forme et sa taille.
       const edge = outer - half;
@@ -352,7 +353,8 @@ export function buildIndices(
     const { design, unit, insert, radius: baseRadius } = prepared;
     const angle = (hour / 12) * Math.PI * 2;
     const twelve = hour === 0;
-    const offsets = twelve && design.twin ? [-design.twin * size, design.twin * size] : [0];
+    // Le doublé de 12 h s'écarte avec la largeur, pour que les deux index ne se chevauchent pas.
+    const offsets = twelve && design.twin ? [-design.twin * width, design.twin * width] : [0];
     for (const dx of offsets) {
       const radius =
         d.dialShape === 'round'

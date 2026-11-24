@@ -131,7 +131,8 @@ test('raccord fondu sur la configuration signalée : vue de face dégagée', asy
       I: 4,
       an: 0.98,
       ba: 3,
-      am: 1.21,
+      bc: 1.21,
+      bd: 1.21,
     }),
   );
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });

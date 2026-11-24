@@ -38,6 +38,11 @@ export interface CrownConfig {
 }
 
 export interface BezelConfig {
+  shape: string;
+  /** Width and height relative to the standard profile. */
+  width: number;
+  height: number;
+  finish: string;
   /** Clockwise position of the bezel's zero marker, in degrees. */
   angleDeg: number;
   type: Open<
@@ -141,8 +146,10 @@ export interface DialConfig {
     >;
     /** Facteur de taille des chiffres des heures (1 = taille de référence). */
     numeralSize: number;
-    /** Facteur de taille des index appliqués (1 = référence). */
-    indexSize: number;
+    /** Facteur de longueur des index appliqués, dans l'axe du rayon (1 = référence). */
+    indexLength: number;
+    /** Facteur de largeur des index appliqués, en travers du rayon (1 = référence). */
+    indexWidth: number;
     /** Distance des index au centre, en facteur de leur position habituelle. */
     indexRadius: number;
     /** Teinte des chiffres des heures, ou « match » : l'encre de l'impression. */
@@ -156,7 +163,14 @@ export interface DialConfig {
   text: { brand: string; line2: string; position: ClockPosition };
 }
 
+export interface HandAdjustment {
+  style: string;
+  length: number;
+  width: number;
+}
 export interface HandsConfig {
+  hour: HandAdjustment;
+  minute: HandAdjustment;
   set: string;
   finish: string;
   /** Couleur conservée pour la finition laquée, indépendamment des métaux. */

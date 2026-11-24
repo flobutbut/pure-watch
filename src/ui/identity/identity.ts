@@ -1,9 +1,11 @@
 /** Contenu de la fiche d'identité : la configuration lue comme une fiche technique. */
 import type { RowDef } from '../../core/catalog/types';
+import { ralName, tint } from '../../core/color/names';
+import { bezelScale, hasBezelInsert, bezelLayout, bezelShape } from '../../core/config/bezel';
+import { handAdjustment, handStyle } from '../../core/config/hands';
+import { PART_SETTINGS } from '../colors/part-settings';
 import { lugJoin } from '../../core/config/lugs';
 import { LUG_SETTINGS } from '../colors/lug-settings';
-import { ralName, tint } from '../../core/color/names';
-import { bezelScale, hasBezelInsert } from '../../core/config/bezel';
 import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
 import { hasLume, lumeChoice, lumePigment } from '../../core/config/lume';
 import { dateComplication } from '../../core/config/date';
@@ -86,7 +88,7 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
       reference: ral ? `≈ RAL ${ral.code}${ralLabel === name ? '' : ` ${ralLabel}`}` : m.noRal,
     };
   };
-  const share = (value: number, of: 'size' | 'distance') =>
+  const share = (value: number, of: 'size' | 'length' | 'width' | 'distance') =>
     Math.abs(value - 1) < 0.005 ? m.standard : m.share(Math.round(value * 100), of);
 
   if (row.id === 'dial-finish' && !hasIntrinsicColor(config.dial.finish)) {
@@ -151,7 +153,7 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
     ];
   }
   if (row.id === 'indices' && config.dial.indices.style !== 'none') {
-    const { indexSize, indexRadius } = config.dial.indices;
+    const { indexLength, indexWidth, indexRadius } = config.dial.indices;
     const finish =
       INDEX_FINISHES.find((item) => item.id === config.dial.indices.finish)?.name ?? 'polished';
     return [
@@ -161,7 +163,8 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
         swatch: indexColor(config),
         metal: !['printed', 'lacquer'].includes(finish),
       },
-      { label: m.indexSize, value: share(indexSize, 'size') },
+      { label: m.indexLength, value: share(indexLength, 'length') },
+      { label: m.indexWidth, value: share(indexWidth, 'width') },
       { label: m.indexPosition, value: share(indexRadius, 'distance') },
     ];
   }
@@ -206,6 +209,50 @@ export function identitySections(
         label: LUG_SETTINGS[locale].label,
         value: LUG_SETTINGS[locale].names[lugJoin(config)],
       });
+    const settings = PART_SETTINGS[locale];
+    if (
+      row.id === 'hands' &&
+      ['hour', 'minute'].some((part) => {
+        const a = handAdjustment(config.hands, part as 'hour' | 'minute');
+        return a.style !== 'match' || a.length !== 1 || a.width !== 1;
+      })
+    ) {
+      for (const part of ['hour', 'minute'] as const) {
+        const a = handAdjustment(config.hands, part);
+        section.traits.push(
+          {
+            label: part === 'hour' ? settings.hourDesign : settings.minuteDesign,
+            value: settings.styles[handStyle(config.hands, part)] ?? handStyle(config.hands, part),
+          },
+          {
+            label: part === 'hour' ? settings.hourLength : settings.minuteLength,
+            value: `${Math.round(a.length * 100)} %`,
+          },
+          {
+            label: part === 'hour' ? settings.hourWidth : settings.minuteWidth,
+            value: `${Math.round(a.width * 100)} %`,
+          },
+        );
+      }
+    }
+    if (row.id === 'bezel') {
+      const b = bezelLayout(config);
+      if (b.shape !== 'case' || b.width !== 1 || b.height !== 1 || b.finish !== 'case') {
+        const d = watchDimensions(config);
+        section.traits.push(
+          {
+            label: settings.bezelShape,
+            value: settings.shapes[bezelShape(config)] ?? bezelShape(config),
+          },
+          { label: settings.bezelWidth, value: len(Number(d.bezelWidth.toFixed(2))) },
+          {
+            label: settings.bezelHeight,
+            value: `${Math.round(b.height * 100)} %`,
+          },
+          { label: settings.bezelFinish, value: settings.finishes[b.finish] ?? b.finish },
+        );
+      }
+    }
     if (row.id === 'hands' || (row.id === 'indices' && config.dial.indices.style !== 'none')) {
       const part = row.id === 'hands' ? config.hands : config.dial.indices;
       const lm = m.lume;
