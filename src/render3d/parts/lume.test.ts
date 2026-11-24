@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultConfig } from '../../core/config/defaults';
 import { proportionsForDiameter, watchDimensions } from '../../core/geometry/dimensions';
 import { MaterialLibrary } from '../materials';
-import { buildIndices } from './dial';
+import { INDEX_REACH, buildIndices } from './dial';
 import { buildHands, HAND_SETS } from './hands';
 
 const dispose = (object: THREE.Object3D) =>
@@ -101,7 +101,9 @@ describe('inserts lumineux construits en géométrie', () => {
       const x = p.getX(i),
         y = p.getY(i);
       expect(Number.isFinite(x + y + p.getZ(i))).toBe(true);
-      expect(Math.max(Math.abs(x), Math.abs(y))).toBeLessThanOrEqual(d.dialSafeRadius * 0.9 + 1e-3);
+      expect(Math.max(Math.abs(x), Math.abs(y))).toBeLessThanOrEqual(
+        d.dialSafeRadius * INDEX_REACH + 1e-3,
+      );
       hours.add((Math.round((Math.atan2(x, y) * 6) / Math.PI) + 12) % 12);
     }
     expect([...hours].sort((a, b) => a - b)).toEqual([1, 2, 4, 5, 7, 8, 9, 10, 11]);
