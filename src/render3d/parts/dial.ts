@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { dialRadiusAt } from '../../core/geometry/dial-shape';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
-import { effectiveDialColor } from '../../core/config/dial';
+import { effectiveDialColor, numeralColor } from '../../core/config/dial';
 import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
@@ -102,6 +102,9 @@ export function buildDial(
       line2: config.dial.text.line2,
       numerals: config.dial.indices.numerals,
       numeralFont: config.dial.indices.numeralFont,
+      numeralInk: numeralColor(config.dial),
+      numeralSize: config.dial.indices.numeralSize,
+      numeralRadius: config.dial.indices.numeralRadius,
       omitHours: complicationHours(config),
     }),
   );
@@ -264,7 +267,11 @@ function indexDesign(style: string, R: number): IndexDesign | null {
   }
 }
 
-function buildIndices(config: WatchConfig, d: WatchDimensions, lib: MaterialLibrary): THREE.Group {
+export function buildIndices(
+  config: WatchConfig,
+  d: WatchDimensions,
+  lib: MaterialLibrary,
+): THREE.Group {
   const group = new THREE.Group();
   group.name = 'indices';
   const design = indexDesign(config.dial.indices.style, d.dialSafeRadius);
@@ -276,19 +283,31 @@ function buildIndices(config: WatchConfig, d: WatchDimensions, lib: MaterialLibr
     ...complicationHours(config),
   ]);
   const unit = design.geometry();
+  const { indexSize: size, indexRadius: factor } = config.dial.indices;
+  if (size !== 1) unit.scale(size, size, 1);
+  // Half length along the radius, at the reference size and at the chosen one.
+  unit.computeBoundingBox();
+  // The 12 o'clock index may be enlarged: the edge limit applies to the largest one.
+  const half =
+    Math.max(-unit.boundingBox!.min.y, unit.boundingBox!.max.y) * Math.max(1, design.big ?? 1);
+  const half0 = half / size;
+  // Pushed outwards, an index stops before the minute track (≈ 0.9 R), unless the
+  // reference layout already reaches further.
+  const outer = Math.max(design.radius + half0, d.dialSafeRadius * 0.9);
+  const baseRadius = Math.min(design.radius * factor, outer - half);
   const parts: THREE.BufferGeometry[] = [];
   for (let hour = 0; hour < 12; hour++) {
     if (skip.has(hour)) continue;
     const angle = (hour / 12) * Math.PI * 2;
     const twelve = hour === 0;
-    const offsets = twelve && design.twin ? [-design.twin, design.twin] : [0];
+    const offsets = twelve && design.twin ? [-design.twin * size, design.twin * size] : [0];
     for (const dx of offsets) {
       const g = unit.clone();
       if (twelve && design.big) g.scale(design.big, design.big, 1);
       const radius =
         d.dialShape === 'round'
-          ? design.radius
-          : (design.radius / d.dialSafeRadius) * dialRadiusAt(d, Math.PI / 2 - angle);
+          ? baseRadius
+          : (baseRadius / d.dialSafeRadius) * dialRadiusAt(d, Math.PI / 2 - angle);
       g.translate(dx, radius, 0);
       g.rotateZ(-angle);
       parts.push(g.index ? g.toNonIndexed() : g);

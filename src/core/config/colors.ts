@@ -1,12 +1,22 @@
-import { effectiveDialColor } from './dial';
+import { effectiveDialColor, numeralColor } from './dial';
 import { rehautColor } from './rehaut';
 import type { HexColor, WatchConfig } from './types';
 
-export type ColorTarget = 'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel';
+/** Pièces réglées dans le panneau latéral ; « indices » n'a que taille et position. */
+export type ColorTarget =
+  'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel' | 'numerals' | 'indices';
 export interface ColorChoice {
   color: HexColor | 'match';
   finish: string;
+  /** Chiffres : le même panneau règle aussi leur taille et leur distance au centre. */
+  layout?: { size: number; radius: number };
 }
+
+/** Plages des curseurs de taille et de position des chiffres (facteurs de la référence). */
+export const NUMERAL_SIZE_RANGE = { min: 0.7, max: 1.75 } as const;
+export const NUMERAL_RADIUS_RANGE = { min: 0.6, max: 1.1 } as const;
+export const INDEX_SIZE_RANGE = { min: 0.6, max: 1.6 } as const;
+export const INDEX_RADIUS_RANGE = { min: 0.6, max: 1.1 } as const;
 export const HAND_FINISHES = [
   { id: 'polished', name: 'Acier', color: '#E8EBF0' },
   { id: 'gold', name: 'Or', color: '#D3AA54' },
@@ -33,6 +43,18 @@ export function handColor(config: WatchConfig): HexColor {
 export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
   if (target === 'bezel') return { color: config.bezel.color, finish: 'ceramic' };
   if (target === 'rehaut') return { color: config.rehaut.color, finish: config.rehaut.finish };
+  if (target === 'indices')
+    return {
+      color: 'match',
+      finish: config.dial.indices.finish,
+      layout: { size: config.dial.indices.indexSize, radius: config.dial.indices.indexRadius },
+    };
+  if (target === 'numerals')
+    return {
+      color: config.dial.indices.numeralColor,
+      finish: 'print',
+      layout: { size: config.dial.indices.numeralSize, radius: config.dial.indices.numeralRadius },
+    };
   return {
     color:
       target === 'dial'
@@ -75,6 +97,34 @@ export function withColorChoice(
         color: choice.color === 'match' ? config.hands.color : choice.color,
       },
     };
+  if (target === 'indices')
+    return choice.layout
+      ? {
+          ...config,
+          dial: {
+            ...config.dial,
+            indices: {
+              ...config.dial.indices,
+              indexSize: choice.layout.size,
+              indexRadius: choice.layout.radius,
+            },
+          },
+        }
+      : config;
+  if (target === 'numerals')
+    return {
+      ...config,
+      dial: {
+        ...config.dial,
+        indices: {
+          ...config.dial.indices,
+          numeralColor: choice.color,
+          ...(choice.layout
+            ? { numeralSize: choice.layout.size, numeralRadius: choice.layout.radius }
+            : {}),
+        },
+      },
+    };
   if (target === 'seconds')
     return {
       ...config,
@@ -88,6 +138,9 @@ export function targetColor(config: WatchConfig, target: ColorTarget): string {
   if (target === 'bezel') return config.bezel.color;
   if (target === 'rehaut') return rehautColor(config);
   if (target === 'dial') return effectiveDialColor(config.dial);
+  if (target === 'numerals') return numeralColor(config.dial);
+  // Applied indices are polished steel.
+  if (target === 'indices') return '#E8EBF0';
   if (target === 'hands' || config.hands.second.color === 'match') return handColor(config);
   return config.hands.second.color;
 }

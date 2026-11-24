@@ -73,6 +73,40 @@ export const FONTS: Record<string, FontDef> = {
         import('@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff2?inline'),
       ),
   },
+  // Très grasse : grotesque noire, chiffres pleins et massifs (Archivo Black).
+  black: {
+    family: 'Archivo Black, sans-serif',
+    embedded: 'Archivo Black',
+    weight: 400,
+    load: () =>
+      inline(import('@fontsource/archivo-black/files/archivo-black-latin-400-normal.woff2?inline')),
+  },
+  // Slab épaisse : empattements carrés et lourds, esprit affiche (Alfa Slab One).
+  slab: {
+    family: 'Alfa Slab One, serif',
+    embedded: 'Alfa Slab One',
+    weight: 400,
+    load: () =>
+      inline(import('@fontsource/alfa-slab-one/files/alfa-slab-one-latin-400-normal.woff2?inline')),
+  },
+  // Didone grasse : contrastes extrêmes, pleins très noirs et déliés fins (Abril Fatface).
+  'fat-face': {
+    family: 'Abril Fatface, serif',
+    embedded: 'Abril Fatface',
+    weight: 400,
+    load: () =>
+      inline(import('@fontsource/abril-fatface/files/abril-fatface-latin-400-normal.woff2?inline')),
+  },
+  // Pochoir : chiffres coupés, montre militaire (Allerta Stencil).
+  stencil: {
+    family: 'Allerta Stencil, sans-serif',
+    embedded: 'Allerta Stencil',
+    weight: 400,
+    load: () =>
+      inline(
+        import('@fontsource/allerta-stencil/files/allerta-stencil-latin-400-normal.woff2?inline'),
+      ),
+  },
 };
 
 export function fontDef(id: string | undefined): FontDef {

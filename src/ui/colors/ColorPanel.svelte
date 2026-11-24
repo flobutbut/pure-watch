@@ -3,14 +3,19 @@
   import {
     colorChoice,
     HAND_FINISHES,
+    handColor,
     hexToHsv,
     hsvToHex,
     normalizeHex,
+    INDEX_RADIUS_RANGE,
+    INDEX_SIZE_RANGE,
+    NUMERAL_RADIUS_RANGE,
+    NUMERAL_SIZE_RANGE,
     targetColor,
     type ColorChoice,
     type ColorTarget,
   } from '../../core/config/colors';
-  import { effectiveDialColor } from '../../core/config/dial';
+  import { effectiveDialColor, printInk } from '../../core/config/dial';
   import { REHAUT_FINISHES } from '../../core/config/rehaut';
   import type { HexColor, WatchConfig } from '../../core/config/types';
   import Sheet from '../sheet/Sheet.svelte';
@@ -33,6 +38,9 @@
   let hexInput = $state(initialHex);
   let finish = $state(initial.finish);
   let matched = $state(initial.color === 'match');
+  /** Chiffres : taille et distance au centre, réglées dans le même panneau. */
+  let size = $state(initial.layout?.size ?? 1);
+  let radius = $state(initial.layout?.radius ?? 1);
   let recent = $state<HexColor[]>([]);
   let spectrum = $state<HTMLButtonElement>();
   let pointer: number | null = null;
@@ -49,18 +57,44 @@
           ? 'Couleur de la lunette'
           : target === 'rehaut'
             ? 'Matière et couleur du réhaut'
-            : 'Couleur de la trotteuse',
+            : target === 'numerals'
+              ? 'Chiffres'
+              : target === 'indices'
+                ? 'Index'
+                : 'Couleur de la trotteuse',
+  );
+  /** Index : taille et position seulement, leur matière suit la finition appliquée. */
+  const colorless = $derived(target === 'indices');
+  const ranges = $derived(
+    target === 'indices'
+      ? { size: INDEX_SIZE_RANGE, radius: INDEX_RADIUS_RANGE }
+      : { size: NUMERAL_SIZE_RANGE, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    target === 'rehaut' ? finish === 'custom' : target !== 'hands' || finish === 'lacquer',
+    !colorless &&
+      (target === 'rehaut' ? finish === 'custom' : target !== 'hands' || finish === 'lacquer'),
   );
   const color = $derived(hsvToHex(hsv.h, hsv.s, hsv.v));
   const valid = $derived(!free || matched || normalizeHex(hexInput) !== null);
-  const choice = $derived<ColorChoice>({ color: matched ? 'match' : color, finish });
+  const choice = $derived<ColorChoice>({
+    color: matched ? 'match' : color,
+    finish,
+    ...(initial.layout ? { layout: { size, radius } } : {}),
+  });
+  const sameLayout = (a: ColorChoice['layout'], b: ColorChoice['layout']) =>
+    Math.abs((a?.size ?? 1) - (b?.size ?? 1)) < 0.005 &&
+    Math.abs((a?.radius ?? 1) - (b?.radius ?? 1)) < 0.005;
+  /** Slider wording: the reference value is named, the rest read as a share of it. */
+  const factor = (value: number) =>
+    Math.abs(value - 1) < 0.005 ? 'Standard' : `${Math.round(value * 100)} %`;
+  const fill = (value: number, range: { min: number; max: number }) =>
+    `${((value - range.min) / (range.max - range.min)) * 100}%`;
   const sameColor = (a: ColorChoice['color'], b: ColorChoice['color']) =>
     a === b || (a !== 'match' && b !== 'match' && normalizeHex(a) === normalizeHex(b));
   const changed = $derived(
-    choice.finish !== initial.finish || !sameColor(choice.color, initial.color),
+    choice.finish !== initial.finish ||
+      !sameColor(choice.color, initial.color) ||
+      !sameLayout(choice.layout, initial.layout),
   );
   let previewTimer: ReturnType<typeof setTimeout> | undefined;
   let pendingPreview: ColorChoice;
@@ -143,6 +177,8 @@
     hexInput = initialHex;
     finish = initial.finish;
     matched = initial.color === 'match';
+    size = initial.layout?.size ?? 1;
+    radius = initial.layout?.radius ?? 1;
   }
   // An unfinished HEX entry is ignored: the last valid colour, still shown on the watch, is kept.
   function close() {
@@ -222,6 +258,62 @@
     </div>
   {/if}
 
+  {#if initial.layout}
+    <div class="layout">
+      <label class="slider">
+        <span class="slider-head">Taille <span>{factor(size)}</span></span>
+        <input
+          type="range"
+          min={ranges.size.min}
+          max={ranges.size.max}
+          step="0.01"
+          value={size}
+          style:--fill={fill(size, ranges.size)}
+          aria-valuetext={factor(size)}
+          oninput={(event) => (size = Number(event.currentTarget.value))}
+        />
+      </label>
+      <label class="slider">
+        <span class="slider-head">Position <span>{factor(radius)}</span></span>
+        <input
+          type="range"
+          min={ranges.radius.min}
+          max={ranges.radius.max}
+          step="0.01"
+          value={radius}
+          style:--fill={fill(radius, ranges.radius)}
+          aria-valuetext="{factor(radius)} de la distance au centre"
+          oninput={(event) => (radius = Number(event.currentTarget.value))}
+        />
+        <span class="slider-ends" aria-hidden="true"><span>Centre</span><span>Bord</span></span>
+      </label>
+    </div>
+  {/if}
+  {#if target === 'numerals'}
+    <p class="section-label">Couleur</p>
+    <div class="links" role="group" aria-label="Accords de couleurs">
+      <button
+        type="button"
+        aria-pressed={matched}
+        class:chosen={matched}
+        onclick={() => {
+          selectHex(printInk(effectiveDialColor(config.dial)));
+          matched = true;
+        }}
+      >
+        Encre du cadran
+      </button>
+      <button type="button" onclick={() => selectHex(handColor(config))}>
+        Couleur des aiguilles
+      </button>
+      {#if config.hands.second.color !== 'match'}
+        <button type="button" onclick={() => selectHex(targetColor(config, 'seconds'))}>
+          Couleur de la trotteuse
+        </button>
+      {/if}
+    </div>
+  {/if}
+
   {#if free}
     <div class="palette-section">
       <p class="section-label">Teintes proposées</p>
@@ -259,12 +351,6 @@
       </div>
     {/if}
 
-    {#if matched}
-      <p class="match-note">
-        La trotteuse suit la matière des aiguilles. Choisissez une teinte pour lui donner sa propre
-        couleur.
-      </p>
-    {/if}
     <div class="custom" class:muted={matched}>
       {#if !matched}
         <p class="tint" aria-live="polite">
@@ -360,22 +446,12 @@
           </p>{/if}
       </details>
     </div>
-  {:else}
-    <p class="metal-note">
-      {#if target === 'rehaut'}
-        Le réhaut suit {finish === 'metal' ? 'la matière du boîtier' : 'la couleur du cadran'}.
-        Sélectionnez « Couleur libre » pour choisir sa propre teinte.
-      {:else}
-        Les reflets et la matière suivent la finition choisie. Sélectionnez « Laqué » pour créer une
-        couleur libre.
-      {/if}
-    </p>
   {/if}
   {#snippet footer()}
     <button
       type="button"
       class="restore"
-      title="Revenir à la couleur d’origine"
+      title={initial.layout ? 'Revenir aux réglages d’origine' : 'Revenir à la couleur d’origine'}
       disabled={!changed}
       onclick={restore}
     >
@@ -409,6 +485,65 @@
     border-color: var(--ink);
     background: color-mix(in srgb, var(--ink) 12%, transparent);
     box-shadow: inset 0 0 0 1px var(--ink);
+  }
+  .layout {
+    display: grid;
+    gap: 18px;
+    margin: 0 0 22px;
+  }
+  .layout:last-child {
+    margin-bottom: 0;
+  }
+  .slider {
+    display: block;
+    font-size: 11px;
+  }
+  .slider-head span {
+    float: right;
+    opacity: 0.6;
+  }
+  .slider input {
+    display: block;
+    width: 100%;
+    height: 6px;
+    margin: 12px 0 0;
+    border-radius: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: linear-gradient(
+      to right,
+      var(--ink) var(--fill),
+      color-mix(in srgb, var(--ink) 18%, transparent) var(--fill)
+    );
+    cursor: pointer;
+  }
+  .slider input::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 3px solid var(--control, #fff);
+    box-shadow: 0 1px 4px #0006;
+  }
+  .slider input::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 3px solid var(--control, #fff);
+    box-shadow: 0 1px 4px #0006;
+  }
+  .slider input:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 6px;
+  }
+  .slider-ends {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    opacity: 0.55;
   }
   .swatches {
     display: flex;
@@ -574,13 +709,6 @@
   .error {
     font-size: 11px;
     margin: 8px 0 0;
-  }
-  .match-note,
-  .metal-note {
-    font-size: 12px;
-    line-height: 1.6;
-    opacity: 0.7;
-    margin: 0 0 18px;
   }
   .muted {
     opacity: 0.5;

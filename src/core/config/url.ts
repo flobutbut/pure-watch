@@ -15,7 +15,19 @@ const V1_DEFAULTS = {
   ...frozenDefaults,
   case: { ...frozenDefaults.case, profile: 'curved' },
   bezel: { ...frozenDefaults.bezel, angleDeg: 0 },
-  dial: { ...frozenDefaults.dial, shape: 'round', size: 'open' },
+  dial: {
+    ...frozenDefaults.dial,
+    shape: 'round',
+    size: 'open',
+    indices: {
+      ...frozenDefaults.dial.indices,
+      numeralSize: 1,
+      numeralRadius: 1,
+      numeralColor: 'match',
+      indexSize: 1,
+      indexRadius: 1,
+    },
+  },
   hands: { ...frozenDefaults.hands, color: '#E8EBF0' },
   rehaut: { profile: 'classic', finish: 'dial', color: '#111317', scale: 'none' },
 } as WatchConfig;
@@ -197,6 +209,10 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     condensed: 9,
     futurist: 10,
     italic: 11,
+    black: 12,
+    slab: 13,
+    'fat-face': 14,
+    stencil: 15,
   }),
   F: field('dial.text.brand', text),
   G: field('dial.text.line2', text),
@@ -262,6 +278,11 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   ag: field('dial.size', id, { compact: 1, balanced: 2, open: 3 }),
   ah: field('case.profile', id, { straight: 1, curved: 2, faceted: 3, stepped: 4 }),
   ai: field('bezel.angleDeg', z.number().finite().min(0).lt(360)),
+  aj: field('dial.indices.numeralSize', z.number().finite().min(0.5).max(2)),
+  ak: field('dial.indices.numeralRadius', z.number().finite().min(0.4).max(1.2)),
+  al: field('dial.indices.numeralColor', z.union([hex, z.literal('match')])),
+  am: field('dial.indices.indexSize', z.number().finite().min(0.5).max(2)),
+  an: field('dial.indices.indexRadius', z.number().finite().min(0.4).max(1.2)),
 };
 
 function base64url(text: string): string {
