@@ -12,6 +12,11 @@
     title: string;
     closeLabel: string;
     modal?: boolean;
+    /**
+     * Modal panels make the page inert by default. Off, the panel still owns focus and the
+     * keyboard, but the 3D watch beside it can be turned with the pointer.
+     */
+    inertPage?: boolean;
     /** « side » : centré à droite ; « stage » : sous les outils de la vue 3D. */
     placement?: 'side' | 'stage';
     /** Non-modal, Escape still closes the panel itself rather than the view behind it. */
@@ -28,6 +33,7 @@
     title,
     closeLabel,
     modal = false,
+    inertPage = true,
     placement = 'side',
     closeOnEscape = false,
     onclose,
@@ -41,7 +47,8 @@
   onMount(() => {
     const previousFocus = document.activeElement as HTMLElement | null;
     if (modal) {
-      dialog.showModal();
+      if (inertPage) dialog.showModal();
+      else dialog.show();
       heading.focus();
     } else {
       dialog.show();
@@ -57,7 +64,7 @@
   });
 
   function backdrop(event: MouseEvent) {
-    if (!modal || event.target !== dialog) return;
+    if (!modal || !inertPage || event.target !== dialog) return;
     const rect = dialog.getBoundingClientRect();
     if (
       event.clientX < rect.left ||
@@ -69,6 +76,16 @@
   }
 </script>
 
+<svelte:window
+  onkeydown={(event) => {
+    // Turning the watch moves focus out of the panel: Escape still closes it.
+    if (modal && !inertPage && event.key === 'Escape' && !event.defaultPrevented) {
+      event.preventDefault();
+      onclose();
+    }
+  }}
+/>
+
 <dialog
   bind:this={dialog}
   class="sheet {placement}"
@@ -78,7 +95,8 @@
     onclose();
   }}
   onkeydown={(event) => {
-    if (closeOnEscape && !modal && event.key === 'Escape') {
+    // A dialog opened with show() never receives `cancel`: Escape is handled here.
+    if ((closeOnEscape || (modal && !inertPage)) && event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
       onclose();

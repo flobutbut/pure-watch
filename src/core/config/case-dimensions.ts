@@ -13,6 +13,26 @@ export const CASE_DIMENSIONS = [
 
 export type CaseDimensions = Pick<WatchConfig['case'], (typeof CASE_DIMENSIONS)[number]['key']>;
 
+/** Strap widths sold as standard: the lug-width slider settles on them. */
+export const STRAP_WIDTHS_MM = [10, 12, 14, 16, 17, 18, 19, 20, 21, 22, 24, 26, 28, 30] as const;
+
+/**
+ * Magnetic stops of a slider: the value settles on the nearest one within `tolerance`
+ * (same unit as the value), otherwise it stays where the pointer left it.
+ */
+export function snapToStops(value: number, stops: readonly number[], tolerance: number): number {
+  let best = value;
+  let distance = tolerance;
+  for (const stop of stops) {
+    const gap = Math.abs(stop - value);
+    if (gap <= distance) {
+      best = stop;
+      distance = gap;
+    }
+  }
+  return best;
+}
+
 export function caseDimensions(config: WatchConfig): CaseDimensions {
   const { diameterMm, thicknessMm, lugToLugMm, lugWidthMm } = config.case;
   return { diameterMm, thicknessMm, lugToLugMm, lugWidthMm };

@@ -236,6 +236,10 @@ const fr = {
     nominal: 'Taille nominale du boîtier',
     adjust: (label: string) => `Ajuster : ${label}`,
     lastValid: 'La dernière valeur valide reste affichée.',
+    defaultsHint: (size: string) =>
+      `Le repère de chaque curseur marque la valeur par défaut du format ${size} et l’attire ; l’entre-cornes s’aimante aussi sur les largeurs de bracelet standard.`,
+    atDefault: 'valeur par défaut',
+    standardWidth: 'largeur de bracelet standard',
     diameterMm: 'Diamètre',
     thicknessMm: 'Épaisseur',
     lugToLugMm: 'Longueur de corne à corne',
@@ -581,6 +585,10 @@ const en: Messages = {
     nominal: 'Nominal case size',
     adjust: (label: string) => `Adjust: ${label}`,
     lastValid: 'The last valid value is still shown.',
+    defaultsHint: (size: string) =>
+      `The mark on each slider shows the default value for the ${size} size and draws the thumb to it; the lug width also snaps to standard strap widths.`,
+    atDefault: 'default value',
+    standardWidth: 'standard strap width',
     diameterMm: 'Diameter',
     thicknessMm: 'Thickness',
     lugToLugMm: 'Lug-to-lug length',

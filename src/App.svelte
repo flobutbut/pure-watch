@@ -33,7 +33,11 @@
   import Ambience from './ui/Ambience.svelte';
   import ColorPanel from './ui/colors/ColorPanel.svelte';
   import DimensionsPanel from './ui/dimensions/DimensionsPanel.svelte';
-  import { withCaseDimensions, type CaseDimensions } from './core/config/case-dimensions';
+  import {
+    caseDimensions,
+    withCaseDimensions,
+    type CaseDimensions,
+  } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
   import { generationPrompt } from './ui/identity/prompt';
   import { ambienceFor, NIGHT_AMBIENCE } from './ui/ambience';
@@ -80,6 +84,19 @@
       initialRows.findIndex((row) => row.id === 'hands'),
     ),
     mode: initialPreview ? 'view3d' : 'grid',
+  });
+  /**
+   * Default dimensions: those of the size chosen in the grid, which the case panel marks on
+   * its sliders (not the last saved values, which may be custom).
+   */
+  const sizeDefaults = $derived.by(() => {
+    const row = named.rows.find((r) => r.id === 'case-size')!;
+    const variant = row.variants[selectedIndex(nav, row.id)] ?? row.variants[0]!;
+    const size = variant.value as Partial<WatchConfig['case']>;
+    return {
+      name: variant.i18n.name,
+      values: caseDimensions({ ...config, case: { ...config.case, ...size } }),
+    };
   });
   let bump = $state.raw<{ dir: Bump; n: number }>({ dir: null, n: 0 });
   let announcement = $state('');
@@ -300,7 +317,7 @@
 <svelte:window
   onkeydown={(e) => {
     // Modal sheets own Escape and commit their last valid values.
-    if (e.key === 'Escape' && !editing) close();
+    if (e.key === 'Escape' && !editing && !e.defaultPrevented) close();
   }}
 />
 
@@ -353,7 +370,12 @@
       onclose={closeColor}
     />
   {:else if dimensionsEditing}
-    <DimensionsPanel {config} onpreview={previewDimensions} onclose={closeDimensions} />
+    <DimensionsPanel
+      {config}
+      defaults={sizeDefaults}
+      onpreview={previewDimensions}
+      onclose={closeDimensions}
+    />
   {/if}
   <p class="sr-only" aria-live="polite">{announcement}</p>
   {#if linkNotice}<p class="link-notice" role="status">{t().linkNotice[linkNotice]}</p>{/if}

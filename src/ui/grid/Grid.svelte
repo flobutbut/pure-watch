@@ -716,7 +716,7 @@
           view: { ...(previewConfig ?? config).view, night },
         }}
         transient={previewConfig !== null}
-        mode={open ? 'inspect' : 'grid'}
+        mode={open || editing ? 'inspect' : 'grid'}
         displayScale={livePlace.scale}
         bind:handle={live}
       />
@@ -964,7 +964,8 @@
     will-change: transform;
   }
 
-  .grid.open .live-slot {
+  .grid.open .live-slot,
+  .grid.color-editing .live-slot {
     pointer-events: auto;
     cursor: grab;
   }
