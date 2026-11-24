@@ -640,7 +640,8 @@
         onedit={() => live?.view(0)}
       />
     {/if}
-    <button class="backdrop" aria-label={t().grid.close3d} onclick={onclose}></button>
+    <!-- The void around the watch: a click here first closes an open panel (Sheet). -->
+    <button class="backdrop" data-backdrop aria-label={t().grid.close3d} onclick={onclose}></button>
     <div class="tools">
       <button
         class="tool"

@@ -2,11 +2,12 @@
   /**
    * Le seul panneau de l'interface (couleurs, dimensions, fiche, partage, À propos) :
    * en-tête, fermeture, corps défilant et pied facultatif. Modal, il prend le focus et le
-   * rend à la fermeture ; sinon il accompagne la vue sans la bloquer. Échap, Espace et la
-   * croix le referment toujours (dismiss.ts).
+   * rend à la fermeture ; sinon il accompagne la vue sans la bloquer. Échap, Espace, la
+   * croix et un clic dans le vide autour de lui le referment toujours (dismiss.ts). L'en-tête
+   * reste en place quelle que soit la hauteur : seul le corps défile.
    */
   import { onMount, type Snippet } from 'svelte';
-  import { dismissKey } from './dismiss';
+  import { dismissKey, inVoid, isTap, isTopOverlay, openOverlay, outsideBox } from './dismiss';
 
   interface Props {
     id: string;
@@ -46,8 +47,15 @@
   let dialog: HTMLDialogElement;
   let heading: HTMLHeadingElement;
 
+  /** This panel in the stack of open overlays. */
+  const overlay = {};
+
   onMount(() => {
     const previousFocus = document.activeElement as HTMLElement | null;
+    const leaveStack = openOverlay(overlay);
+    // Capture phase: the click is caught before the page acts on it (grid, 3D view, toggles).
+    window.addEventListener('pointerdown', pressOutside, true);
+    window.addEventListener('click', clickOutside, true);
     if (modal) {
       if (inertPage) dialog.showModal();
       else dialog.show();
@@ -60,6 +68,9 @@
         previousFocus.focus({ preventScroll: true });
     }
     return () => {
+      leaveStack();
+      window.removeEventListener('pointerdown', pressOutside, true);
+      window.removeEventListener('click', clickOutside, true);
       dialog.close();
       if ((modal || closedFromInside) && previousFocus?.isConnected)
         previousFocus.focus({ preventScroll: true });
@@ -73,23 +84,42 @@
     onclose();
   }
 
-  function backdrop(event: MouseEvent) {
-    if (!modal || !inertPage || event.target !== dialog) return;
-    const rect = dialog.getBoundingClientRect();
-    if (
-      event.clientX < rect.left ||
-      event.clientX > rect.right ||
-      event.clientY < rect.top ||
-      event.clientY > rect.bottom
-    )
-      onclose();
+  /** Outside the panel: elsewhere on the page, or on a modal panel's backdrop. */
+  function outside(event: MouseEvent): boolean {
+    const target = event.target;
+    if (!(target instanceof Node) || !dialog.contains(target)) return true;
+    return target === dialog && outsideBox(event, dialog.getBoundingClientRect());
+  }
+
+  /** Where the pointer went down outside the panel, if it did. */
+  let pressed: { clientX: number; clientY: number } | null = null;
+  function pressOutside(event: PointerEvent) {
+    pressed =
+      event.isPrimary && event.button === 0 && isTopOverlay(overlay) && outside(event)
+        ? { clientX: event.clientX, clientY: event.clientY }
+        : null;
+  }
+
+  /**
+   * A click in the void closes the panel, and only that: the page behind does not act on it.
+   * A drag (turning the watch, the bezel) or a click from the keyboard leaves it open. Beside
+   * a companion panel (not modal), the page's controls keep working and leave it open too.
+   */
+  function clickOutside(event: MouseEvent) {
+    const start = pressed;
+    pressed = null;
+    if (!start || !isTopOverlay(overlay) || !outside(event) || !isTap(start, event)) return;
+    if (!modal && !inVoid(event.target)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onclose();
   }
 </script>
 
 <svelte:window
   onkeydown={(event) => {
     // Turning the watch moves focus out of the panel: Escape and Space still close it.
-    if (modal && !inertPage && dismissKey(event)) {
+    if (modal && !inertPage && isTopOverlay(overlay) && dismissKey(event)) {
       event.preventDefault();
       onclose();
     }
@@ -116,7 +146,6 @@
     // Modal, the panel owns the keyboard; otherwise the 3D view keeps its shortcuts.
     if (modal) event.stopPropagation();
   }}
-  onclick={backdrop}
 >
   <div class="frame">
     <header>
@@ -144,10 +173,16 @@
     --control-line: color-mix(in srgb, var(--ink) 28%, transparent);
     /* Secondary text: the faintest ink that still reads at 4.5:1 on either tone. */
     --ink-soft: color-mix(in srgb, var(--ink) 66%, var(--veil));
-    --sheet-top: 50%;
-    --sheet-max: calc(100dvh - 48px);
+    /* The panel keeps to the band between the app's header and the bottom of the window,
+       centred in it: however tall its content, the header with its close button stays in
+       view and only the body scrolls. */
+    --sheet-top: var(--chrome-top, 84px);
+    --sheet-max: max(160px, calc(100dvh - var(--sheet-top) - 24px - env(safe-area-inset-bottom)));
     position: fixed;
-    inset: var(--sheet-top) calc(24px + env(safe-area-inset-right)) auto auto;
+    /* Above the app's fixed header and footer, should they ever meet. */
+    z-index: 11;
+    inset: calc(var(--sheet-top) + var(--sheet-max) / 2) calc(24px + env(safe-area-inset-right))
+      auto auto;
     translate: 0 -50%;
     margin: 0;
     width: 340px;
@@ -163,14 +198,18 @@
     box-shadow: 0 16px 80px #0003;
     font: inherit;
   }
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
   :global(:root[data-tone='dark']) dialog {
     --ink: #f4f3ef;
     --veil: #25282c;
   }
   dialog.stage {
     --sheet-top: calc(var(--chrome-top, 84px) + 60px);
-    --sheet-max: calc(100dvh - var(--sheet-top) - 72px - env(safe-area-inset-bottom));
-    z-index: 3;
+    --sheet-max: max(160px, calc(100dvh - var(--sheet-top) - 72px - env(safe-area-inset-bottom)));
+    top: var(--sheet-top);
     translate: none;
     animation: sheet-in 220ms cubic-bezier(0.2, 0, 0, 1);
   }
@@ -184,6 +223,7 @@
     background: #0001;
   }
   dialog.center {
+    --sheet-max: calc(100dvh - 48px);
     inset: 0;
     margin: auto;
     translate: none;
@@ -201,10 +241,11 @@
       translate: 0 8px;
     }
   }
+  /* The dialog's height is capped: the frame shrinks with it, and the body gives way first. */
   .frame {
     display: flex;
     flex-direction: column;
-    max-height: calc(var(--sheet-max) - 50px);
+    min-height: 0;
   }
   header,
   .toolbar,
@@ -304,9 +345,6 @@
     }
     dialog.stage {
       --sheet-max: 52dvh;
-    }
-    .frame {
-      max-height: calc(var(--sheet-max) - 42px - env(safe-area-inset-bottom));
     }
     header {
       margin-bottom: 14px;
