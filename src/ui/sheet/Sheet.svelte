@@ -1,14 +1,16 @@
 <script lang="ts">
   /**
-   * Panneau latéral partagé (couleurs, fiche d'identité) : en-tête, fermeture, corps
-   * défilant et pied facultatif. Modal, il prend le focus et le rend à la fermeture ;
-   * sinon il accompagne la vue sans la bloquer.
+   * Le seul panneau de l'interface (couleurs, dimensions, fiche, partage, À propos) :
+   * en-tête, fermeture, corps défilant et pied facultatif. Modal, il prend le focus et le
+   * rend à la fermeture ; sinon il accompagne la vue sans la bloquer. Échap, Espace et la
+   * croix le referment toujours (dismiss.ts).
    */
   import { onMount, type Snippet } from 'svelte';
+  import { dismissKey } from './dismiss';
 
   interface Props {
     id: string;
-    eyebrow: string;
+    eyebrow?: string;
     title: string;
     closeLabel: string;
     modal?: boolean;
@@ -17,10 +19,11 @@
      * keyboard, but the 3D watch beside it can be turned with the pointer.
      */
     inertPage?: boolean;
-    /** « side » : centré à droite ; « stage » : sous les outils de la vue 3D. */
-    placement?: 'side' | 'stage';
-    /** Non-modal, Escape still closes the panel itself rather than the view behind it. */
-    closeOnEscape?: boolean;
+    /**
+     * « side » : centré à droite ; « stage » : sous les outils de la vue 3D ;
+     * « center » : au milieu de la page, sur un voile flouté (À propos).
+     */
+    placement?: 'side' | 'stage' | 'center';
     onclose: () => void;
     children: Snippet;
     /** Stays in place above the scrolling body (tabs, for instance). */
@@ -35,7 +38,6 @@
     modal = false,
     inertPage = true,
     placement = 'side',
-    closeOnEscape = false,
     onclose,
     children,
     toolbar,
@@ -59,9 +61,17 @@
     }
     return () => {
       dialog.close();
-      if (modal && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+      if ((modal || closedFromInside) && previousFocus?.isConnected)
+        previousFocus.focus({ preventScroll: true });
     };
   });
+
+  /** Closed from inside (Escape, Space, ×), a side panel hands the keyboard back too. */
+  let closedFromInside = false;
+  function dismiss() {
+    closedFromInside = dialog.contains(document.activeElement);
+    onclose();
+  }
 
   function backdrop(event: MouseEvent) {
     if (!modal || !inertPage || event.target !== dialog) return;
@@ -78,8 +88,8 @@
 
 <svelte:window
   onkeydown={(event) => {
-    // Turning the watch moves focus out of the panel: Escape still closes it.
-    if (modal && !inertPage && event.key === 'Escape' && !event.defaultPrevented) {
+    // Turning the watch moves focus out of the panel: Escape and Space still close it.
+    if (modal && !inertPage && dismissKey(event)) {
       event.preventDefault();
       onclose();
     }
@@ -95,11 +105,12 @@
     onclose();
   }}
   onkeydown={(event) => {
-    // A dialog opened with show() never receives `cancel`: Escape is handled here.
-    if ((closeOnEscape || (modal && !inertPage)) && event.key === 'Escape') {
+    // Every panel closes itself with Escape or Space (a dialog opened with show() never
+    // receives `cancel`), rather than the view behind it.
+    if (dismissKey(event)) {
       event.preventDefault();
       event.stopPropagation();
-      onclose();
+      dismiss();
       return;
     }
     // Modal, the panel owns the keyboard; otherwise the 3D view keeps its shortcuts.
@@ -110,10 +121,10 @@
   <div class="frame">
     <header>
       <div>
-        <p class="eyebrow">{eyebrow}</p>
+        {#if eyebrow}<p class="eyebrow">{eyebrow}</p>{/if}
         <h2 {id} tabindex="-1" bind:this={heading}>{title}</h2>
       </div>
-      <button type="button" class="close" aria-label={closeLabel} onclick={onclose}>×</button>
+      <button type="button" class="close" aria-label={closeLabel} onclick={dismiss}>×</button>
     </header>
     {#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
     <div class="body">{@render children()}</div>
@@ -131,6 +142,8 @@
     /* Outlined controls need a filled surface to read as buttons on the pale veil. */
     --control: color-mix(in srgb, var(--ink) 5%, transparent);
     --control-line: color-mix(in srgb, var(--ink) 28%, transparent);
+    /* Secondary text: the faintest ink that still reads at 4.5:1 on either tone. */
+    --ink-soft: color-mix(in srgb, var(--ink) 66%, var(--veil));
     --sheet-top: 50%;
     --sheet-max: calc(100dvh - 48px);
     position: fixed;
@@ -144,7 +157,7 @@
     box-sizing: border-box;
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-    border-radius: 22px;
+    border-radius: var(--radius-l);
     background: var(--veil);
     color: var(--ink);
     box-shadow: 0 16px 80px #0003;
@@ -169,6 +182,24 @@
   }
   dialog::backdrop {
     background: #0001;
+  }
+  dialog.center {
+    inset: 0;
+    margin: auto;
+    translate: none;
+    width: min(560px, calc(100vw - 32px));
+    max-width: none;
+    animation: sheet-rise 200ms ease-out;
+  }
+  dialog.center::backdrop {
+    background: #0004;
+    backdrop-filter: blur(8px);
+  }
+  @keyframes sheet-rise {
+    from {
+      opacity: 0;
+      translate: 0 8px;
+    }
   }
   .frame {
     display: flex;
@@ -198,13 +229,13 @@
     align-items: center;
   }
   .eyebrow {
-    font-size: 9px;
+    font-size: var(--text-2xs);
     letter-spacing: 0.16em;
-    opacity: 0.5;
+    color: var(--ink-soft);
     margin: 0;
   }
   h2 {
-    font-size: 19px;
+    font-size: var(--text-title);
     line-height: 1.2;
     font-weight: 500;
     margin: 0;
@@ -217,7 +248,7 @@
     font-weight: 300;
     padding: 2px;
     min-width: 36px;
-    min-height: 40px;
+    min-height: var(--control-height);
     line-height: 1;
   }
   footer {
@@ -225,24 +256,27 @@
     margin-top: 24px;
   }
 
-  /* Shared vocabulary for the content of every sheet. */
-  .sheet :global(button),
-  .sheet :global(input) {
-    font: inherit;
-    color: inherit;
-  }
-  .sheet :global(button) {
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .sheet :global(button:focus-visible),
-  .sheet :global(input:focus-visible) {
-    outline: 2px solid var(--ink);
-    outline-offset: 3px;
+  /* Shared vocabulary for the content of every sheet. The base layer sits under the
+     design system's components (kit/Button), which bring their own look. */
+  @layer base {
+    .sheet :global(button),
+    .sheet :global(input) {
+      font: inherit;
+      color: inherit;
+    }
+    .sheet :global(button) {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sheet :global(button:focus-visible),
+    .sheet :global(input:focus-visible) {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
   }
   .sheet :global(.section-label) {
-    font-size: 11px;
-    opacity: 0.65;
+    font-size: var(--text-s);
+    color: var(--ink-soft);
     margin: 0 0 8px;
   }
   .sheet :global(.dot) {
@@ -265,7 +299,7 @@
       translate: none;
       width: 100%;
       max-width: 100%;
-      border-radius: 22px 22px 0 0;
+      border-radius: var(--radius-l) var(--radius-l) 0 0;
       padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
     }
     dialog.stage {
@@ -279,6 +313,18 @@
     }
     footer {
       margin-top: 16px;
+    }
+    dialog.center {
+      --sheet-max: calc(100dvh - 48px);
+      inset: 0;
+      width: calc(100vw - 24px);
+      border-radius: var(--radius-l);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    dialog.stage,
+    dialog.center {
+      animation: none;
     }
   }
 </style>

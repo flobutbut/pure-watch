@@ -18,8 +18,7 @@
     sheetShown?: boolean;
   } = $props();
   let shareButton: HTMLButtonElement;
-  let aboutButton = $state<HTMLButtonElement>();
-  let aboutDialog: AboutDialog;
+  let about = $state(false);
   // Focus returns to the button when the panel closes, unless it already went elsewhere.
   let wasSharing = false;
   $effect(() => {
@@ -74,9 +73,9 @@
     </div>
     <button
       class="about-button"
-      bind:this={aboutButton}
-      onclick={() => aboutDialog.open()}
+      onclick={() => (about = true)}
       aria-haspopup="dialog"
+      aria-expanded={about}
     >
       {t().chrome.about}
     </button>
@@ -96,7 +95,8 @@
   </footer>
 {/if}
 
-<AboutDialog bind:this={aboutDialog} onclose={() => aboutButton?.focus({ preventScroll: true })} />
+<!-- The panel hands focus back to the button when it closes. -->
+{#if about}<AboutDialog onclose={() => (about = false)} />{/if}
 
 <style>
   .app-header {
@@ -127,7 +127,7 @@
     stroke-linejoin: miter;
   }
   .brand span {
-    font-size: 12px;
+    font-size: var(--text-m);
     font-weight: 500;
     letter-spacing: 0.3em;
   }
@@ -145,12 +145,12 @@
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    min-height: 40px;
+    min-height: var(--control-height);
     border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-    border-radius: 24px;
+    border-radius: var(--radius-pill);
     padding: 9px 15px;
     background: color-mix(in srgb, var(--veil) 65%, transparent);
-    font-size: 12px;
+    font-size: var(--text-m);
     letter-spacing: 0.02em;
     transition:
       background 180ms,
@@ -190,8 +190,8 @@
     padding: 4px 2px;
     border: 0;
     background: transparent;
-    font-size: 10px;
-    color: color-mix(in srgb, var(--ink) 60%, var(--veil));
+    font-size: var(--text-xs);
+    color: var(--ink-soft);
     text-decoration: underline;
     text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent);
     text-underline-offset: 3px;
@@ -211,9 +211,9 @@
     padding: 4px 3px;
     border: 0;
     background: transparent;
-    font-size: 9px;
+    font-size: var(--text-2xs);
     letter-spacing: 0.08em;
-    color: color-mix(in srgb, var(--ink) 38%, var(--veil));
+    color: var(--ink-faint);
     transition: color 160ms;
   }
   .language button + button::before {
@@ -223,7 +223,7 @@
   }
   .language button:hover,
   .language button[aria-pressed='true'] {
-    color: color-mix(in srgb, var(--ink) 75%, var(--veil));
+    color: color-mix(in srgb, var(--ink) 50%, var(--ink-soft));
   }
   .language button[aria-pressed='true'] {
     cursor: default;
@@ -232,8 +232,8 @@
     display: flex;
     align-items: center;
     gap: 26px;
-    font-size: 10px;
-    color: color-mix(in srgb, var(--ink) 60%, var(--veil));
+    font-size: var(--text-xs);
+    color: var(--ink-soft);
   }
   .keyboard-hints > span {
     display: flex;
@@ -244,16 +244,16 @@
   kbd {
     padding: 3px 5px;
     border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     font: inherit;
-    font-size: 9px;
+    font-size: var(--text-2xs);
     letter-spacing: 0.02em;
   }
   .touch-hints {
     display: none;
-    font-size: 10px;
+    font-size: var(--text-xs);
     text-align: center;
-    color: color-mix(in srgb, var(--ink) 60%, var(--veil));
+    color: var(--ink-soft);
   }
   @media (hover: none) and (pointer: coarse) {
     .keyboard-hints {
@@ -271,7 +271,7 @@
       gap: 7px;
     }
     .brand span {
-      font-size: 11px;
+      font-size: var(--text-s);
       letter-spacing: 0.24em;
     }
     .mark {
@@ -279,18 +279,18 @@
       height: 30px;
     }
     .share-button {
-      min-height: 40px;
+      min-height: var(--control-height);
       padding: 9px 12px;
     }
     .keyboard-hints {
       gap: 12px;
-      font-size: 9px;
+      font-size: var(--text-2xs);
     }
     .keyboard-hints > span {
       gap: 4px;
     }
     kbd {
-      font-size: 8px;
+      font-size: var(--text-3xs);
       padding: 2px 3px;
     }
     footer {
@@ -298,10 +298,10 @@
       gap: 12px;
     }
     .about-button {
-      font-size: 9px;
+      font-size: var(--text-2xs);
     }
     .language button {
-      font-size: 8px;
+      font-size: var(--text-3xs);
     }
   }
   /* Below this width the identity card becomes a bottom sheet and covers the hints. */

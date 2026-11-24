@@ -9,6 +9,7 @@
   } from '../../core/config/case-dimensions';
   import MagneticRange from './MagneticRange.svelte';
   import type { WatchConfig } from '../../core/config/types';
+  import RestoreButton from '../kit/RestoreButton.svelte';
   import Sheet from '../sheet/Sheet.svelte';
   import { formatNumber } from '../../core/i18n/locale';
   import { i18n, t } from '../i18n.svelte';
@@ -112,18 +113,15 @@
       {t().dimensions.lastValid}
     </p>{/if}
   {#snippet footer()}
-    <button class="restore" disabled={!changed} onclick={() => (values = { ...initial })}>
-      <span aria-hidden="true">↺</span>
-      {t().colors.restore}
-    </button>
+    <RestoreButton disabled={!changed} onclick={() => (values = { ...initial })} />
   {/snippet}
 </Sheet>
 
 <style>
   .intro {
-    font-size: 12px;
+    font-size: var(--text-m);
     line-height: 1.5;
-    opacity: 0.65;
+    color: var(--ink-soft);
     margin: 0 0 24px;
   }
   .dimensions {
@@ -137,39 +135,29 @@
     gap: 10px;
   }
   label {
-    font-size: 12px;
+    font-size: var(--text-m);
   }
   .value {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 11px;
+    font-size: var(--text-s);
   }
   .value span {
-    opacity: 0.6;
+    color: var(--ink-soft);
   }
   input[type='number'] {
     width: 70px;
     min-height: 36px;
     box-sizing: border-box;
     border: 1px solid var(--control-line);
-    border-radius: 8px;
+    border-radius: var(--radius-s);
     background: var(--control);
     padding: 7px;
   }
   .error {
-    font-size: 12px;
+    font-size: var(--text-m);
     line-height: 1.5;
     margin: 20px 0 0;
-  }
-  .restore {
-    border: 0;
-    border-radius: 9px;
-    background: var(--control);
-    padding: 10px 14px;
-    font-size: 12px;
-  }
-  .restore:disabled {
-    opacity: 0.35;
   }
 </style>

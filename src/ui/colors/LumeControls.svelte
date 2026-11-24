@@ -6,6 +6,7 @@
     enableLume,
     type LumeChoice,
   } from '../../core/config/lume';
+  import Button from '../kit/Button.svelte';
   import { t } from '../i18n.svelte';
 
   let {
@@ -25,32 +26,23 @@
 <section aria-label={t().lume.title}>
   <p class="section-label">{t().lume.title}</p>
   <div class="choices" role="group" aria-label={t().lume.treatment}>
-    <button
-      type="button"
-      aria-pressed={!value.kind}
-      onclick={() => onchange({ ...value, kind: null })}
-    >
+    <Button aria-pressed={!value.kind} onclick={() => onchange({ ...value, kind: null })}>
       {t().lume.none}
-    </button>
-    <button
-      type="button"
-      aria-pressed={Boolean(value.kind)}
-      onclick={() => onchange(enableLume(value))}
-    >
+    </Button>
+    <Button aria-pressed={Boolean(value.kind)} onclick={() => onchange(enableLume(value))}>
       {t().lume.insert}
-    </button>
+    </Button>
   </div>
   {#if value.kind}
     <div class="choices presets" role="group" aria-label={t().lume.pigments}>
       {#each LUME_PIGMENTS as preset (preset.id)}
-        <button
-          type="button"
+        <Button
           aria-pressed={pigment?.id === preset.id}
           onclick={() => onchange(pigmentChoice(preset))}
         >
           <span class="sample" style:--day={preset.day} style:--night={preset.night}></span>
           {preset.name}
-        </button>
+        </Button>
       {/each}
     </div>
     {#if pigment}
@@ -63,12 +55,12 @@
     {/if}
     <p class="indicative">{t().lume.indicative}</p>
   {/if}
-  <button class="preview" type="button" aria-pressed={night} onclick={onnight}>
+  <Button class="preview" aria-pressed={night} onclick={onnight}>
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M19.6 15.4A8 8 0 0 1 8.6 4.4a8 8 0 1 0 11 11Z" />
     </svg>
     {t().lume.preview}
-  </button>
+  </Button>
 </section>
 
 <style>
@@ -81,22 +73,6 @@
     gap: 7px;
     margin-bottom: 12px;
   }
-  button {
-    border: 1px solid var(--control-line);
-    border-radius: 10px;
-    background: var(--control);
-    padding: 8px 10px;
-    min-height: 40px;
-    font-size: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-  }
-  button[aria-pressed='true'] {
-    border-color: var(--ink);
-    box-shadow: inset 0 0 0 1px var(--ink);
-    background: color-mix(in srgb, var(--ink) 12%, transparent);
-  }
   .sample {
     width: 16px;
     height: 16px;
@@ -108,9 +84,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
+  .presets :global(.button) {
+    justify-content: flex-start;
+  }
   .pigment-info {
     margin-bottom: 12px;
-    font-size: 12px;
+    font-size: var(--text-m);
     line-height: 1.5;
   }
   .pigment-info p {
@@ -118,16 +97,15 @@
   }
   .performance,
   .indicative {
-    opacity: 0.65;
-    font-size: 11px;
+    color: var(--ink-soft);
+    font-size: var(--text-s);
   }
   .indicative {
     line-height: 1.5;
     margin: 12px 0;
   }
-  .preview {
+  section :global(.preview) {
     width: 100%;
-    justify-content: center;
   }
   svg {
     width: 17px;

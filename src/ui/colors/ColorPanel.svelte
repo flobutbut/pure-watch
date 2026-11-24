@@ -20,6 +20,8 @@
   import type { NumeralSystem } from '../../core/config/numerals';
   import { REHAUT_FINISHES } from '../../core/config/rehaut';
   import type { HexColor, WatchConfig } from '../../core/config/types';
+  import Button from '../kit/Button.svelte';
+  import RestoreButton from '../kit/RestoreButton.svelte';
   import Sheet from '../sheet/Sheet.svelte';
   import LumeControls from './LumeControls.svelte';
   import { tint } from '../../core/color/names';
@@ -221,25 +223,21 @@
   {#if target === 'rehaut'}
     <div class="links" role="group" aria-label={t().colors.rehautFinish}>
       {#each REHAUT_FINISHES as item (item.id)}
-        <button
-          type="button"
-          class:chosen={finish === item.id}
+        <Button
           aria-pressed={finish === item.id}
           onclick={() => {
             finish = item.id;
           }}
         >
           {t().rehautFinish[item.id]}
-        </button>
+        </Button>
       {/each}
     </div>
   {/if}
   {#if target === 'hands'}
     <div class="finishes" role="group" aria-label={t().colors.handsFinish}>
       {#each HAND_FINISHES as item (item.id)}
-        <button
-          type="button"
-          class:chosen={finish === item.id}
+        <Button
           aria-pressed={finish === item.id}
           onclick={() => {
             finish = item.id;
@@ -247,7 +245,7 @@
         >
           <span class="dot" style:--swatch={item.color ?? color} class:metal={item.id !== 'lacquer'}
           ></span>{t().handFinish[item.id]}
-        </button>
+        </Button>
       {/each}
     </div>
   {/if}
@@ -255,35 +253,28 @@
   {#if target === 'indices'}
     <div class="finishes index-finishes" role="group" aria-label={t().lume.indexFinish}>
       {#each INDEX_FINISHES as item (item.id)}
-        <button
-          type="button"
-          class:chosen={finish === item.id}
-          aria-pressed={finish === item.id}
-          onclick={() => (finish = item.id)}
-        >
+        <Button aria-pressed={finish === item.id} onclick={() => (finish = item.id)}>
           <span class="dot" style:--swatch={item.color ?? color} class:metal={item.color !== null}
           ></span>
           {item.name === 'printed' ? t().lume.printed : t().handFinish[item.name]}
-        </button>
+        </Button>
       {/each}
     </div>
   {/if}
 
   {#if target === 'seconds'}
     <div class="links" role="group" aria-label={t().colors.pairings}>
-      <button
-        type="button"
+      <Button
         aria-pressed={matched}
-        class:chosen={matched}
         onclick={() => {
           matched = true;
         }}
       >
         {t().colors.matchHands}
-      </button>
-      <button type="button" onclick={() => selectHex(effectiveDialColor(config.dial))}>
+      </Button>
+      <Button onclick={() => selectHex(effectiveDialColor(config.dial))}>
         {t().colors.dialColor}
-      </button>
+      </Button>
     </div>
   {/if}
 
@@ -291,14 +282,12 @@
     <p class="section-label">{t().colors.script}</p>
     <div class="links" role="group" aria-label={t().colors.scriptLabel}>
       {#each [{ id: 'arabic', name: t().colors.arabic }, { id: 'roman', name: t().colors.roman }] as system (system.id)}
-        <button
-          type="button"
-          class:chosen={numeralSystem === system.id}
+        <Button
           aria-pressed={numeralSystem === system.id}
           onclick={() => (numeralSystem = system.id as NumeralSystem)}
         >
           {system.name}
-        </button>
+        </Button>
       {/each}
     </div>
   {/if}
@@ -338,24 +327,22 @@
   {#if target === 'numerals'}
     <p class="section-label">{t().colors.color}</p>
     <div class="links" role="group" aria-label={t().colors.pairings}>
-      <button
-        type="button"
+      <Button
         aria-pressed={matched}
-        class:chosen={matched}
         onclick={() => {
           selectHex(printInk(effectiveDialColor(config.dial)));
           matched = true;
         }}
       >
         {t().colors.dialInk}
-      </button>
-      <button type="button" onclick={() => selectHex(handColor(config))}>
+      </Button>
+      <Button onclick={() => selectHex(handColor(config))}>
         {t().colors.handsColor}
-      </button>
+      </Button>
       {#if config.hands.second.style !== 'none' && config.hands.second.color !== 'match'}
-        <button type="button" onclick={() => selectHex(targetColor(config, 'seconds'))}>
+        <Button onclick={() => selectHex(targetColor(config, 'seconds'))}>
           {t().colors.secondsColor}
-        </button>
+        </Button>
       {/if}
     </div>
   {/if}
@@ -496,16 +483,11 @@
     </div>
   {/if}
   {#snippet footer()}
-    <button
-      type="button"
-      class="restore"
+    <RestoreButton
       title={initial.layout ? t().colors.restoreSettings : t().colors.restoreColor}
       disabled={!changed}
       onclick={restore}
-    >
-      <span aria-hidden="true">↺</span>
-      {t().colors.restore}
-    </button>
+    />
   {/snippet}
 </Sheet>
 
@@ -517,24 +499,6 @@
     gap: 7px;
     margin: 0 0 20px;
   }
-  .finishes button,
-  .links button {
-    border: 1px solid var(--control-line);
-    border-radius: 10px;
-    min-height: 40px;
-    background: var(--control);
-    padding: 8px 10px;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 12px;
-  }
-  .finishes .chosen,
-  .links .chosen {
-    border-color: var(--ink);
-    background: color-mix(in srgb, var(--ink) 12%, transparent);
-    box-shadow: inset 0 0 0 1px var(--ink);
-  }
   .layout {
     display: grid;
     gap: 18px;
@@ -545,11 +509,11 @@
   }
   .slider {
     display: block;
-    font-size: 11px;
+    font-size: var(--text-s);
   }
   .slider-head span {
     float: right;
-    opacity: 0.6;
+    color: var(--ink-soft);
   }
   .slider input {
     display: block;
@@ -592,7 +556,7 @@
     display: flex;
     justify-content: space-between;
     margin-top: 8px;
-    opacity: 0.55;
+    color: var(--ink-soft);
   }
   .swatches {
     display: flex;
@@ -629,7 +593,7 @@
     display: block;
     padding: 0;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius-s);
     position: relative;
     touch-action: none;
     background:
@@ -648,19 +612,19 @@
   }
   .hue-label {
     display: block;
-    font-size: 11px;
+    font-size: var(--text-s);
     margin: 16px 0;
   }
   .hue-label span {
     float: right;
-    opacity: 0.5;
+    color: var(--ink-soft);
   }
   input.hue {
     display: block;
     margin: 10px 0 0;
     width: 100%;
     height: 14px;
-    border-radius: 10px;
+    border-radius: var(--radius-s);
     appearance: none;
     -webkit-appearance: none;
     background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
@@ -693,8 +657,8 @@
   }
   .tint-ref {
     margin-left: auto;
-    font-size: 11px;
-    opacity: 0.6;
+    font-size: var(--text-s);
+    color: var(--ink-soft);
   }
   .advanced {
     margin-top: 4px;
@@ -704,7 +668,7 @@
     align-items: center;
     gap: 6px;
     min-height: 32px;
-    font-size: 11px;
+    font-size: var(--text-s);
     opacity: 0.7;
     cursor: pointer;
     list-style: none;
@@ -732,9 +696,9 @@
     gap: 10px;
     align-items: center;
     border: 1px solid var(--control-line);
-    border-radius: 9px;
+    border-radius: var(--radius-s);
     padding: 8px 10px;
-    font-size: 11px;
+    font-size: var(--text-s);
   }
   .hex-preview {
     width: 18px;
@@ -756,30 +720,11 @@
     text-transform: uppercase;
   }
   .error {
-    font-size: 11px;
+    font-size: var(--text-s);
     margin: 8px 0 0;
   }
   .muted {
     opacity: 0.5;
-  }
-  .restore {
-    min-height: 42px;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 12px;
-    border: 1px solid var(--control-line);
-    background: var(--control);
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-  }
-  .restore span {
-    font-size: 15px;
-    line-height: 1;
-  }
-  .restore:disabled {
-    opacity: 0.45;
-    cursor: default;
   }
   @media (max-width: 759px) {
     .finishes {
@@ -787,12 +732,12 @@
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 5px;
     }
-    .finishes button {
+    .finishes :global(.button) {
       flex-direction: column;
       justify-content: center;
       padding: 7px 3px;
       gap: 5px;
-      font-size: 10px;
+      font-size: var(--text-xs);
       min-height: 58px;
       line-height: 1.1;
     }

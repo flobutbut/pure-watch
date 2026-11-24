@@ -321,7 +321,12 @@
   }}
 />
 
-<main style:--ink={ambience.ink} style:--veil={ambience.veil}>
+<main
+  style:--ink={ambience.ink}
+  style:--ink-soft={ambience.inkSoft}
+  style:--ink-faint={ambience.inkFaint}
+  style:--veil={ambience.veil}
+>
   <Ambience {ambience} />
   <AppChrome
     sharing={sharing !== null}
@@ -399,7 +404,7 @@
     width: max-content;
     margin: 0;
     padding: 0.7rem 1rem;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-s);
     background: var(--veil);
     color: var(--ink);
     box-shadow: 0 2px 18px #0003;

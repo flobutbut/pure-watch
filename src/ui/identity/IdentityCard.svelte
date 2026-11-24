@@ -3,6 +3,7 @@
   import type { WatchConfig } from '../../core/config/types';
   import { compatibleMovements, mm, type Fit } from '../../core/movement/compatibility';
   import { movementStepsPerSecond, type MovementSpec } from '../../core/movement/movements';
+  import Button from '../kit/Button.svelte';
   import Sheet from '../sheet/Sheet.svelte';
   import { identitySections } from './identity';
   import { NUMBER_LOCALE } from '../../core/i18n/locale';
@@ -83,19 +84,19 @@
   {#snippet toolbar()}
     <div class="tabs" role="tablist" aria-label={t().identity.tabs}>
       {#each TABS as item (item.id)}
-        <button
-          type="button"
+        <Button
+          variant="quiet"
+          size="compact"
           role="tab"
           id="identity-tab-{item.id}"
           aria-selected={tab === item.id}
           aria-controls="identity-panel"
           tabindex={tab === item.id ? 0 : -1}
-          class:chosen={tab === item.id}
           onclick={() => choose(item.id)}
           onkeydown={tabKey}
         >
           {t().identity[item.id]}
-        </button>
+        </Button>
       {/each}
     </div>
   {/snippet}
@@ -160,20 +161,20 @@
     gap: 2px 16px;
     padding: 7px 0;
     border-bottom: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-    font-size: 12px;
+    font-size: var(--text-m);
   }
   dl div:last-child {
     border-bottom: 0;
   }
   dt {
-    opacity: 0.6;
+    color: var(--ink-soft);
   }
   .ref {
     flex-basis: 100%;
     margin: 0;
     text-align: right;
-    font-size: 11px;
-    opacity: 0.55;
+    font-size: var(--text-s);
+    color: var(--ink-soft);
   }
   dd {
     margin: 0;
@@ -190,23 +191,14 @@
     gap: 4px;
     padding: 3px;
     border: 1px solid var(--control-line);
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     background: var(--control);
   }
-  .tabs button {
+  .tabs :global(.button) {
     flex: 1;
-    min-height: 36px;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    background: transparent;
-    font-size: 12px;
   }
-  .tabs button:focus-visible {
+  .tabs :global(.button:focus-visible) {
     outline-offset: -1px;
-  }
-  .tabs .chosen {
-    border-color: var(--ink);
-    background: color-mix(in srgb, var(--ink) 12%, transparent);
   }
   .movements {
     list-style: none;
@@ -217,7 +209,7 @@
   .movements > li {
     padding: 14px 0;
     border-bottom: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-    font-size: 12px;
+    font-size: var(--text-m);
   }
   .movements > li:first-child {
     padding-top: 2px;
@@ -227,9 +219,9 @@
   }
   .fit {
     margin-left: 4px;
-    font-size: 11px;
+    font-size: var(--text-s);
     font-weight: 400;
-    opacity: 0.6;
+    color: var(--ink-soft);
   }
   .ok .fit {
     opacity: 1;
@@ -240,11 +232,11 @@
   }
   .no .name,
   .no .meta {
-    opacity: 0.55;
+    color: var(--ink-soft);
   }
   .meta {
     margin: 6px 0 0;
-    opacity: 0.6;
+    color: var(--ink-soft);
     line-height: 1.5;
   }
   .notes {
@@ -258,7 +250,7 @@
   }
   .cadence {
     margin: 8px 0 0;
-    font-size: 11px;
-    opacity: 0.6;
+    font-size: var(--text-s);
+    color: var(--ink-soft);
   }
 </style>

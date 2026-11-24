@@ -1,20 +1,22 @@
 <script lang="ts">
-  import Modal from './Modal.svelte';
+  import Sheet from './sheet/Sheet.svelte';
   import { t } from './i18n.svelte';
 
-  let { onclose }: { onclose?: () => void } = $props();
+  let { onclose }: { onclose: () => void } = $props();
 
   const AUTHOR = 'Florian Butour';
   const EMAIL = 'f.butour@gmail.com';
   const year = new Date().getFullYear();
-  let modal: Modal;
-
-  export function open() {
-    modal.show();
-  }
 </script>
 
-<Modal bind:this={modal} title={t().about.title} closeLabel={t().about.close} wide {onclose}>
+<Sheet
+  id="about-title"
+  title={t().about.title}
+  closeLabel={t().about.close}
+  placement="center"
+  modal
+  {onclose}
+>
   {@const m = t().about}
   <div class="content">
     <p class="intro">
@@ -56,15 +58,11 @@
       <p>{m.creditsText}</p>
     </section>
   </div>
-</Modal>
+</Sheet>
 
 <style>
   .content {
-    max-height: min(62dvh, 560px);
-    overflow-y: auto;
-    margin-right: -10px;
-    padding-right: 10px;
-    font-size: 12px;
+    font-size: var(--text-m);
     line-height: 1.65;
   }
   .intro {
@@ -77,11 +75,11 @@
   }
   h3 {
     margin: 0 0 6px;
-    font-size: 10px;
+    font-size: var(--text-xs);
     font-weight: 500;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    opacity: 0.6;
+    color: var(--ink-soft);
   }
   p {
     margin: 0;

@@ -259,6 +259,10 @@
   let bezelEditing = $state(false);
   /** Choix explicite de l'utilisateur ; par défaut la fiche s'ouvre sur grand écran. */
   let cardWanted = $state<boolean | null>(null);
+  // Bezel setting belongs to one visit of the 3D view: it never outlives it.
+  $effect(() => {
+    if (!open) bezelEditing = false;
+  });
   const sharing = $derived(open && share !== null);
   const cardShown = $derived(open && !sharing && (cardWanted ?? width >= 760));
   /** One panel at a time beside the watch: the identity card or sharing. */
@@ -329,8 +333,8 @@
   function onkeydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
     if (editing || target.closest('input, textarea, select')) return;
-    // Inside the identity card, keys scroll and activate it; Escape still leaves the 3D view.
-    if (target.closest('dialog') && event.key !== 'Escape') return;
+    // Panels beside the watch handle their own keys (Escape and Space close them).
+    if (target.closest('dialog')) return;
     // Buttons retain their native activation; arrows still navigate after closing a colour panel.
     if (target.closest('button') && (event.key === 'Enter' || event.key === ' ')) return;
     if (open) {
@@ -440,6 +444,14 @@
   const activeRowDef = $derived(rows[nav.activeRow]!);
   const activeVariant = $derived(activeRowDef.variants[selected(nav.activeRow)]!);
 </script>
+
+{#snippet settingsIcon()}
+  <svg class="settings-icon" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M2 5h12M2 11h12" />
+    <circle cx="10.5" cy="5" r="1.8" />
+    <circle cx="5.5" cy="11" r="1.8" />
+  </svg>
+{/snippet}
 
 <div
   class="grid"
@@ -559,10 +571,7 @@
             aria-label={t().grid.caseDimensions}
             onclick={ondimensions}
           >
-            <svg class="settings-icon" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M2 5h12M2 11h12" />
-              <circle cx="10.5" cy="5" r="1.8" /><circle cx="5.5" cy="11" r="1.8" />
-            </svg>
+            {@render settingsIcon()}
             <span>{t().grid.dimensions}</span>
           </button>
         {/if}
@@ -594,11 +603,7 @@
               onclick={() => oncolor(target)}
             >
               {#if target === 'numerals' || target === 'indices'}
-                <svg class="settings-icon" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M2 5h12M2 11h12" />
-                  <circle cx="10.5" cy="5" r="1.8" />
-                  <circle cx="5.5" cy="11" r="1.8" />
-                </svg>
+                {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
@@ -772,7 +777,7 @@
     gap: 6px;
     align-self: flex-start;
     border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
-    border-radius: 20px;
+    border-radius: var(--radius-l);
     background: color-mix(in srgb, var(--veil) 80%, transparent);
     color: var(--ink);
     padding: 5px 8px;
@@ -780,7 +785,7 @@
     max-width: 100%;
     margin-top: 5px;
     font: inherit;
-    font-size: 10px;
+    font-size: var(--text-xs);
     letter-spacing: 0;
     cursor: pointer;
   }
@@ -801,11 +806,11 @@
     box-shadow: inset 0 0 0 1px #8885;
   }
   .color-value {
-    opacity: 0.65;
+    color: var(--ink-soft);
   }
   .natural {
-    font-size: 10px;
-    opacity: 0.65;
+    font-size: var(--text-xs);
+    color: var(--ink-soft);
     margin-top: 8px;
   }
 
@@ -888,9 +893,9 @@
 
   /* Variante choisie, sous le nom de la ligne : plus petite et plus discrète. */
   .label-variant {
-    font-size: 12px;
+    font-size: var(--text-m);
     letter-spacing: 0.01em;
-    opacity: 0.62;
+    color: var(--ink-soft);
   }
 
   .label.active .label-name {
@@ -898,7 +903,7 @@
   }
 
   .label.active .label-variant {
-    opacity: 0.85;
+    color: color-mix(in srgb, var(--ink) 50%, var(--ink-soft));
   }
 
   .grid.dragging .label {
