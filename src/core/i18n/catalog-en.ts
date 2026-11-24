@@ -148,6 +148,11 @@ export const CATALOG_EN: Record<string, RowNames> = {
       concentric: 'Concentric',
       'vertical-brushed': 'Vertical brushed',
       hammered: 'Hammered',
+      leather: 'Leather effect',
+      'circular-brushed': 'Circular brushed',
+      tapisserie: 'Tapisserie',
+      waves: 'Waves',
+      scales: 'Scales',
     },
   },
   'dial-color': {
