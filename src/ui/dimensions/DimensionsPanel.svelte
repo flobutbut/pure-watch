@@ -4,8 +4,10 @@
     CASE_DIMENSIONS,
     caseDimensions,
     caseDimensionsError,
+    STRAP_WIDTHS_MM,
     type CaseDimensions,
   } from '../../core/config/case-dimensions';
+  import MagneticRange from './MagneticRange.svelte';
   import type { WatchConfig } from '../../core/config/types';
   import Sheet from '../sheet/Sheet.svelte';
   import { formatNumber } from '../../core/i18n/locale';
@@ -13,13 +15,25 @@
 
   let {
     config,
+    defaults,
     onpreview,
     onclose,
   }: {
     config: WatchConfig;
+    /** Values of the size chosen in the grid: the sliders' magnetic marks. */
+    defaults: { name: string; values: CaseDimensions };
     onpreview: (values: CaseDimensions) => void;
     onclose: (values: CaseDimensions) => void;
   } = $props();
+  const stopsFor = (key: keyof CaseDimensions) => (key === 'lugWidthMm' ? STRAP_WIDTHS_MM : []);
+  function valuetext(key: keyof CaseDimensions, value: number): string {
+    const m = t().dimensions;
+    const notes = [
+      value === defaults.values[key] ? m.atDefault : '',
+      (stopsFor(key) as readonly number[]).includes(value) ? m.standardWidth : '',
+    ].filter(Boolean);
+    return `${display(value)} mm${notes.length ? ` (${notes.join(', ')})` : ''}`;
+  }
   const initial = untrack(() => caseDimensions(config));
   let values = $state({ ...initial });
   let lastValid = { ...initial };
@@ -51,10 +65,12 @@
   title={t().dimensions.title}
   closeLabel={t().dimensions.close}
   modal
+  inertPage={false}
   onclose={close}
 >
   <p class="intro">
     {t().dimensions.intro}
+    {t().dimensions.defaultsHint(defaults.name)}
   </p>
   <div class="dimensions">
     {#each CASE_DIMENSIONS as field (field.key)}
@@ -77,15 +93,16 @@
           />
           <span>mm</span>
         </div>
-        <input
-          type="range"
-          aria-label={t().dimensions.adjust(label)}
+        <MagneticRange
+          label={t().dimensions.adjust(label)}
           min={field.min}
           max={field.max}
           step={field.step}
           value={Number.isFinite(values[field.key]) ? values[field.key] : initial[field.key]}
-          aria-valuetext="{display(values[field.key])} mm"
-          oninput={(e) => (values[field.key] = e.currentTarget.valueAsNumber)}
+          defaultValue={defaults.values[field.key]}
+          stops={stopsFor(field.key)}
+          valuetext={valuetext(field.key, values[field.key])}
+          oninput={(value) => (values[field.key] = value)}
         />
       </div>
     {/each}
@@ -139,12 +156,6 @@
     border-radius: 8px;
     background: var(--control);
     padding: 7px;
-  }
-  input[type='range'] {
-    grid-column: 1 / -1;
-    width: 100%;
-    margin: 0;
-    accent-color: var(--ink);
   }
   .error {
     font-size: 12px;

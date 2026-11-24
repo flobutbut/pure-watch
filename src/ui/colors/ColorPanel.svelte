@@ -215,6 +215,7 @@
   {title}
   closeLabel={t().colors.close}
   modal
+  inertPage={false}
   onclose={close}
 >
   {#if target === 'rehaut'}
