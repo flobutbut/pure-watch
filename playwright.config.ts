@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: 'e2e',
   use: {
     baseURL: 'http://localhost:4173',
+    // The site follows the browser language: the journeys are written for the French site.
+    locale: 'fr-FR',
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
       : {},

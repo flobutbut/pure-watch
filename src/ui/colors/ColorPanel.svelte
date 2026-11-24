@@ -20,6 +20,7 @@
   import type { HexColor, WatchConfig } from '../../core/config/types';
   import Sheet from '../sheet/Sheet.svelte';
   import { tint } from '../../core/color/names';
+  import { i18n, t } from '../i18n.svelte';
 
   interface Props {
     target: ColorTarget;
@@ -48,21 +49,7 @@
   const ADVANCED_KEY = 'epure:color-advanced:v1';
   /** The HEX field is a power-user tool: folded away unless someone opened it before. */
   let advanced = $state(false);
-  const title = $derived(
-    target === 'dial'
-      ? 'Couleur du cadran'
-      : target === 'hands'
-        ? 'Matière des aiguilles'
-        : target === 'bezel'
-          ? 'Couleur de la lunette'
-          : target === 'rehaut'
-            ? 'Matière et couleur du réhaut'
-            : target === 'numerals'
-              ? 'Chiffres'
-              : target === 'indices'
-                ? 'Index'
-                : 'Couleur de la trotteuse',
-  );
+  const title = $derived(t().colors[target]);
   /** Index : taille et position seulement, leur matière suit la finition appliquée. */
   const colorless = $derived(target === 'indices');
   const ranges = $derived(
@@ -86,7 +73,9 @@
     Math.abs((a?.radius ?? 1) - (b?.radius ?? 1)) < 0.005;
   /** Slider wording: the reference value is named, the rest read as a share of it. */
   const factor = (value: number) =>
-    Math.abs(value - 1) < 0.005 ? 'Standard' : `${Math.round(value * 100)} %`;
+    Math.abs(value - 1) < 0.005
+      ? t().colors.standard
+      : `${Math.round(value * 100)}${i18n.locale === 'fr' ? ' ' : ''}%`;
   const fill = (value: number, range: { min: number; max: number }) =>
     `${((value - range.min) / (range.max - range.min)) * 100}%`;
   const sameColor = (a: ColorChoice['color'], b: ColorChoice['color']) =>
@@ -108,7 +97,7 @@
     }, 100);
   }
   $effect(() => schedulePreview(choice));
-  const named = $derived(tint(color));
+  const named = $derived(tint(color, i18n.locale));
 
   onMount(() => {
     try {
@@ -200,14 +189,14 @@
 
 <Sheet
   id="color-title"
-  eyebrow="PERSONNALISER"
+  eyebrow={t().colors.eyebrow}
   {title}
-  closeLabel="Fermer les couleurs"
+  closeLabel={t().colors.close}
   modal
   onclose={close}
 >
   {#if target === 'rehaut'}
-    <div class="links" role="group" aria-label="Finition du réhaut">
+    <div class="links" role="group" aria-label={t().colors.rehautFinish}>
       {#each REHAUT_FINISHES as item (item.id)}
         <button
           type="button"
@@ -217,13 +206,13 @@
             finish = item.id;
           }}
         >
-          {item.name}
+          {t().rehautFinish[item.id]}
         </button>
       {/each}
     </div>
   {/if}
   {#if target === 'hands'}
-    <div class="finishes" role="group" aria-label="Finition des aiguilles">
+    <div class="finishes" role="group" aria-label={t().colors.handsFinish}>
       {#each HAND_FINISHES as item (item.id)}
         <button
           type="button"
@@ -234,14 +223,14 @@
           }}
         >
           <span class="dot" style:--swatch={item.color ?? color} class:metal={item.id !== 'lacquer'}
-          ></span>{item.name}
+          ></span>{t().handFinish[item.id]}
         </button>
       {/each}
     </div>
   {/if}
 
   {#if target === 'seconds'}
-    <div class="links" role="group" aria-label="Accords de couleurs">
+    <div class="links" role="group" aria-label={t().colors.pairings}>
       <button
         type="button"
         aria-pressed={matched}
@@ -250,10 +239,10 @@
           matched = true;
         }}
       >
-        Assortie aux aiguilles
+        {t().colors.matchHands}
       </button>
       <button type="button" onclick={() => selectHex(effectiveDialColor(config.dial))}>
-        Couleur du cadran
+        {t().colors.dialColor}
       </button>
     </div>
   {/if}
@@ -261,7 +250,7 @@
   {#if initial.layout}
     <div class="layout">
       <label class="slider">
-        <span class="slider-head">Taille <span>{factor(size)}</span></span>
+        <span class="slider-head">{t().colors.size} <span>{factor(size)}</span></span>
         <input
           type="range"
           min={ranges.size.min}
@@ -274,7 +263,7 @@
         />
       </label>
       <label class="slider">
-        <span class="slider-head">Position <span>{factor(radius)}</span></span>
+        <span class="slider-head">{t().colors.position} <span>{factor(radius)}</span></span>
         <input
           type="range"
           min={ranges.radius.min}
@@ -282,16 +271,18 @@
           step="0.01"
           value={radius}
           style:--fill={fill(radius, ranges.radius)}
-          aria-valuetext="{factor(radius)} de la distance au centre"
+          aria-valuetext={t().colors.positionValue(factor(radius))}
           oninput={(event) => (radius = Number(event.currentTarget.value))}
         />
-        <span class="slider-ends" aria-hidden="true"><span>Centre</span><span>Bord</span></span>
+        <span class="slider-ends" aria-hidden="true">
+          <span>{t().colors.center}</span><span>{t().colors.edge}</span>
+        </span>
       </label>
     </div>
   {/if}
   {#if target === 'numerals'}
-    <p class="section-label">Couleur</p>
-    <div class="links" role="group" aria-label="Accords de couleurs">
+    <p class="section-label">{t().colors.color}</p>
+    <div class="links" role="group" aria-label={t().colors.pairings}>
       <button
         type="button"
         aria-pressed={matched}
@@ -301,14 +292,14 @@
           matched = true;
         }}
       >
-        Encre du cadran
+        {t().colors.dialInk}
       </button>
       <button type="button" onclick={() => selectHex(handColor(config))}>
-        Couleur des aiguilles
+        {t().colors.handsColor}
       </button>
       {#if config.hands.second.color !== 'match'}
         <button type="button" onclick={() => selectHex(targetColor(config, 'seconds'))}>
-          Couleur de la trotteuse
+          {t().colors.secondsColor}
         </button>
       {/if}
     </div>
@@ -316,8 +307,8 @@
 
   {#if free}
     <div class="palette-section">
-      <p class="section-label">Teintes proposées</p>
-      <div class="swatches" role="group" aria-label="Teintes proposées">
+      <p class="section-label">{t().colors.presets}</p>
+      <div class="swatches" role="group" aria-label={t().colors.presets}>
         {#each presets as preset (preset.color)}
           <button
             type="button"
@@ -335,14 +326,14 @@
 
     {#if recent.length}
       <div class="recent">
-        <p class="section-label">Récentes</p>
-        <div class="swatches" role="group" aria-label="Couleurs récentes">
+        <p class="section-label">{t().colors.recent}</p>
+        <div class="swatches" role="group" aria-label={t().colors.recentLabel}>
           {#each recent as hex (hex)}
             <button
               type="button"
               class="swatch"
-              aria-label="Réutiliser {hex}"
-              title={tint(hex).name}
+              aria-label={t().colors.reuse(hex)}
+              title={tint(hex, i18n.locale).name}
               style:--swatch={hex}
               onclick={() => selectHex(hex)}
             ></button>
@@ -362,9 +353,7 @@
         type="button"
         class="spectrum"
         bind:this={spectrum}
-        aria-label="Saturation {Math.round(hsv.s)} %, luminosité {Math.round(
-          hsv.v,
-        )} % : utilisez les flèches, Maj pour un pas de dix"
+        aria-label={t().colors.spectrum(Math.round(hsv.s), Math.round(hsv.v))}
         style:--hue={hsvToHex(hsv.h, 100, 100)}
         onpointerdown={pointerDown}
         onpointermove={(event) => {
@@ -386,7 +375,7 @@
         ></span>
       </button>
       <label class="hue-label">
-        Teinte <span>{Math.round(hsv.h)}°</span>
+        {t().colors.hue} <span>{Math.round(hsv.h)}°</span>
         <input
           class="hue"
           type="range"
@@ -407,11 +396,11 @@
           }
         }}
       >
-        <summary>Avancé</summary>
+        <summary>{t().colors.advanced}</summary>
         <label class="hex-label">
           <span>HEX</span><span class="hex-preview" style:background={color}></span>
           <input
-            aria-label="Code HEX"
+            aria-label={t().colors.hexCode}
             aria-invalid={!valid}
             aria-describedby={!valid ? 'hex-error' : undefined}
             type="text"
@@ -442,7 +431,7 @@
           />
         </label>
         {#if !valid}<p id="hex-error" class="error">
-            Saisissez 3 ou 6 caractères : 0–9 ou A–F.
+            {t().colors.hexError}
           </p>{/if}
       </details>
     </div>
@@ -451,11 +440,12 @@
     <button
       type="button"
       class="restore"
-      title={initial.layout ? 'Revenir aux réglages d’origine' : 'Revenir à la couleur d’origine'}
+      title={initial.layout ? t().colors.restoreSettings : t().colors.restoreColor}
       disabled={!changed}
       onclick={restore}
     >
-      <span aria-hidden="true">↺</span> Rétablir
+      <span aria-hidden="true">↺</span>
+      {t().colors.restore}
     </button>
   {/snippet}
 </Sheet>

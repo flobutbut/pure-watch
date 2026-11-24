@@ -310,14 +310,16 @@ export function encodeConfigHash(config: WatchConfig): string {
   return `#v1.${base64url(JSON.stringify(payload))}`;
 }
 
+/** What went wrong with a link; the interface words it in the visitor's language. */
+export type LinkNotice = '' | 'invalid' | 'adjusted' | 'unsupported';
+
 export interface ConfigLink {
   config: WatchConfig;
-  notice: string;
+  notice: LinkNotice;
 }
 
-const INVALID = 'Ce lien de configuration est invalide. La montre par défaut est affichée.';
-const ADJUSTED =
-  'Certaines options du lien ne sont pas reconnues ; leurs valeurs par défaut ont été utilisées.';
+const INVALID = 'invalid';
+const ADJUSTED = 'adjusted';
 
 /** New catalog identifiers can travel literally until a later wire version assigns a token. */
 function catalogContains(catalog: Catalog, path: string, value: string): boolean {
@@ -333,12 +335,9 @@ function catalogContains(catalog: Catalog, path: string, value: string): boolean
 }
 
 export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
-  const fallback = (notice: string): ConfigLink => ({ config: defaultConfig(), notice });
+  const fallback = (notice: LinkNotice): ConfigLink => ({ config: defaultConfig(), notice });
   if (!hash || hash === '#') return fallback('');
-  if (!hash.startsWith('#v1.'))
-    return fallback(
-      'Cette version de lien n’est pas prise en charge. La montre par défaut est affichée.',
-    );
+  if (!hash.startsWith('#v1.')) return fallback('unsupported');
   if (hash.length > MAX_HASH_LENGTH || !/^#v1\.[A-Za-z0-9_-]+$/.test(hash))
     return fallback(INVALID);
   try {

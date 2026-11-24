@@ -1,6 +1,8 @@
 <script lang="ts">
   import AboutDialog from './AboutDialog.svelte';
   import ShareDialog from './ShareDialog.svelte';
+  import { LOCALES } from '../core/i18n/locale';
+  import { i18n, setLocale, t } from './i18n.svelte';
 
   let {
     url,
@@ -15,7 +17,7 @@
 </script>
 
 <header class="app-header">
-  <div class="brand" aria-label="Épure, atelier horloger">
+  <div class="brand" aria-label={t().chrome.brand}>
     <svg class="mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <path d="M29.9 10.1a14 14 0 1 0 0 19.8M13 12v16h12M13 12h12M13 20h9" />
     </svg>
@@ -26,34 +28,32 @@
     bind:this={shareButton}
     onclick={() => shareDialog.open(url)}
     aria-haspopup="dialog"
-    aria-label="Partager la configuration"
+    aria-label={t().chrome.shareLabel}
   >
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 15V3m-4 4 4-4 4 4M7 11H5v10h14V11h-2" />
     </svg>
-    <span>Partager</span>
+    <span>{t().chrome.share}</span>
   </button>
 </header>
 
 {#if !colorEditing}
-  <footer aria-label="Aide à la navigation" class:under-sheet={sheetShown}>
+  <footer aria-label={t().chrome.footer} class:under-sheet={sheetShown}>
     <div class="keyboard-hints">
       {#if inspecting}
-        <span><kbd>← ↑ ↓ →</kbd> Tourner</span>
-        <span><kbd>1–5</kbd> Vues</span>
-        <span><kbd>P</kbd> Pause</span>
-        <span><kbd>I</kbd> Fiche</span>
-        <span><kbd>Échap</kbd> Retour</span>
+        <span><kbd>← ↑ ↓ →</kbd> {t().chrome.rotate}</span>
+        <span><kbd>1–5</kbd> {t().chrome.views}</span>
+        <span><kbd>P</kbd> {t().chrome.pause}</span>
+        <span><kbd>I</kbd> {t().chrome.card}</span>
+        <span><kbd>{t().chrome.escKey}</kbd> {t().chrome.back}</span>
       {:else}
-        <span><kbd>↑ ↓</kbd> Pièces</span>
-        <span><kbd>← →</kbd> Variantes</span>
-        <span><kbd>Entrée</kbd> Vue 3D</span>
+        <span><kbd>↑ ↓</kbd> {t().chrome.parts}</span>
+        <span><kbd>← →</kbd> {t().chrome.variants}</span>
+        <span><kbd>{t().chrome.enterKey}</kbd> {t().chrome.view3d}</span>
       {/if}
     </div>
     <div class="touch-hints">
-      {inspecting
-        ? 'Glisser pour tourner · Pincer pour zoomer'
-        : 'Glisser pour explorer · Toucher la montre pour la voir en 3D'}
+      {inspecting ? t().chrome.touchInspect : t().chrome.touchGrid}
     </div>
     <button
       class="about-button"
@@ -61,8 +61,21 @@
       onclick={() => aboutDialog.open()}
       aria-haspopup="dialog"
     >
-      À propos
+      {t().chrome.about}
     </button>
+    <div class="language" role="group" aria-label={t().chrome.language}>
+      {#each LOCALES as locale (locale)}
+        <button
+          type="button"
+          lang={locale}
+          aria-pressed={i18n.locale === locale}
+          aria-label={locale === 'fr' ? 'Français' : 'English'}
+          onclick={() => setLocale(locale)}
+        >
+          {locale.toUpperCase()}
+        </button>
+      {/each}
+    </div>
   </footer>
 {/if}
 
@@ -171,6 +184,34 @@
   .about-button:hover {
     color: var(--ink);
   }
+  /* Choix de la langue : deux sigles discrets, la langue active seule à pleine encre. */
+  .language {
+    display: flex;
+    flex: none;
+    align-items: center;
+    pointer-events: auto;
+  }
+  .language button {
+    padding: 4px 3px;
+    border: 0;
+    background: transparent;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: color-mix(in srgb, var(--ink) 38%, var(--veil));
+    transition: color 160ms;
+  }
+  .language button + button::before {
+    content: '·';
+    margin-right: 6px;
+    color: color-mix(in srgb, var(--ink) 30%, var(--veil));
+  }
+  .language button:hover,
+  .language button[aria-pressed='true'] {
+    color: color-mix(in srgb, var(--ink) 75%, var(--veil));
+  }
+  .language button[aria-pressed='true'] {
+    cursor: default;
+  }
   .keyboard-hints {
     display: flex;
     align-items: center;
@@ -243,6 +284,9 @@
     .about-button {
       font-size: 9px;
     }
+    .language button {
+      font-size: 8px;
+    }
   }
   /* Below this width the identity card becomes a bottom sheet and covers the hints. */
   @media (max-width: 759px) {
@@ -252,7 +296,8 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .share-button,
-    .about-button {
+    .about-button,
+    .language button {
       transition: none;
     }
   }

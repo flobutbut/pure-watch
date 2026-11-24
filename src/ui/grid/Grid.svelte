@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { RowDef } from '../../core/catalog/types';
   import type { WatchConfig } from '../../core/config/types';
-  import { HAND_FINISHES, targetColor, type ColorTarget } from '../../core/config/colors';
+  import { targetColor, type ColorTarget } from '../../core/config/colors';
   import { tint } from '../../core/color/names';
   import { hasIntrinsicColor } from '../../core/config/dial';
   import { turnBezel } from '../../core/config/bezel';
@@ -11,6 +11,7 @@
   import BezelControl from '../view3d/BezelControl.svelte';
   import IdentityCard from '../identity/IdentityCard.svelte';
   import Cell from './Cell.svelte';
+  import { i18n, t } from '../i18n.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
   import { commandFromKey } from './keyboard';
   import {
@@ -370,8 +371,8 @@
   /** Metal hands are named by their material; painted surfaces by their tint. */
   const colorLabel = (target: ColorTarget) =>
     target === 'hands' && config.hands.finish !== 'lacquer'
-      ? (HAND_FINISHES.find((f) => f.id === config.hands.finish)?.name ?? '')
-      : tint(targetColor(config, target)).name;
+      ? (t().handFinish[config.hands.finish] ?? '')
+      : tint(targetColor(config, target), i18n.locale).name;
 
   const colorForRow = (id: string): ColorTarget | null =>
     id === 'bezel' && config.bezel.type === 'rotating'
@@ -405,7 +406,7 @@
   bind:clientHeight={height}
   role="grid"
   tabindex="0"
-  aria-label="Configurateur : flèches pour naviguer, Entrée pour voir la montre en 3D"
+  aria-label={t().grid.label}
   aria-activedescendant="cell-{activeRowDef.id}-{activeVariant.id}"
   style:--pitch="{metrics.pitch}px"
   style:--cell="{metrics.cell}px"
@@ -439,8 +440,10 @@
             class:jump={slot.jump}
             role="gridcell"
             aria-selected={slot.dCol === 0}
-            aria-label="{row.i18n.name}, {variant.i18n.name}, {slot.variantIndex + 1} sur {row
-              .variants.length}{isCenter ? ' — montre complète, Entrée pour la voir en 3D' : ''}"
+            aria-label="{row.i18n.name}, {variant.i18n.name}, {t().grid.position(
+              slot.variantIndex + 1,
+              row.variants.length,
+            )}{isCenter ? t().grid.center : ''}"
             data-row={rowIndex}
             data-variant={slot.variantIndex}
             style:transform="translate({place.x}px, {place.y}px) scale({place.scale})"
@@ -502,8 +505,8 @@
         </span>
         {#if target}
           {#if target === 'dial' && hasIntrinsicColor(config.dial.finish)}
-            <span class="natural" title="Cette finition possède sa propre coloration.">
-              Teinte naturelle
+            <span class="natural" title={t().grid.naturalTitle}>
+              {t().grid.natural}
             </span>
           {:else}
             <button
@@ -511,18 +514,18 @@
               type="button"
               tabindex={dRow === 0 ? 0 : -1}
               aria-label={target === 'dial'
-                ? 'Couleur du cadran'
+                ? t().grid.dialColor
                 : target === 'bezel'
-                  ? 'Couleur de la lunette'
+                  ? t().grid.bezelColor
                   : target === 'hands'
-                    ? 'Matière et couleur des aiguilles'
+                    ? t().grid.handsColor
                     : target === 'rehaut'
-                      ? 'Matière et couleur du réhaut'
+                      ? t().grid.rehautColor
                       : target === 'numerals'
-                        ? 'Paramètres des chiffres : taille, position et couleur'
+                        ? t().grid.numeralsSettings
                         : target === 'indices'
-                          ? 'Paramètres des index : taille et position'
-                          : 'Couleur de la trotteuse'}
+                          ? t().grid.indicesSettings
+                          : t().grid.secondsColor}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
@@ -537,16 +540,16 @@
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
               <span>
-                {target === 'numerals' || target === 'indices' ? 'Paramètres' : 'Couleur'}
+                {target === 'numerals' || target === 'indices' ? t().grid.settings : t().grid.color}
                 {#if target !== 'indices'}<span class="color-value">
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'
                       ? config.rehaut.finish === 'metal'
-                        ? 'Boîtier'
-                        : 'Cadran'
+                        ? t().grid.caseMatch
+                        : t().grid.dialMatch
                       : target === 'seconds' && config.hands.second.color === 'match'
-                        ? 'Assortie'
+                        ? t().grid.handsMatch
                         : target === 'numerals' && config.dial.indices.numeralColor === 'match'
-                          ? 'Encre'
+                          ? t().grid.ink
                           : colorLabel(target)}
                   </span>{/if}
               </span>
@@ -569,12 +572,12 @@
         onedit={() => live?.view(0)}
       />
     {/if}
-    <button class="backdrop" aria-label="Fermer la vue 3D" onclick={onclose}></button>
+    <button class="backdrop" aria-label={t().grid.close3d} onclick={onclose}></button>
     <div class="tools">
       <button
         class="tool"
-        aria-label="Réinitialiser la vue"
-        title="Réinitialiser la vue (double clic)"
+        aria-label={t().grid.resetView}
+        title={t().grid.resetViewTitle}
         onclick={() => live?.view(4)}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -583,9 +586,9 @@
       </button>
       <button
         class="tool"
-        aria-label={paused ? 'Relancer les aiguilles' : 'Mettre les aiguilles en pause'}
+        aria-label={paused ? t().grid.resume : t().grid.pause}
         aria-pressed={paused}
-        title="Pause (P)"
+        title={t().grid.pauseTitle}
         onclick={() => (paused = live?.togglePause() ?? false)}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -594,16 +597,21 @@
       </button>
       <button
         class="tool card-toggle"
-        aria-label="Fiche d’identité"
+        aria-label={t().grid.card}
         aria-pressed={cardShown}
-        title="Fiche d’identité (I)"
+        title={t().grid.cardTitle}
         onclick={toggleCard}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.01" />
         </svg>
       </button>
-      <button class="tool" aria-label="Fermer" title="Fermer (Échap)" onclick={onclose}>
+      <button
+        class="tool"
+        aria-label={t().grid.close}
+        title={t().grid.closeTitle}
+        onclick={onclose}
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
     </div>

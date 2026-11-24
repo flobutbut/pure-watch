@@ -28,8 +28,13 @@
   import AppChrome from './ui/AppChrome.svelte';
   import { ambienceFor } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
+  import { localizeCatalog } from './core/i18n/catalog-en';
+  import { i18n, t } from './ui/i18n.svelte';
 
   const catalog = parseCatalog(rawCatalog);
+  // Same rows, ids and values in every language: only the names change.
+  const catalogs = { fr: catalog, en: localizeCatalog(catalog, 'en') };
+  const named = $derived(catalogs[i18n.locale]);
 
   const initialLink = readConfigUrl(new URL(location.href), catalog);
   const initialConfig = initialLink.config;
@@ -41,7 +46,7 @@
   let cardShown = $state(false);
   let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
-  const rows = $derived(visibleRows(catalog.rows, config));
+  const rows = $derived(visibleRows(named.rows, config));
   const rowViews = $derived(toRowViews(rows));
 
   const initialRows = visibleRows(catalog.rows, initialConfig);
@@ -61,13 +66,13 @@
     // Chiffres : blanc et noir d'impression, puis les accents de la trotteuse.
     ...(colorTarget === 'numerals'
       ? [
-          { name: 'Blanc', color: '#F2F1EC' },
-          { name: 'Noir', color: '#1B1F27' },
-          { name: 'Or', color: '#C9A24A' },
+          { name: t().app.white, color: '#F2F1EC' },
+          { name: t().app.black, color: '#1B1F27' },
+          { name: t().app.gold, color: '#C9A24A' },
         ]
       : []),
     ...(
-      catalog.rows.find(
+      named.rows.find(
         (row) =>
           row.id ===
           (colorTarget === 'seconds' || colorTarget === 'numerals'
@@ -96,10 +101,10 @@
       linkNotice = '';
       announcement =
         colorTarget === 'numerals'
-          ? 'Réglages des chiffres enregistrés'
+          ? t().app.numeralsSaved
           : colorTarget === 'indices'
-            ? 'Réglages des index enregistrés'
-            : 'Couleur enregistrée';
+            ? t().app.indicesSaved
+            : t().app.colorSaved;
     }
     dropColor();
   }
@@ -150,7 +155,7 @@
             ),
       mode: inspecting ? 'view3d' : 'grid',
     };
-    announcement = 'Configuration chargée depuis le lien';
+    announcement = t().app.linkLoaded;
   }
 
   // Three.js n'est chargé qu'après le premier affichage (chargement paresseux, spec §9.8).
@@ -201,7 +206,7 @@
       ),
     };
     const variant = row.variants[index]?.i18n.name ?? '';
-    announcement = rowChanged ? `${row.i18n.name} : ${variant}` : variant;
+    announcement = rowChanged ? t().app.rowVariant(row.i18n.name, variant) : variant;
   }
 
   const OPEN_MS = 450;
@@ -211,7 +216,7 @@
     if (editing) return;
     if (nav.mode !== 'grid') return;
     nav = transition(nav, 'open');
-    announcement = 'Vue 3D : faites glisser pour tourner la montre, Échap pour revenir';
+    announcement = t().app.view3d;
     clearTimeout(modeTimer);
     modeTimer = setTimeout(() => (nav = transition(nav, 'opened')), OPEN_MS);
   }
@@ -271,7 +276,7 @@
     />
   {/if}
   <p class="sr-only" aria-live="polite">{announcement}</p>
-  {#if linkNotice}<p class="link-notice" role="status">{linkNotice}</p>{/if}
+  {#if linkNotice}<p class="link-notice" role="status">{t().linkNotice[linkNotice]}</p>{/if}
 </main>
 
 <style>

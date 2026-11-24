@@ -5,6 +5,8 @@
   import { movementStepsPerSecond, type MovementSpec } from '../../core/movement/movements';
   import Sheet from '../sheet/Sheet.svelte';
   import { identitySections } from './identity';
+  import { NUMBER_LOCALE } from '../../core/i18n/locale';
+  import { i18n, t } from '../i18n.svelte';
 
   interface Props {
     rows: readonly RowDef[];
@@ -13,38 +15,34 @@
   }
   let { rows, config, onclose }: Props = $props();
 
-  const sections = $derived(identitySections(rows, config));
-  const movements = $derived(compatibleMovements(config));
-  const FIT_LABEL: Record<Fit, string> = {
-    ok: 'Compatible',
-    adapt: 'Avec adaptations',
-    check: 'À vérifier',
-    no: 'Incompatible',
-  };
-  const CALENDAR: Record<MovementSpec['calendar'], string | null> = {
-    none: 'Sans date',
-    date: 'Date',
-    'day-date': 'Jour et date',
-    unknown: null,
-  };
+  const sections = $derived(identitySections(rows, config, i18n.locale));
+  const movements = $derived(compatibleMovements(config, i18n.locale));
+  const fitLabel = (fit: Fit) => t().movement[fit];
+  const calendarLabel = (calendar: MovementSpec['calendar']): string | null =>
+    calendar === 'none'
+      ? t().movement.noDate
+      : calendar === 'date'
+        ? t().movement.date
+        : calendar === 'day-date'
+          ? t().movement.dayDate
+          : null;
   /** Narrow no-break space as thousands separator, as in printed specification sheets. */
-  const number = (value: number) => value.toLocaleString('fr-FR').replace(/\s/g, '\u202f');
+  const number = (value: number) =>
+    value.toLocaleString(NUMBER_LOCALE[i18n.locale]).replace(/\s/g, '\u202f');
 
   function details(movement: MovementSpec): string {
-    if (movement.kind === 'quartz') return 'Pile · 1 pas par seconde';
-    const parts = ['Automatique'];
-    if (movement.frequencyVph) parts.push(`${number(movement.frequencyVph)} alt/h`);
-    if (movement.powerReserveH) parts.push(`${movement.powerReserveH} h de réserve`);
-    const calendar = CALENDAR[movement.calendar];
+    const m = t().movement;
+    if (movement.kind === 'quartz') return m.battery;
+    const parts = [m.automatic];
+    if (movement.frequencyVph) parts.push(m.frequency(number(movement.frequencyVph)));
+    if (movement.powerReserveH) parts.push(m.reserve(movement.powerReserveH));
+    const calendar = calendarLabel(movement.calendar);
     if (calendar) parts.push(calendar);
     if (movement.diameterMm && movement.heightMm)
-      parts.push(`Ø ${number(movement.diameterMm)} × ${mm(movement.heightMm, 2)}`);
+      parts.push(`Ø ${number(movement.diameterMm)} × ${mm(movement.heightMm, 2, i18n.locale)}`);
     return parts.join(' · ');
   }
-  const TABS = [
-    { id: 'traits', label: 'Caractéristiques' },
-    { id: 'movements', label: 'Mouvements' },
-  ] as const;
+  const TABS = [{ id: 'traits' }, { id: 'movements' }] as const;
   type Tab = (typeof TABS)[number]['id'];
   let tab = $state<Tab>('traits');
   let panels: HTMLDivElement;
@@ -70,20 +68,20 @@
   }
   function cadence(movement: MovementSpec): string {
     const steps = movementStepsPerSecond(movement.id);
-    return `Trotteuse de la vue 3D : ${steps} pas par seconde`;
+    return t().movement.cadence(steps);
   }
 </script>
 
 <Sheet
   id="identity-title"
-  eyebrow="FICHE D’IDENTITÉ"
-  title="Votre montre"
-  closeLabel="Masquer la fiche d’identité"
+  eyebrow={t().identity.eyebrow}
+  title={t().identity.title}
+  closeLabel={t().identity.close}
   placement="stage"
   {onclose}
 >
   {#snippet toolbar()}
-    <div class="tabs" role="tablist" aria-label="Contenu de la fiche">
+    <div class="tabs" role="tablist" aria-label={t().identity.tabs}>
       {#each TABS as item (item.id)}
         <button
           type="button"
@@ -96,7 +94,7 @@
           onclick={() => choose(item.id)}
           onkeydown={tabKey}
         >
-          {item.label}
+          {t().identity[item.id]}
         </button>
       {/each}
     </div>
@@ -124,11 +122,11 @@
         </section>
       {/each}
     {:else}
-      <ul class="movements" aria-label="Mouvements compatibles">
+      <ul class="movements" aria-label={t().identity.movementsLabel}>
         {#each movements as { movement, fit, notes } (movement.id)}
           <li class={fit}>
             <p class="name">
-              {movement.name} <span class="fit">{FIT_LABEL[fit]}</span>
+              {movement.name} <span class="fit">{fitLabel(fit)}</span>
             </p>
             <p class="meta">{details(movement)}</p>
             {#if notes.length}

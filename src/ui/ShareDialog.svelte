@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onDestroy, tick } from 'svelte';
   import Modal from './Modal.svelte';
+  import { t } from './i18n.svelte';
 
   let { onclose }: { onclose?: () => void } = $props();
 
-  const TITLE = 'Épure · Ma montre';
-  const TEXT = 'Une montre composée dans l’atelier Épure.';
+  const TITLE = $derived(t().share.shareTitle);
+  const TEXT = $derived(t().share.shareText);
 
   let modal: Modal;
   let linkInput = $state<HTMLInputElement>();
@@ -77,7 +78,7 @@
   }
 </script>
 
-<Modal bind:this={modal} title="Partager votre montre" closeLabel="Fermer le partage" {onclose}>
+<Modal bind:this={modal} title={t().share.title} closeLabel={t().share.close} {onclose}>
   <ul class="networks">
     {#each networks as network (network.name)}
       <li>
@@ -85,7 +86,7 @@
           href={network.href}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Partager sur {network.name}"
+          aria-label={t().share.on(network.name)}
         >
           <span class="disc">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d={network.icon} /></svg>
@@ -95,19 +96,19 @@
       </li>
     {/each}
     <li>
-      <a href={mailto} aria-label="Partager par e-mail">
+      <a href={mailto} aria-label={t().share.byEmail}>
         <span class="disc">
           <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
             <rect x="3" y="5.5" width="18" height="13" rx="2" />
             <path d="m3.5 7 8.5 6.5L20.5 7" />
           </svg>
         </span>
-        <span class="label">E-mail</span>
+        <span class="label">{t().share.email}</span>
       </a>
     </li>
   </ul>
 
-  <label for="configuration-link">Lien de la configuration</label>
+  <label for="configuration-link">{t().share.link}</label>
   <div class="link-row">
     <input
       id="configuration-link"
@@ -117,15 +118,14 @@
       onclick={() => linkInput?.select()}
     />
     <button class="copy" class:done={copyState === 'copied'} onclick={copy}>
-      {copyState === 'copied' ? 'Copié ✓' : 'Copier le lien'}
+      {copyState === 'copied' ? t().share.copied : t().share.copy}
     </button>
   </div>
   <p class="status" role="status">
     {#if copyState === 'copied'}
-      Lien de la configuration copié
+      {t().share.copiedStatus}
     {:else if copyState === 'manual'}
-      Le lien est sélectionné. Utilisez le menu Copier de votre appareil ou le raccourci clavier
-      habituel.
+      {t().share.manual}
     {/if}
   </p>
 
@@ -134,7 +134,7 @@
       <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
         <path d="M12 15V3m-4 4 4-4 4 4M7 11H5v10h14V11h-2" />
       </svg>
-      Autres applications…
+      {t().share.more}
     </button>
   {/if}
 </Modal>
