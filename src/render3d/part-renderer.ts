@@ -23,7 +23,7 @@ const LAYER_DEPENDENCIES: Record<
 > = {
   case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
   rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut'],
-  lugs: ['case', 'crystal'],
+  lugs: ['case', 'crystal', 'dial.shape', 'dial.size', 'bezel.type'],
   crown: ['crown', 'case', 'crystal', 'complications'],
   dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],
   print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications'],

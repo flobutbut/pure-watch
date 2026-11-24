@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { HandAngles } from '../core/clock/angles';
 import { isBlackTonneau } from '../core/config/instrument';
 import type { WatchConfig } from '../core/config/types';
-import { hasBezelInsert } from '../core/config/bezel';
+import { hasBezelInsert, independentBezel } from '../core/config/bezel';
 import { watchDimensions, type WatchDimensions } from '../core/geometry/dimensions';
 import type { CrystalQuality, MaterialLibrary } from './materials';
 import type { Refinement } from './refinement';
@@ -21,6 +21,7 @@ import { buildHands } from './parts/hands';
 import { buildLugs } from './parts/lugs';
 import { decorateRehaut } from './parts/rehaut';
 import { buildGraduatedBezel } from './parts/rotating-bezel';
+import { buildIndependentBezel } from './parts/independent-bezel';
 
 export const LAYERS = [
   'case',
@@ -107,6 +108,8 @@ export function buildWatch(
       ? buildGraduatedBezel(config, d, lib, options.printSize)
       : null;
   if (graduatedBezel) caseParts!.case.add(graduatedBezel.group);
+  if (independentBezel(config) && caseParts && wanted('case'))
+    caseParts.case.add(buildIndependentBezel(config, d, lib));
   const detailedHands = options.handDetail
     ? options.handDetail === 'refined'
     : options.refinement !== 'legacy';

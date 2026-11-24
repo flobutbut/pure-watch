@@ -24,6 +24,7 @@
   import RestoreButton from '../kit/RestoreButton.svelte';
   import Sheet from '../sheet/Sheet.svelte';
   import LumeControls from './LumeControls.svelte';
+  import LugSettings from './LugSettings.svelte';
   import { tint } from '../../core/color/names';
   import { i18n, t } from '../i18n.svelte';
 
@@ -59,6 +60,7 @@
   let radius = $state(initial.layout?.radius ?? 1);
   let numeralSystem = $state<NumeralSystem>(initial.numeralSystem ?? 'arabic');
   let lume = $state(initial.lume);
+  let lugJoin = $state(initial.lugJoin);
   let recent = $state<HexColor[]>([]);
   let spectrum = $state<HTMLButtonElement>();
   let pointer: number | null = null;
@@ -73,11 +75,13 @@
       : { size: NUMERAL_SIZE_RANGE, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    target === 'indices'
-      ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
-      : target === 'rehaut'
-        ? finish === 'custom'
-        : target !== 'hands' || finish === 'lacquer',
+    target === 'lugs'
+      ? false
+      : target === 'indices'
+        ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
+        : target === 'rehaut'
+          ? finish === 'custom'
+          : target !== 'hands' || finish === 'lacquer',
   );
   const color = $derived(hsvToHex(hsv.h, hsv.s, hsv.v));
   const valid = $derived(!free || matched || normalizeHex(hexInput) !== null);
@@ -87,6 +91,7 @@
     ...(initial.layout ? { layout: { size, radius } } : {}),
     ...(target === 'numerals' ? { numeralSystem } : {}),
     ...(lume ? { lume } : {}),
+    ...(lugJoin ? { lugJoin } : {}),
   });
   const sameLayout = (a: ColorChoice['layout'], b: ColorChoice['layout']) =>
     Math.abs((a?.size ?? 1) - (b?.size ?? 1)) < 0.005 &&
@@ -105,6 +110,7 @@
       !sameColor(choice.color, initial.color) ||
       choice.numeralSystem !== initial.numeralSystem ||
       JSON.stringify(choice.lume) !== JSON.stringify(initial.lume) ||
+      choice.lugJoin !== initial.lugJoin ||
       !sameLayout(choice.layout, initial.layout),
   );
   let previewTimer: ReturnType<typeof setTimeout> | undefined;
@@ -192,6 +198,7 @@
     radius = initial.layout?.radius ?? 1;
     numeralSystem = initial.numeralSystem ?? 'arabic';
     lume = initial.lume;
+    lugJoin = initial.lugJoin;
   }
   // An unfinished HEX entry is ignored: the last valid colour, still shown on the watch, is kept.
   function close() {
@@ -220,6 +227,7 @@
   inertPage={false}
   onclose={close}
 >
+  {#if lugJoin}<LugSettings value={lugJoin} onchange={(value) => (lugJoin = value)} />{/if}
   {#if target === 'rehaut'}
     <div class="links" role="group" aria-label={t().colors.rehautFinish}>
       {#each REHAUT_FINISHES as item (item.id)}
@@ -484,7 +492,7 @@
   {/if}
   {#snippet footer()}
     <RestoreButton
-      title={initial.layout ? t().colors.restoreSettings : t().colors.restoreColor}
+      title={initial.layout || lugJoin ? t().colors.restoreSettings : t().colors.restoreColor}
       disabled={!changed}
       onclick={restore}
     />

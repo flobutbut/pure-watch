@@ -1,4 +1,22 @@
 import type { WatchConfig } from './types';
+import { shapeRadius } from '../geometry/case-shape';
+import { continuousLugs } from './lugs';
+
+/** A separate ring exposes the flat case shoulder for flush and blended lug roots. */
+export function independentBezel(config: WatchConfig): boolean {
+  return continuousLugs(config) && !hasBezelInsert(config);
+}
+
+/** Keep the ring just inside the case outline; detached lugs retain their old dimensions. */
+export function bezelEnvelopeRadius(config: WatchConfig, radius: number): number {
+  if (!independentBezel(config)) return radius;
+  let result = Infinity;
+  for (let i = 0; i < 1024; i++) {
+    const angle = (i * Math.PI * 2) / 1024;
+    result = Math.min(result, radius - 0.1 / shapeRadius(config.case.shape, angle));
+  }
+  return result * 0.998;
+}
 
 /** Available fixed profiles and the independent rotating ring. */
 export const BEZEL_TYPES = [

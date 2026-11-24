@@ -16,8 +16,16 @@ import type { MaterialLibrary } from '../materials';
 import { caseLevels } from './levels';
 import { profileAttachmentSurface } from './case-profile';
 import { applyOcclusion, lugRoot } from './occlusion';
+import { continuousLugs, lugJoin } from '../../core/config/lugs';
+import { shapeRadius } from '../../core/geometry/case-shape';
+import { lugShoulder } from './lug-shoulder';
 
 export interface HornSpec {
+  /** Optional continuous connection; absent for historical lugs and crown guards. */
+  blendRadius?: number;
+  aperture?: (theta: number) => number;
+  shoulder?: (theta: number) => number;
+  occlusionDepth?: number;
   /** Three contiguous material groups: top, sides, narrow polished bevels. */
   machined?: boolean;
   /** Bande occupée en x (côté intérieur, vers le bracelet ; côté extérieur). */
@@ -116,6 +124,45 @@ interface Sides {
   outer: (y: number) => number;
 }
 
+/** Smooth union of the shoulder and the lug's strip, with a bounded machining radius. */
+function blendedSides(h: HornSpec): Sides {
+  const surface = surfaceOf(h),
+    radius = h.blendRadius!;
+  const field = (x: number, y: number) => {
+    const a = Math.hypot(x, y) - surface(Math.atan2(y, x));
+    const b = Math.max(h.aIn - x, x - h.aOut);
+    const t = clamp(0.5 + (0.5 * (b - a)) / radius, 0, 1);
+    return b + (a - b) * t - radius * t * (1 - t);
+  };
+  const cache = new Map<number, { inner: number; outer: number }>();
+  const at = (y: number) => {
+    let found = cache.get(y);
+    if (found) return found;
+    const mid = (h.aIn + h.aOut) / 2;
+    let lo = mid,
+      hi = 200;
+    for (let i = 0; i < 35; i++) {
+      const x = (lo + hi) / 2;
+      if (field(x, y) <= 0) lo = x;
+      else hi = x;
+    }
+    const outer = lo;
+    lo = h.aIn < 0 ? -200 : 0;
+    hi = mid;
+    if (field(lo, y) > 0)
+      for (let i = 0; i < 35; i++) {
+        const x = (lo + hi) / 2;
+        if (field(x, y) > 0) lo = x;
+        else hi = x;
+      }
+    else hi = lo;
+    found = { inner: hi, outer };
+    cache.set(y, found);
+    return found;
+  };
+  return { inner: (y) => at(y).inner, outer: (y) => at(y).outer };
+}
+
 /** Section à la distance y : bornes en x (avant le quart sx), bornes en z. */
 function section(y: number, h: HornSpec, sides: Sides) {
   const yTop = h.yTip - h.tipRadius;
@@ -170,7 +217,9 @@ export function hornGeometry(h: HornSpec): THREE.BufferGeometry {
   const ys: number[] = [];
   for (let y = h.yStart; y < yTop; y += 0.2) ys.push(y);
   for (let i = 0; i <= 10; i++) ys.push(yTop + (i / 10) * h.tipRadius * 0.999);
-  const sides: Sides = { inner: makeSide(h.aIn, -1, h), outer: makeSide(h.aOut, 1, h) };
+  const sides: Sides = h.blendRadius
+    ? blendedSides(h)
+    : { inner: makeSide(h.aIn, -1, h), outer: makeSide(h.aOut, 1, h) };
   const rings = ys.map((y) => ring(y, h, segments, sides));
 
   const buckets = Array.from({ length: h.machined ? 3 : 1 }, () => ({
@@ -189,8 +238,77 @@ export function hornGeometry(h: HornSpec): THREE.BufferGeometry {
   // horaire vu depuis la pointe : on inverse les triangles pour orienter les faces vers
   // l'extérieur. Un quart miroir (sx·sy < 0) inverse déjà le sens.
   const flip = h.sx * h.sy > 0;
-  const tri = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) =>
-    flip ? push(a, c, b) : push(a, b, c);
+  const conformed = new WeakMap<THREE.Vector3, THREE.Vector3>();
+  const apertureY = new Map<number, number>();
+  const innerY = (x: number) => {
+    const key = Math.round(x * 1e6);
+    let start = apertureY.get(key);
+    if (start === undefined) {
+      start = surfaceY(x, h.aperture!);
+      apertureY.set(key, start);
+    }
+    return start;
+  };
+  const conform = (v: THREE.Vector3) => {
+    const cached = conformed.get(v);
+    if (cached) return cached;
+    const p = v.clone();
+    if (h.aperture) {
+      p.y = Math.max(p.y, innerY(p.x));
+    }
+    if (h.shoulder) {
+      const r = Math.hypot(p.x, p.y),
+        boundary = h.shoulder(Math.atan2(p.y, p.x));
+      const t = clamp((boundary - r) / 0.2, 0, 1);
+      // Buried overlap sits below the deck, avoiding two coincident top faces.
+      const roof = h.root.top - 0.012 * t * t * (3 - 2 * t);
+      p.z = Math.min(p.z, roof);
+    }
+    conformed.set(v, p);
+    return p;
+  };
+  const ab = new THREE.Vector3(),
+    ac = new THREE.Vector3();
+  const emitTriangle = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) => {
+    if (h.aperture || h.shoulder) {
+      a = conform(a);
+      b = conform(b);
+      c = conform(c);
+      if (ab.subVectors(b, a).cross(ac.subVectors(c, a)).lengthSq() < 1e-14) return;
+    }
+    if (flip) push(a, c, b);
+    else push(a, b, c);
+  };
+  const clipX = (points: THREE.Vector3[], edge: number, sign: 1 | -1) => {
+    const result: THREE.Vector3[] = [];
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i]!,
+        b = points[(i + 1) % points.length]!;
+      const insideA = (a.x - edge) * sign >= 0,
+        insideB = (b.x - edge) * sign >= 0;
+      if (insideA) result.push(a);
+      if (insideA !== insideB) {
+        const p = a.clone().lerp(b, (edge - a.x) / (b.x - a.x));
+        p.x = edge;
+        result.push(p);
+      }
+    }
+    return result;
+  };
+  const tri = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) => {
+    // Follow the inner curve across the whole face, not just its corners. Fixed
+    // x-strips bound chord error without repeatedly subdividing the length of a lug.
+    const minX = Math.min(a.x, b.x, c.x),
+      maxX = Math.max(a.x, b.x, c.x),
+      step = 0.4;
+    if (h.aperture && maxX - minX > step && [a, b, c].some((v) => v.y < innerY(v.x))) {
+      for (let i = Math.floor(minX / step); i < Math.ceil(maxX / step); i++) {
+        const polygon = clipX(clipX([a, b, c], i * step, 1), (i + 1) * step, -1);
+        for (let j = 1; j < polygon.length - 1; j++)
+          emitTriangle(polygon[0]!, polygon[j]!, polygon[j + 1]!);
+      }
+    } else emitTriangle(a, b, c);
+  };
   for (let i = 0; i < rings.length - 1; i++) {
     const r0 = rings[i]!;
     const r1 = rings[i + 1]!;
@@ -237,7 +355,7 @@ export function hornGeometry(h: HornSpec): THREE.BufferGeometry {
   applyOcclusion(smooth, (x, y, z) => {
     const out = Math.hypot(x, y) - surface(Math.atan2(y * h.sy, x * h.sx));
     const nearRoot = z > h.root.bottom - 0.5 && z < h.root.top + 0.5 ? 1 : 0.6;
-    return 1 - 0.38 * nearRoot * Math.exp(-((Math.max(0, out) / 1.0) ** 2));
+    return 1 - (h.occlusionDepth ?? 0.38) * nearRoot * Math.exp(-((Math.max(0, out) / 1.0) ** 2));
   });
   return smooth;
 }
@@ -354,30 +472,49 @@ export function buildLugs(
   if (config.case.lugs === 'none') return group; // boîtier sans corne
 
   const { R, T, c } = caseLevels(d);
+  const joined = continuousLugs(config),
+    blended = lugJoin(config) === 'blended';
   const original = STYLES[config.case.lugs] ?? STYLES['straight']!;
-  const machined = refined && ['straight', 'curved', 'drilled'].includes(config.case.lugs);
+  const legacyMachined = refined && ['straight', 'curved', 'drilled'].includes(config.case.lugs);
+  const machined = legacyMachined || joined;
   // Preserve inside spacing and lug-to-lug. Only the outside tapers, by 0.18 mm.
-  const style = machined
+  const style = legacyMachined
     ? { ...original, bevel: 0.085, bevelSegments: 1, taper: 0.07, tipRadius: 0.18 }
     : original;
-  const root = lugRoot(d);
+  const root = lugRoot(d, config);
   const zb = d.z.back;
-  const tipTop = zb + style.tipTop * T;
-  const tipBottom = zb + style.tipBottom * T;
+  const tipTop = joined ? root.top - (0.39 - style.tipTop) * T : zb + style.tipTop * T;
+  const tipBottom = joined
+    ? tipTop - (style.tipTop - style.tipBottom) * T
+    : zb + style.tipBottom * T;
   const thickness = d.lugThickness;
   // Boîtiers non ronds : la corne part de là où le flanc se trouve réellement.
-  const surface = profileAttachmentSurface(config, d, root.bottom, root.top, refined);
+  const shoulder = joined ? lugShoulder(config, d) : undefined;
+  const buried = profileAttachmentSurface(config, d, root.bottom, root.top, refined);
+  const surface = shoulder
+    ? blended
+      ? shoulder
+      : (theta: number) => Math.min(shoulder(theta) - 0.025, buried(theta))
+    : buried;
+  const aperture = joined
+    ? (theta: number) =>
+        Math.max(
+          (d.openingRadius + 0.3) * d.dialScale * shapeRadius(d.dialShape, theta),
+          shoulder!(theta) - 0.15,
+        )
+    : undefined;
   const yFlank = surfaceY(d.lugWidth / 2 + thickness, surface);
   const roundFlank = surfaceY(d.lugWidth / 2 + thickness, () => R - c * 0.6 - 0.05);
   const yJunction = R * 0.9 + (yFlank - roundFlank);
   // Intégrées : bloc court ; sinon pointe au lug-to-lug.
   const yTip = style.integrated
-    ? yFlank + clamp(R * 0.14, 2, 3.4)
+    ? Math.max(yFlank, joined ? surface(Math.PI / 2) : 0) + clamp(R * 0.14, 2, 3.4)
     : Math.max(d.lugToLug / 2, yFlank + R * 0.2);
+  const profileStart = joined ? Math.min(yJunction, yTip - Math.max(1, R * 0.12)) : yJunction;
 
   // Profil de côté : la corne s'affine (droite) ou plonge vers le poignet (courbe).
   const profile = (y: number) => {
-    const u = clamp((y - yJunction) / (yTip - yJunction), 0, 1);
+    const u = clamp((y - profileStart) / (yTip - profileStart), 0, 1);
     const top = root.top + (tipTop - root.top) * u ** style.topCurve;
     const bottom = root.bottom + (tipBottom - root.bottom) * u ** style.bottomCurve;
     return { top, bottom };
@@ -394,7 +531,7 @@ export function buildLugs(
   const material = machined
     ? [
         lib.caseMetal(config, 'brushed', true),
-        lib.caseMetal(config, 'satin', true),
+        lib.caseMetal(config, blended ? 'brushed' : 'satin', true),
         lib.caseMetal(config, 'polished', true),
       ]
     : lib.caseMetal(config, style.polished ? 'polished' : 'satin', true);
@@ -402,6 +539,8 @@ export function buildLugs(
   for (const sx of sides) {
     for (const sy of [1, -1] as const) {
       const geometry = hornGeometry({
+        ...(joined ? { shoulder, aperture, occlusionDepth: blended ? 0 : 0.08 } : {}),
+        ...(blended ? { blendRadius: clamp(thickness * 1.1, 1, 2.8) } : {}),
         machined,
         aIn,
         aOut,
@@ -415,7 +554,7 @@ export function buildLugs(
         ...(style.taper || style.taperInner
           ? {
               taper: {
-                from: yJunction,
+                from: profileStart,
                 amount: (style.taper ?? 0) * thickness,
                 inner: (style.taperInner ?? 0) * thickness,
               },

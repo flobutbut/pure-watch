@@ -419,26 +419,30 @@
 
   /** Metal hands are named by their material; painted surfaces by their tint. */
   const colorLabel = (target: ColorTarget) =>
-    target === 'hands' && config.hands.finish !== 'lacquer'
-      ? (t().handFinish[config.hands.finish] ?? '')
-      : tint(targetColor(config, target), i18n.locale).name;
+    target === 'lugs'
+      ? t().grid.lugsSettings
+      : target === 'hands' && config.hands.finish !== 'lacquer'
+        ? (t().handFinish[config.hands.finish] ?? '')
+        : tint(targetColor(config, target), i18n.locale).name;
 
   const colorForRow = (id: string): ColorTarget | null =>
-    id === 'bezel' && hasBezelInsert(config)
-      ? 'bezel'
-      : id === 'dial-finish'
-        ? 'dial'
-        : id === 'hands'
-          ? 'hands'
-          : id === 'seconds' && config.hands.second.style !== 'none'
-            ? 'seconds'
-            : id === 'rehaut'
-              ? 'rehaut'
-              : id === 'numerals' && config.dial.indices.numerals !== 'none'
-                ? 'numerals'
-                : id === 'indices' && config.dial.indices.style !== 'none'
-                  ? 'indices'
-                  : null;
+    id === 'lugs' && config.case.lugs !== 'none'
+      ? 'lugs'
+      : id === 'bezel' && hasBezelInsert(config)
+        ? 'bezel'
+        : id === 'dial-finish'
+          ? 'dial'
+          : id === 'hands'
+            ? 'hands'
+            : id === 'seconds' && config.hands.second.style !== 'none'
+              ? 'seconds'
+              : id === 'rehaut'
+                ? 'rehaut'
+                : id === 'numerals' && config.dial.indices.numerals !== 'none'
+                  ? 'numerals'
+                  : id === 'indices' && config.dial.indices.style !== 'none'
+                    ? 'indices'
+                    : null;
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -587,29 +591,33 @@
               tabindex={dRow === 0 ? 0 : -1}
               aria-label={target === 'dial'
                 ? t().grid.dialColor
-                : target === 'bezel'
-                  ? t().grid.bezelColor
-                  : target === 'hands'
-                    ? t().grid.handsColor
-                    : target === 'rehaut'
-                      ? t().grid.rehautColor
-                      : target === 'numerals'
-                        ? t().grid.numeralsSettings
-                        : target === 'indices'
-                          ? t().grid.indicesSettings
-                          : t().grid.secondsColor}
+                : target === 'lugs'
+                  ? t().grid.lugsSettings
+                  : target === 'bezel'
+                    ? t().grid.bezelColor
+                    : target === 'hands'
+                      ? t().grid.handsColor
+                      : target === 'rehaut'
+                        ? t().grid.rehautColor
+                        : target === 'numerals'
+                          ? t().grid.numeralsSettings
+                          : target === 'indices'
+                            ? t().grid.indicesSettings
+                            : t().grid.secondsColor}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if target === 'numerals' || target === 'indices'}
+              {#if target === 'numerals' || target === 'indices' || target === 'lugs'}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
               <span>
-                {target === 'numerals' || target === 'indices' ? t().grid.settings : t().grid.color}
-                {#if target !== 'indices'}<span class="color-value">
+                {target === 'numerals' || target === 'indices' || target === 'lugs'
+                  ? t().grid.settings
+                  : t().grid.color}
+                {#if target !== 'indices' && target !== 'lugs'}<span class="color-value">
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'
                       ? config.rehaut.finish === 'metal'
                         ? t().grid.caseMatch

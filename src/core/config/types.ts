@@ -22,6 +22,7 @@ export interface CaseConfig {
   lugs: Open<
     'straight' | 'curved' | 'pointed' | 'faceted' | 'teardrop' | 'drilled' | 'integrated' | 'none'
   >;
+  lugJoin: 'detached' | 'flush' | 'blended';
   material: Open<
     'steel' | 'titanium' | 'bronze' | 'gold-yellow' | 'gold-rose' | 'ceramic' | 'brass' | 'carbon'
   >;

@@ -10,7 +10,7 @@ import { caseLevels, metricLatheUV, shapeAperture, shapeLathe } from './levels';
 import { applyOcclusion, caseOcclusion } from './occlusion';
 import { arc, buildRuns, type P2, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
-import { bezelTypeForConfig } from '../../core/config/bezel';
+import { bezelTypeForConfig, independentBezel } from '../../core/config/bezel';
 import { bezelProfile, bezelSegments, machineBezel } from './bezel';
 import { effectiveRehautProfile } from '../../core/config/rehaut';
 import { buildWideRehaut } from './rehaut';
@@ -116,7 +116,7 @@ export function buildCase(
       },
     );
   }
-  const bezelType = bezelTypeForConfig(config);
+  const bezelType = independentBezel(config) ? 'rotating' : bezelTypeForConfig(config);
   const customBezel = bezelProfile(bezelType, d, flankEnd);
   if (customBezel) runs.splice(3, runs.length - 3, ...customBezel);
   const midcase = caseProfileRuns(config.case.profile, d);

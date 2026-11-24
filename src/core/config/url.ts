@@ -9,6 +9,7 @@ import frozenDefaults from './url-v1-defaults.json';
 import { withoutSeconds } from './seconds';
 import { normalizeNumerals } from './numerals';
 import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
+import { LUG_JOINS } from './lugs';
 
 // Wire defaults and identifiers are immutable for v1. Changing application defaults
 // or reordering the catalog must never reinterpret an already shared link.
@@ -16,7 +17,7 @@ import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
 // JSON and all existing wire identifiers stay unchanged.
 const V1_DEFAULTS = {
   ...frozenDefaults,
-  case: { ...frozenDefaults.case, profile: 'curved' },
+  case: { ...frozenDefaults.case, profile: 'curved', lugJoin: 'detached' },
   bezel: { ...frozenDefaults.bezel, angleDeg: 0 },
   dial: {
     ...frozenDefaults.dial,
@@ -304,6 +305,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   ar: field('dial.indices.lumeEmission', hex),
   as: field('hands.lumeColor', hex),
   at: field('hands.lumeEmission', hex),
+  ba: field('case.lugJoin', z.enum(LUG_JOINS), { detached: 1, flush: 2, blended: 3 }),
 };
 
 function base64url(text: string): string {
