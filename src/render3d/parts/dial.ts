@@ -19,6 +19,7 @@ import { buildReservePrint } from './power-reserve';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 import { hasLume } from '../../core/config/lume';
+import { INDEX_RADIUS_RANGE } from '../../core/config/colors';
 import { indexPlate } from './inserts';
 
 export interface DialParts {
@@ -271,6 +272,12 @@ function indexDesign(style: string, R: number): IndexDesign | null {
   }
 }
 
+/**
+ * Portée maximale des index, en fraction du rayon du cadran : au-delà du trait extérieur
+ * de la minuterie (0,985 R), presque au réhaut.
+ */
+export const INDEX_REACH = 0.995;
+
 export function buildIndices(
   config: WatchConfig,
   d: WatchDimensions,
@@ -331,8 +338,15 @@ export function buildIndices(
       unit.computeBoundingBox();
       const half =
         Math.max(-unit.boundingBox!.min.y, unit.boundingBox!.max.y) * Math.max(1, design.big ?? 1);
-      const outer = Math.max(design.radius + half / size, d.dialSafeRadius * 0.9);
-      prepared = { design, unit, insert, radius: Math.min(design.radius * factor, outer - half) };
+      // Agrandis ou repoussés, les index peuvent recouvrir la minuterie jusqu'au réhaut.
+      const outer = Math.max(design.radius + half / size, d.dialSafeRadius * INDEX_REACH);
+      // Au-delà de 100 %, la position glisse vers le bord : au maximum du curseur, le bout
+      // de l'index touche la limite, quelles que soient sa forme et sa taille.
+      const edge = outer - half;
+      const reach = (factor - 1) / (INDEX_RADIUS_RANGE.max - 1);
+      const wanted =
+        factor <= 1 ? design.radius * factor : design.radius + (edge - design.radius) * reach;
+      prepared = { design, unit, insert, radius: Math.min(wanted, edge) };
       units.set(resolved, prepared);
     }
     const { design, unit, insert, radius: baseRadius } = prepared;

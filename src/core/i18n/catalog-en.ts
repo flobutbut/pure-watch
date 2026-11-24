@@ -125,7 +125,13 @@ export const CATALOG_EN: Record<string, RowNames> = {
   },
   rehaut: {
     name: 'Flange',
-    variants: { classic: 'Thin', sloped: 'Bevelled', concave: 'Concave', stepped: 'Stepped' },
+    variants: {
+      classic: 'Thin',
+      sloped: 'Bevelled',
+      concave: 'Concave',
+      stepped: 'Stepped',
+      flat: 'Flat',
+    },
   },
   'rehaut-scale': {
     name: 'Flange markings',

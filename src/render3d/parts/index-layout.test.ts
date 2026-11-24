@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { INDEX_RADIUS_RANGE } from '../../core/config/colors';
 import { defaultConfig } from '../../core/config/defaults';
 import type { WatchConfig } from '../../core/config/types';
 import { watchDimensions } from '../../core/geometry/dimensions';
 import type { MaterialLibrary } from '../materials';
-import { buildIndices } from './dial';
+import { INDEX_REACH, buildIndices } from './dial';
 
 // Only the geometry matters here: a plain material avoids the texture work of the library.
 const lib = { polishedSteel: () => new THREE.MeshStandardMaterial() } as unknown as MaterialLibrary;
@@ -74,7 +75,7 @@ describe('taille et position des index', () => {
       config.dial.indices.indexSize = 1.6;
       config.dial.indices.indexRadius = 1.1;
       expect(indexExtent(config).outer).toBeLessThanOrEqual(
-        watchDimensions(config).dialSafeRadius * 0.9 + 1e-3,
+        watchDimensions(config).dialSafeRadius * INDEX_REACH + 1e-3,
       );
     },
   );
@@ -88,11 +89,28 @@ describe('taille et position des index', () => {
     expect(indexExtent(config).length / reference.length).toBeGreaterThan(1.35);
   });
 
-  it('arrête un grand index poussé au bord avant la minuterie', () => {
+  it("laisse un grand index recouvrir la minuterie et l'arrête juste avant le réhaut", () => {
     const config = defaultConfig();
+    config.dial.chapterRing = 'railroad';
     config.dial.indices.indexSize = 1.6;
     config.dial.indices.indexRadius = 1.1;
     const R = watchDimensions(config).dialSafeRadius;
-    expect(indexExtent(config).outer).toBeLessThanOrEqual(R * 0.9 + 1e-3);
+    const { outer } = indexExtent(config);
+    // La minuterie chemin de fer va de 0,93 R à 0,985 R : l'index la recouvre entièrement.
+    expect(outer).toBeGreaterThan(R * 0.99);
+    expect(outer).toBeLessThanOrEqual(R * INDEX_REACH + 1e-3);
   });
+
+  it.each(['baton', 'dots', 'dauphine', 'triangles'])(
+    '%s de taille standard au bout du curseur touche la limite, au-delà de la minuterie',
+    (style) => {
+      const config = defaultConfig();
+      config.dial.indices.style = style;
+      config.dial.indices.indexRadius = INDEX_RADIUS_RANGE.max;
+      const R = watchDimensions(config).dialSafeRadius;
+      expect(indexExtent(config).outer).toBeCloseTo(R * INDEX_REACH, 2);
+      config.dial.indices.indexRadius = 1;
+      expect(indexExtent(config).outer).toBeLessThan(R * 0.93);
+    },
+  );
 });

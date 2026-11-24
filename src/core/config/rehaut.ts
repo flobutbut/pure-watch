@@ -1,7 +1,7 @@
 import { effectiveDialColor } from './dial';
 import type { HexColor, RehautConfig, WatchConfig } from './types';
 
-export const REHAUT_PROFILES = ['classic', 'sloped', 'concave', 'stepped'] as const;
+export const REHAUT_PROFILES = ['classic', 'sloped', 'concave', 'stepped', 'flat'] as const;
 export const REHAUT_SCALES = ['none', 'minutes', 'five-minute', '24h', 'tachymeter'] as const;
 export const REHAUT_FINISHES = [
   { id: 'dial', name: 'Assorti au cadran' },

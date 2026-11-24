@@ -64,7 +64,7 @@ export interface CrystalConfig {
 }
 
 export interface RehautConfig {
-  profile: Open<'classic' | 'sloped' | 'concave' | 'stepped'>;
+  profile: Open<'classic' | 'sloped' | 'concave' | 'stepped' | 'flat'>;
   finish: Open<'dial' | 'metal' | 'custom'>;
   color: HexColor;
   scale: Open<'none' | 'minutes' | 'five-minute' | '24h' | 'tachymeter'>;
