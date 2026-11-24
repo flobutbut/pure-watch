@@ -48,3 +48,6 @@ La couronne et ses protège-couronnes conservent leur propre raccord.
 Panneau : [ordinateur](panel-desktop.png) · [mobile](panel-mobile.png).
 Absence de débordement sur le cadran : [vue de face](round-blended-face-desktop.png).
 Configuration signalée, cadran bleu et index ronds : [vue de face](reported-face-desktop.png).
+
+Contrôle étendu après détection de ponts et de faces traversantes :
+[audit de toutes les cornes, matrice géométrique et planches](../lug-audit/README.md).

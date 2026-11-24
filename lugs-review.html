@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Épure · contrôle des cornes</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #202c3a;
+        color: #eef2f5;
+        font:
+          14px system-ui,
+          sans-serif;
+      }
+      h1 {
+        font-size: 23px;
+        margin: 0 0 8px;
+      }
+      p {
+        color: #c6d0da;
+        line-height: 1.5;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 20px 0;
+      }
+      label {
+        display: grid;
+        gap: 6px;
+      }
+      select {
+        background: #303f51;
+        color: inherit;
+        border: 1px solid #64778b;
+        border-radius: 6px;
+        padding: 8px;
+        font: inherit;
+      }
+      main {
+        max-width: 1080px;
+      }
+      .columns,
+      .watches {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .columns {
+        text-align: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #637487;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 20px 0 8px;
+      }
+      figure {
+        margin: 0;
+        border: 1px solid #485a6e;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      canvas {
+        width: 100%;
+        display: block;
+        aspect-ratio: 1;
+      }
+      figcaption {
+        padding: 8px;
+        text-align: center;
+        color: #bdcbd9;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Cornes · contrôle de toutes les variantes</h1>
+      <p>
+        Même boîtier, cadran et éclairage par colonne. Les cornes Intégrées comportent un bloc de
+        liaison prévu pour le bracelet.
+      </p>
+      <nav aria-label="Paramètres de contrôle"></nav>
+      <p id="status" role="status">Préparation des rendus…</p>
+    </header>
+    <main aria-busy="true"></main>
+    <script type="module" src="/src/review/lugs.ts"></script>
+  </body>
+</html>
