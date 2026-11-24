@@ -128,6 +128,10 @@ interface Sides {
 function blendedSides(h: HornSpec): Sides {
   const surface = surfaceOf(h),
     radius = h.blendRadius!;
+  // The inner fillet joins the side of this lug to the case locally. Taking the
+  // inner edge of the whole case/strip union closes the strap gap, while clamping
+  // that edge produces a sudden step when it leaves the top of the case.
+  const localInner = h.aIn > 0 ? makeSide(h.aIn, -1, h) : undefined;
   const field = (x: number, y: number) => {
     const a = Math.hypot(x, y) - surface(Math.atan2(y, x));
     const b = Math.max(h.aIn - x, x - h.aOut);
@@ -147,6 +151,11 @@ function blendedSides(h: HornSpec): Sides {
       else hi = x;
     }
     const outer = lo;
+    if (localInner) {
+      found = { inner: localInner(y), outer };
+      cache.set(y, found);
+      return found;
+    }
     lo = h.aIn < 0 ? -200 : 0;
     hi = mid;
     if (field(lo, y) > 0)
@@ -301,7 +310,7 @@ export function hornGeometry(h: HornSpec): THREE.BufferGeometry {
     const minX = Math.min(a.x, b.x, c.x),
       maxX = Math.max(a.x, b.x, c.x),
       step = 0.4;
-    if (h.aperture && maxX - minX > step && [a, b, c].some((v) => v.y < innerY(v.x))) {
+    if (h.aperture && maxX - minX > step) {
       for (let i = Math.floor(minX / step); i < Math.ceil(maxX / step); i++) {
         const polygon = clipX(clipX([a, b, c], i * step, 1), (i + 1) * step, -1);
         for (let j = 1; j < polygon.length - 1; j++)
