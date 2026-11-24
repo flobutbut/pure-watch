@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { WatchConfig } from '../../core/config/types';
   import { bezelAngle, bezelScale, turnBezel } from '../../core/config/bezel';
+  import Button from '../kit/Button.svelte';
   import { t } from '../i18n.svelte';
   let {
     config,
@@ -18,8 +19,9 @@
 </script>
 
 <div class="bezel-control" role="group" aria-label={t().bezel.label}>
-  <button
-    class:chosen={editing}
+  <Button
+    variant="quiet"
+    size="compact"
     aria-pressed={editing}
     title={t().bezel.editTitle}
     onclick={() => {
@@ -28,32 +30,38 @@
     }}
   >
     {t().bezel.edit}
-  </button>
-  <button
+  </Button>
+  <Button
+    variant="quiet"
+    size="compact"
     aria-label={t().bezel.ccw}
     title={t().bezel.ccwTitle}
     onclick={() => onchange(turnBezel(config, -3))}
   >
     ↶
-  </button>
+  </Button>
   {#if !diving}
-    <button
+    <Button
+      variant="quiet"
+      size="compact"
       aria-label={t().bezel.cw}
       title={t().bezel.cwTitle}
       onclick={() => onchange(turnBezel(config, 3))}
     >
       ↷
-    </button>
+    </Button>
   {/if}
   <output aria-label={t().bezel.position}>{angle}°</output>
-  <button
+  <Button
+    variant="quiet"
+    size="compact"
     aria-label={t().bezel.reset}
     title={t().bezel.resetTitle}
     disabled={angle === 0}
     onclick={() => onchange(0)}
   >
     0
-  </button>
+  </Button>
   {#if editing}<span class="hint">
       {t().bezel.hint(diving)}
     </span>{/if}
@@ -75,35 +83,18 @@
     width: max-content;
     max-width: calc(100% - 32px);
     padding: 6px;
-    border-radius: 14px;
+    border-radius: var(--radius-m);
     background: var(--veil);
     backdrop-filter: blur(14px);
     box-shadow: 0 2px 18px #0001;
     color: var(--ink);
-    font-size: 12px;
+    font-size: var(--text-m);
   }
-  button {
+  .bezel-control :global(.button) {
     min-width: 36px;
-    min-height: 36px;
-    padding: 7px 10px;
-    border: 0;
-    border-radius: 9px;
-    color: inherit;
-    background: transparent;
-    font: inherit;
-    cursor: pointer;
   }
-  button:hover,
-  button.chosen {
-    background: color-mix(in srgb, currentColor 10%, transparent);
-  }
-  button:focus-visible {
-    outline: 2px solid currentColor;
+  .bezel-control :global(.button:focus-visible) {
     outline-offset: -2px;
-  }
-  button:disabled {
-    opacity: 0.3;
-    cursor: default;
   }
   output {
     min-width: 36px;
@@ -113,8 +104,8 @@
   .hint {
     flex-basis: 100%;
     text-align: center;
-    opacity: 0.6;
+    color: var(--ink-soft);
     padding: 0 5px 5px;
-    font-size: 10px;
+    font-size: var(--text-xs);
   }
 </style>

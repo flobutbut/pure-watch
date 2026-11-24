@@ -4,6 +4,7 @@
    * prompt de génération pour une IA et capture de la vue telle qu'elle est affichée.
    */
   import { onDestroy, onMount } from 'svelte';
+  import Button from './kit/Button.svelte';
   import Sheet from './sheet/Sheet.svelte';
   import { t } from './i18n.svelte';
 
@@ -124,7 +125,6 @@
   title={t().share.title}
   closeLabel={t().share.close}
   placement="stage"
-  closeOnEscape
   {onclose}
 >
   <div class="share">
@@ -166,9 +166,9 @@
         readonly
         onclick={() => linkInput?.select()}
       />
-      <button class="copy" class:done={copyState === 'copied'} onclick={copy}>
+      <Button variant="primary" onclick={copy}>
         {copyState === 'copied' ? t().share.copied : t().share.copy}
-      </button>
+      </Button>
     </div>
     <p class="status" role="status">
       {#if copyState === 'copied'}
@@ -182,17 +182,12 @@
       <h3 id="generation-prompt">{t().share.prompt}</h3>
       <p>{t().share.promptHint}</p>
       <div class="actions">
-        <button class="copy" class:done={promptState === 'copied'} onclick={copyPrompt}>
+        <Button variant="primary" onclick={copyPrompt}>
           {promptState === 'copied' ? t().share.copied : t().share.copyPrompt}
-        </button>
-        <button
-          class="capture"
-          disabled={!capture}
-          aria-busy={captureState === 'busy'}
-          onclick={takeCapture}
-        >
+        </Button>
+        <Button disabled={!capture} aria-busy={captureState === 'busy'} onclick={takeCapture}>
           {captureState === 'busy' ? t().share.capturing : t().share.capture}
-        </button>
+        </Button>
       </div>
       <p class="status" role="status">
         {#if promptState === 'copied'}
@@ -208,12 +203,12 @@
     </section>
 
     {#if nativeShare}
-      <button class="more" onclick={shareNative}>
+      <Button variant="quiet" class="more" onclick={shareNative}>
         <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
           <path d="M12 15V3m-4 4 4-4 4 4M7 11H5v10h14V11h-2" />
         </svg>
         {t().share.more}
-      </button>
+      </Button>
     {/if}
   </div>
 </Sheet>
@@ -233,7 +228,7 @@
     align-items: center;
     gap: 7px;
     padding: 4px 0;
-    border-radius: 12px;
+    border-radius: var(--radius-m);
     color: inherit;
     text-decoration: none;
   }
@@ -271,14 +266,14 @@
     stroke-linejoin: round;
   }
   .share .label {
-    font-size: 10px;
+    font-size: var(--text-xs);
     letter-spacing: 0.02em;
     opacity: 0.8;
   }
   .share label {
     display: block;
     margin-bottom: 8px;
-    font-size: 11px;
+    font-size: var(--text-s);
   }
   .share .link-row {
     display: flex;
@@ -289,38 +284,25 @@
     min-width: 0;
     padding: 11px 12px;
     border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
-    border-radius: 10px;
+    border-radius: var(--radius-s);
     background: transparent;
     color: inherit;
     font:
       12px ui-monospace,
       monospace;
   }
-  .share button {
-    font: inherit;
-    color: inherit;
-    cursor: pointer;
-  }
-  .share button:focus-visible,
   .share input:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
-  .share .copy {
+  .share .link-row :global(.button) {
     flex: none;
     min-width: 116px;
-    padding: 0 14px;
-    min-height: 42px;
-    border: 0;
-    border-radius: 10px;
-    background: var(--ink);
-    color: var(--veil);
-    font-size: 12px;
   }
   .share .status {
     min-height: 1em;
     margin: 10px 0 0;
-    font-size: 11px;
+    font-size: var(--text-s);
     line-height: 1.5;
     opacity: 0.75;
   }
@@ -335,12 +317,12 @@
   }
   .share .prompt h3 {
     margin: 0 0 6px;
-    font-size: 11px;
+    font-size: var(--text-s);
     font-weight: inherit;
   }
   .share .prompt p:not(.status) {
     margin: 0 0 12px;
-    font-size: 11px;
+    font-size: var(--text-s);
     line-height: 1.5;
     opacity: 0.75;
   }
@@ -349,39 +331,16 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .share .actions button {
+  .share .actions :global(.button) {
     min-width: 0;
     padding: 0 10px;
   }
-  .share .capture {
-    min-height: 42px;
-    border: 1px solid var(--control-line);
-    border-radius: 10px;
-    background: var(--control);
-    font-size: 12px;
-  }
-  .share .capture:disabled {
-    cursor: default;
-    opacity: 0.5;
-  }
-  .share .capture[aria-busy='true'] {
-    cursor: progress;
-  }
-  .share .more {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+  .share :global(.more) {
     margin-top: 16px;
-    padding: 8px 0;
-    border: 0;
-    background: transparent;
-    font-size: 12px;
-    opacity: 0.8;
+    padding-inline: 8px;
+    margin-inline-start: -8px;
   }
-  .share .more:hover {
-    opacity: 1;
-  }
-  .share .more svg {
+  .share :global(.more svg) {
     width: 16px;
     height: 16px;
   }

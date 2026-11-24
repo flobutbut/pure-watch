@@ -18,21 +18,21 @@ export interface Ambience {
   tone: Tone;
   /** Encre de l'interface (icônes, anneau de focus), lisible sur le fond. */
   ink: string;
+  /** Encre adoucie des textes secondaires : la plus discrète qui reste lisible (≥ 4,5:1). */
+  inkSoft: string;
+  /** Encre effacée des repères (langue inactive) : jamais sous 3:1. */
+  inkFaint: string;
   /** Teinte du voile de mise au point (vue 3D). */
   veil: string;
   /** Dérive lente des couches (effets changeants : iridescence). */
   drift: boolean;
 }
 
-export const NIGHT_AMBIENCE: Ambience = {
-  key: 'night-preview',
-  base: '#080D14',
-  layers: 'none',
-  tone: 'dark',
-  ink: '#F2F1EC',
-  veil: '#080D14',
-  drift: false,
-};
+const DARK_INK = '#F2F1EC';
+const LIGHT_INK = '#1B1F27';
+/** WCAG contrast for body text; muted marks settle for the large-text / UI threshold. */
+const READABLE = 4.5;
+const DISCERNIBLE = 3;
 
 type Rgb = [number, number, number];
 
@@ -47,6 +47,20 @@ export function luminance(hex: string): number {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 }
 
+/** Rapport de contraste WCAG 2 entre deux couleurs, de 1 à 21. */
+export function contrast(a: string, b: string): number {
+  const channel = (v: number) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const relative = (hex: string) => {
+    const [r, g, b] = hexToRgb(hex);
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  };
+  const [x, y] = [relative(a), relative(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
 /** Mélange deux couleurs : t = 0 → a, t = 1 → b. */
 export function mix(a: string, b: string, t: number): string {
   const ca = hexToRgb(a);
@@ -54,6 +68,34 @@ export function mix(a: string, b: string, t: number): string {
   const c = ca.map((v, i) => Math.round(v + (cb[i]! - v) * t));
   return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
+
+/** The ink faded toward the background as far as `fade`, but never below `floor`. */
+function softened(ink: string, base: string, fade: number, floor: number): string {
+  for (let t = fade; t > 0; t -= 0.02) {
+    const soft = mix(ink, base, t);
+    if (contrast(soft, base) >= floor) return soft;
+  }
+  return ink;
+}
+
+/** Inks of a background: full, soft (secondary text), faint (inactive marks). */
+function inks(ink: string, base: string) {
+  return {
+    ink,
+    inkSoft: softened(ink, base, 0.4, READABLE),
+    inkFaint: softened(ink, base, 0.62, DISCERNIBLE),
+  };
+}
+
+export const NIGHT_AMBIENCE: Ambience = {
+  key: 'night-preview',
+  base: '#080D14',
+  layers: 'none',
+  tone: 'dark',
+  ...inks(DARK_INK, '#080D14'),
+  veil: '#080D14',
+  drift: false,
+};
 
 const rgba = (hex: string, alpha: number) => {
   const [r, g, b] = hexToRgb(hex);
@@ -67,13 +109,26 @@ const glow = (x: number, y: number, w: number, h: number, color: string, alpha: 
 export function ambienceFor(dialConfig: { finish: string; color: string }): Ambience {
   // Nacre et huile ont leur propre teinte : la couleur choisie ne s'y applique pas.
   const dial = { finish: dialConfig.finish, color: effectiveDialColor(dialConfig) };
-  const tone: Tone = luminance(dial.color) < 0.45 ? 'dark' : 'light';
   // Le fond reprend la couleur du cadran, adoucie : un peu éclaircie s'il est sombre,
   // un peu rapprochée du gris chaud de la maquette s'il est clair.
-  const base =
-    tone === 'dark' ? mix(dial.color, '#ffffff', 0.05) : mix(dial.color, '#e5e5e3', 0.35);
-  const ink = tone === 'dark' ? '#F2F1EC' : '#1B1F27';
-  const common = { base, tone, ink, veil: base };
+  const bases: Record<Tone, string> = {
+    dark: mix(dial.color, '#ffffff', 0.05),
+    light: mix(dial.color, '#e5e5e3', 0.35),
+  };
+  const INK: Record<Tone, string> = { dark: DARK_INK, light: LIGHT_INK };
+  // La clarté perçue choisit le ton ; un cadran saturé (orange, rouge, magenta) peut la
+  // tromper : si l'encre retenue lit mal sur son fond, l'autre ton l'emporte.
+  let tone: Tone = luminance(dial.color) < 0.45 ? 'dark' : 'light';
+  const other: Tone = tone === 'dark' ? 'light' : 'dark';
+  const reading = (t: Tone) => contrast(INK[t], bases[t]);
+  if (reading(tone) < READABLE && reading(other) > reading(tone)) tone = other;
+  // Rare vivid picks read poorly with either ink: the background then steps away from the
+  // ink (darker or lighter) just enough to reach the reading threshold.
+  let base = bases[tone];
+  const away = tone === 'dark' ? '#000000' : '#ffffff';
+  for (let t = 0.05; contrast(INK[tone], base) < READABLE && t <= 0.5; t += 0.05)
+    base = mix(bases[tone], away, t);
+  const common = { base, tone, ...inks(INK[tone], base), veil: base };
 
   switch (dial.finish) {
     case 'guilloche':

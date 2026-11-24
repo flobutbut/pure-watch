@@ -211,7 +211,8 @@ export class Stage {
       if (this.renderer.domElement.hasPointerCapture(id))
         this.renderer.domElement.releasePointerCapture(id);
     }
-    this.controls.enabled = this.mode === 'inspect' && !this.cameraGoal && !enabled;
+    // Only a grab on the ring turns the bezel: anywhere else the watch still turns.
+    this.controls.enabled = this.orbitAllowed();
     this.renderer.domElement.style.cursor = enabled ? (this.bezelDrag ? 'grabbing' : 'grab') : '';
   }
 
@@ -252,6 +253,8 @@ export class Stage {
     const angle = this.bezelPointerAngle(event, true);
     if (angle === null) return;
     this.bezelDrag = { id: event.pointerId, angle, remainder: 0 };
+    // Heard before the orbit controls (capture phase): they skip this drag.
+    this.controls.enabled = false;
     this.renderer.domElement.setPointerCapture(event.pointerId);
     this.renderer.domElement.style.cursor = 'grabbing';
     event.preventDefault();
@@ -283,7 +286,13 @@ export class Stage {
     if (this.renderer.domElement.hasPointerCapture(event.pointerId))
       this.renderer.domElement.releasePointerCapture(event.pointerId);
     this.renderer.domElement.style.cursor = this.bezelEditing ? 'grab' : '';
+    this.controls.enabled = this.orbitAllowed();
   };
+
+  /** Turning by hand: inspected, at rest (no camera move under way), no ring in hand. */
+  private orbitAllowed(): boolean {
+    return this.mode === 'inspect' && !this.cameraGoal && !this.bezelDrag;
+  }
 
   constructor(container: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -333,7 +342,9 @@ export class Stage {
     this.controls.addEventListener('start', () => (this.interacting = true));
     this.controls.addEventListener('end', () => (this.interacting = false));
     this.controls.enabled = false;
-    this.renderer.domElement.addEventListener('pointerdown', this.bezelPointerDown);
+    this.renderer.domElement.addEventListener('pointerdown', this.bezelPointerDown, {
+      capture: true,
+    });
     this.renderer.domElement.addEventListener('pointermove', this.bezelPointerMove);
     this.renderer.domElement.addEventListener('pointerup', this.bezelPointerUp);
     this.renderer.domElement.addEventListener('pointercancel', this.bezelPointerUp);
@@ -608,7 +619,7 @@ export class Stage {
     if (Math.abs(dAz) < 0.002 && Math.abs(goal.el - nextEl) < 0.002) {
       this.placeCamera(goal);
       this.cameraGoal = null;
-      this.controls.enabled = this.mode === 'inspect' && !this.bezelEditing;
+      this.controls.enabled = this.orbitAllowed();
     }
   }
 
@@ -885,7 +896,9 @@ export class Stage {
     }
     this.live?.dispose();
     this.liveMaterials?.dispose();
-    this.renderer.domElement.removeEventListener('pointerdown', this.bezelPointerDown);
+    this.renderer.domElement.removeEventListener('pointerdown', this.bezelPointerDown, {
+      capture: true,
+    });
     this.renderer.domElement.removeEventListener('pointermove', this.bezelPointerMove);
     this.renderer.domElement.removeEventListener('pointerup', this.bezelPointerUp);
     this.renderer.domElement.removeEventListener('pointercancel', this.bezelPointerUp);
