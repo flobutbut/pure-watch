@@ -15,6 +15,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
     lugToLugMm: 47,
     lugWidthMm: 20,
     lugs: 'straight',
+    lugJoin: 'detached',
     material: 'steel',
     finish: 'mixed',
     caseback: 'solid',

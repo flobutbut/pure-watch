@@ -1,5 +1,7 @@
 /** Contenu de la fiche d'identité : la configuration lue comme une fiche technique. */
 import type { RowDef } from '../../core/catalog/types';
+import { lugJoin } from '../../core/config/lugs';
+import { LUG_SETTINGS } from '../colors/lug-settings';
 import { ralName, tint } from '../../core/color/names';
 import { bezelScale, hasBezelInsert } from '../../core/config/bezel';
 import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
@@ -199,6 +201,11 @@ export function identitySections(
     if (!section) sections.push((section = { title, traits: [] }));
     section.traits.push({ label: row.i18n.name, value: rowValue(row, config) });
     section.traits.push(...colorTraits(row, config, locale));
+    if (row.id === 'lugs' && config.case.lugs !== 'none')
+      section.traits.push({
+        label: LUG_SETTINGS[locale].label,
+        value: LUG_SETTINGS[locale].names[lugJoin(config)],
+      });
     if (row.id === 'hands' || (row.id === 'indices' && config.dial.indices.style !== 'none')) {
       const part = row.id === 'hands' ? config.hands : config.dial.indices;
       const lm = m.lume;

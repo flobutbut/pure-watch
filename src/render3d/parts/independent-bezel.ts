@@ -1,0 +1,97 @@
+import * as THREE from 'three';
+import { bezelTypeForConfig } from '../../core/config/bezel';
+import type { WatchConfig } from '../../core/config/types';
+import { shapeRadius } from '../../core/geometry/case-shape';
+import type { WatchDimensions } from '../../core/geometry/dimensions';
+import { buildRuns, type P2, type ProfileRun } from '../lathe';
+import type { MaterialLibrary } from '../materials';
+import { machineBezel } from './bezel';
+import { caseLevels, metricLatheUV } from './levels';
+
+/** Independent exterior contour with a separate aperture; never deforms the midcase. */
+export function buildIndependentBezel(
+  config: WatchConfig,
+  d: WatchDimensions,
+  lib: MaterialLibrary,
+) {
+  const group = new THREE.Group();
+  group.name = 'independent-bezel';
+  const type = bezelTypeForConfig(config),
+    shape = config.case.shape;
+  const { c, seat } = caseLevels(d);
+  const outer = d.bezelRadius - 0.08;
+  const inner = d.openingRadius + 0.285;
+  const bottom = seat + 0.035;
+  const top = d.z.bezelTop - 0.045;
+  const bevel = Math.min(c * 0.3, (outer - inner) * 0.15);
+  const left: P2 = [outer - bevel, top - bevel];
+  const right: P2 = [inner + bevel, top - bevel];
+  const runs: ProfileRun<'brushed' | 'polished'>[] = [
+    {
+      surface: 'brushed',
+      points: [
+        [inner, bottom],
+        [outer - bevel, bottom],
+      ],
+    },
+    {
+      surface: 'polished',
+      points: [[outer - bevel, bottom], [outer, bottom + bevel], [outer, top - 2 * bevel], left],
+    },
+  ];
+  if (type === 'rounded') {
+    runs.push({
+      surface: 'polished',
+      points: Array.from({ length: 25 }, (_, i) => {
+        const t = i / 24;
+        return [left[0] + (right[0] - left[0]) * t, top - bevel * (2 * t - 1) ** 2] as P2;
+      }),
+    });
+  } else if (type === 'stepped') {
+    const mid = (left[0] + right[0]) / 2;
+    runs.push(
+      { surface: 'brushed', points: [left, [mid, top - bevel]] },
+      {
+        surface: 'polished',
+        points: [
+          [mid, top - bevel],
+          [mid - bevel, top],
+        ],
+      },
+      { surface: 'brushed', points: [[mid - bevel, top], [right[0], top], right] },
+    );
+  } else
+    runs.push(
+      { surface: 'polished', points: [left, [outer - 2 * bevel, top]] },
+      {
+        surface: 'brushed',
+        points: [
+          [outer - 2 * bevel, top],
+          [inner + 2 * bevel, top],
+        ],
+      },
+      { surface: 'polished', points: [[inner + 2 * bevel, top], right] },
+    );
+  runs.push({ surface: 'polished', points: [right, [inner, top - 2 * bevel], [inner, bottom]] });
+  const segments = ['fluted', 'coin', 'notched'].includes(type) ? 576 : 192;
+  const ringD = { ...d, caseRadius: outer, openingRadius: inner, bezelWidth: outer - inner };
+  for (const mesh of buildRuns(runs, (s) => lib.caseMetal(config, s), segments)) {
+    machineBezel(mesh.geometry, type, ringD);
+    const p = mesh.geometry.getAttribute('position');
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i),
+        y = p.getY(i),
+        r = Math.hypot(x, y),
+        angle = Math.atan2(y, x);
+      const aperture = inner * d.dialScale * shapeRadius(d.dialShape, angle);
+      const perimeter = outer * shapeRadius(shape, angle);
+      const radius = aperture + ((r - inner) / (outer - inner)) * (perimeter - aperture);
+      p.setXY(i, (x * radius) / r, (y * radius) / r);
+    }
+    p.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+    metricLatheUV(mesh.geometry, outer);
+    group.add(mesh);
+  }
+  return group;
+}

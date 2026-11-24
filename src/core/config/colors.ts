@@ -3,11 +3,13 @@ import { rehautColor } from './rehaut';
 import { normalizeNumerals, numeralSystem, type NumeralSystem } from './numerals';
 import { lumeChoice, withLume, type LumeChoice } from './lume';
 import type { HexColor, WatchConfig } from './types';
+import { lugJoin, type LugJoin } from './lugs';
 
 /** Pièces réglées dans le panneau latéral. */
 export type ColorTarget =
-  'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel' | 'numerals' | 'indices';
+  'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel' | 'numerals' | 'indices' | 'lugs';
 export interface ColorChoice {
+  lugJoin?: LugJoin;
   color: HexColor | 'match';
   finish: string;
   /** Chiffres : le même panneau règle aussi leur taille et leur distance au centre. */
@@ -61,6 +63,8 @@ export function handColor(config: WatchConfig): HexColor {
 }
 
 export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  if (target === 'lugs')
+    return { color: targetColor(config, target) as HexColor, finish: '', lugJoin: lugJoin(config) };
   if (target === 'bezel') return { color: config.bezel.color, finish: 'ceramic' };
   if (target === 'rehaut') return { color: config.rehaut.color, finish: config.rehaut.finish };
   if (target === 'indices')
@@ -95,6 +99,8 @@ export function withColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  if (target === 'lugs')
+    return { ...config, case: { ...config.case, lugJoin: choice.lugJoin ?? lugJoin(config) } };
   if (target === 'numerals') config = normalizeNumerals(config);
   if (target === 'bezel')
     return choice.color === 'match'
@@ -163,6 +169,8 @@ export function withColorChoice(
 }
 
 export function targetColor(config: WatchConfig, target: ColorTarget): string {
+  if (target === 'lugs')
+    return rehautColor({ ...config, rehaut: { ...config.rehaut, finish: 'metal' } });
   if (target === 'bezel') return config.bezel.color;
   if (target === 'rehaut') return rehautColor(config);
   if (target === 'dial') return effectiveDialColor(config.dial);

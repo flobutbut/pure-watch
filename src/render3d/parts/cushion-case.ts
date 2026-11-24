@@ -8,7 +8,7 @@ import type { MaterialLibrary } from '../materials';
 import { caseLevels, metricLatheUV, shapeAperture, shapeLathe } from './levels';
 import { applyOcclusion, caseOcclusion } from './occlusion';
 import type { CaseParts } from './case';
-import { bezelTypeForConfig } from '../../core/config/bezel';
+import { bezelTypeForConfig, independentBezel } from '../../core/config/bezel';
 import { bezelProfile, bezelSegments, machineBezel } from './bezel';
 import { effectiveRehautProfile } from '../../core/config/rehaut';
 import { buildWideRehaut } from './rehaut';
@@ -126,7 +126,7 @@ export function buildCushionCase(
     },
   ];
   const group = new THREE.Group();
-  const bezelType = bezelTypeForConfig(config);
+  const bezelType = independentBezel(config) ? 'rotating' : bezelTypeForConfig(config);
   const customBezel = bezelProfile(bezelType, d, [R - c * 1.05, flankTop]);
   if (customBezel) runs.splice(7, runs.length - 7, ...customBezel);
   const midcase = caseProfileRuns(config.case.profile, d, true);

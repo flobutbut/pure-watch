@@ -7,7 +7,8 @@
 import * as THREE from 'three';
 import type { WatchConfig } from '../../core/config/types';
 import { crownAngle, type WatchDimensions } from '../../core/geometry/dimensions';
-import { caseLevels } from './levels';
+import { caseLevels, caseDeckTop } from './levels';
+import { continuousLugs, lugJoin } from '../../core/config/lugs';
 
 /** Facteur de lumière en un point (1 = pleine lumière, 0 = noir). */
 export type Occlusion = (x: number, y: number, z: number) => number;
@@ -17,15 +18,18 @@ const dip = (distance: number, sigma: number, depth: number) =>
   1 - depth * Math.exp(-((Math.max(0, distance) / sigma) ** 2));
 
 /** Cotes verticales de la racine des cornes (partagées avec lugs.ts). */
-export function lugRoot(d: WatchDimensions) {
+export function lugRoot(d: WatchDimensions, config?: WatchConfig) {
   const { T, flankTop } = caseLevels(d);
-  return { top: flankTop - 0.1 * T, bottom: d.z.back + 0.12 * T };
+  return {
+    top: config && continuousLugs(config) ? caseDeckTop(d) : flankTop - 0.1 * T,
+    bottom: d.z.back + 0.12 * T,
+  };
 }
 
 /** Occlusion sur la carrure : autour de la racine des cornes et du tube de couronne. */
 export function caseOcclusion(config: WatchConfig, d: WatchDimensions): Occlusion {
   const { R, T } = caseLevels(d);
-  const root = lugRoot(d);
+  const root = lugRoot(d, config);
   const lugs = config.case.lugs;
   // Cornes intégrées : un seul bloc sur toute la largeur ; aucune corne : pas d'ombre.
   const aIn = lugs === 'integrated' ? 0 : d.lugWidth / 2;
@@ -42,10 +46,10 @@ export function caseOcclusion(config: WatchConfig, d: WatchDimensions): Occlusio
     let light = 1;
     // Cornes : distance à la zone d'attache (bande en x, hauteur de la racine), même quart.
     const ax = Math.abs(x);
-    if (lugs !== 'none' && Math.abs(y) > R * 0.55) {
+    if (lugs !== 'none' && lugJoin(config) !== 'blended' && Math.abs(y) > R * 0.55) {
       const dx = ax < aIn ? aIn - ax : ax > aOut ? ax - aOut : 0;
       const dz = z > root.top ? z - root.top : z < root.bottom ? root.bottom - z : 0;
-      light *= dip(Math.hypot(dx, dz), 1.1, 0.45);
+      light *= dip(Math.hypot(dx, dz), 1.1, continuousLugs(config) ? 0.08 : 0.45);
     }
     // Couronne : anneau d'ombre autour du tube sur le flanc.
     const theta = Math.atan2(y, x);

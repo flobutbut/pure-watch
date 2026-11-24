@@ -14,6 +14,7 @@ conception ; Épure conserve des composants génériques.
 | 6 | Premier bracelet 3D en cuir | Prochain lot : attaches, courbure, cadrage |
 | 7 | Forme, largeur, hauteur et finition de lunette indépendantes | À faire |
 | 8 | Dessin, longueur et largeur des heures/minutes indépendants | À faire |
+| 9 | Raccord des cornes : détaché, affleurant ou fondu | Intégré : [modes et comparaisons](lug-join/README.md) |
 
 Les chiffres romains disposent désormais des mêmes dispositions et réglages que
 les arabes. La tapisserie est intégrée parmi les finitions de cadran ; le réglage

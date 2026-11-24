@@ -12,6 +12,11 @@ export function caseLevels(d: WatchDimensions) {
   return { R, T, c, flankTop, seat, rehautTop: Math.min(0.6, seat - 0.2) };
 }
 
+/** Flat case shoulder under the separate bezel. */
+export function caseDeckTop(d: WatchDimensions): number {
+  return caseLevels(d).seat - 0.12;
+}
+
 /**
  * Rayon (minimal) du flanc dans la direction θ, forme du boîtier comprise : c'est là que
  * cornes et ailettes se raccordent.
