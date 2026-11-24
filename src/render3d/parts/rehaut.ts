@@ -14,6 +14,19 @@ export function rehautProfile(config: WatchConfig, d: WatchDimensions): P2[] {
   const kind = effectiveRehautProfile(config);
   const { rehautTop } = caseLevels(d);
   const bottom = 0.025;
+  // Plat : couronne horizontale à mi-hauteur (moitié moins épaisse), raccordée au boîtier
+  // par un flanc vertical, puis flanc vertical jusqu'au cadran.
+  if (kind === 'flat') {
+    const top = bottom + (rehautTop - bottom) / 2;
+    return [
+      [d.openingRadius, rehautTop],
+      ...Array.from({ length: 24 }, (_, i): P2 => [
+        d.openingRadius + (d.dialRadius - d.openingRadius) * (i / 23),
+        top,
+      ]),
+      [d.dialRadius, bottom],
+    ];
+  }
   return Array.from({ length: 25 }, (_, i) => {
     const t = i / 24;
     const height =

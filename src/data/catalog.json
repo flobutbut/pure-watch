@@ -880,6 +880,14 @@
           "i18n": {
             "name": "À palier"
           }
+        },
+        {
+          "id": "flat",
+          "value": "flat",
+          "preview": "rehaut/flat.svg",
+          "i18n": {
+            "name": "Plat"
+          }
         }
       ]
     },

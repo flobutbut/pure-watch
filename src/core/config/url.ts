@@ -286,7 +286,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     rectangle: 6,
   }),
   ab: field('hands.color', hex),
-  ac: field('rehaut.profile', id, { classic: 1, sloped: 2, concave: 3, stepped: 4 }),
+  ac: field('rehaut.profile', id, { classic: 1, sloped: 2, concave: 3, stepped: 4, flat: 5 }),
   ad: field('rehaut.finish', id, { dial: 1, metal: 2, custom: 3 }),
   ae: field('rehaut.color', hex),
   af: field('rehaut.scale', id, { none: 1, minutes: 2, 'five-minute': 3, '24h': 4, tachymeter: 5 }),
