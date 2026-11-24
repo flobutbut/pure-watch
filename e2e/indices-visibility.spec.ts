@@ -27,13 +27,13 @@ test('la ligne Index disparaît avec tous les chiffres et retrouve le choix mém
   await numeralsRow(page);
   await expect(indices).toHaveCount(1);
   await page.keyboard.press('End');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-roman');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-all');
   await expect(indices).toHaveCount(0);
   expect(payload(page).A).toBe(6);
   await page.keyboard.press('ArrowUp');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-chapter-ring-railroad');
   await page.keyboard.press('ArrowDown');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-roman');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-all');
   await page.keyboard.press('Home');
   await expect(indices).toHaveCount(1);
   await page.keyboard.press('ArrowDown');

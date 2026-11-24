@@ -2,11 +2,13 @@
 import type { RowDef } from '../../core/catalog/types';
 import { ralName, tint } from '../../core/color/names';
 import { bezelScale } from '../../core/config/bezel';
-import { handColor } from '../../core/config/colors';
+import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
+import { hasLume, lumeChoice, lumePigment } from '../../core/config/lume';
 import { dateComplication } from '../../core/config/date';
 import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
+import { numeralSystem } from '../../core/config/numerals';
 import { effectiveDialColor, hasIntrinsicColor, numeralColor } from '../../core/config/dial';
 import { getAtPath, matchesValue } from '../../core/config/path';
 import {
@@ -130,10 +132,14 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
       },
     ];
   }
-  // Taille, position et couleur se règlent dans le panneau de la ligne Style des chiffres.
-  if (row.id === 'numeral-font' && config.dial.indices.numerals !== 'none') {
+  // Writing system and layout share the panel attached to the numeral positions.
+  if (row.id === 'numerals' && config.dial.indices.numerals !== 'none') {
     const { numeralSize, numeralRadius, numeralColor: color } = config.dial.indices;
     return [
+      {
+        label: m.numeralScript,
+        value: numeralSystem(config.dial.indices) === 'roman' ? m.roman : m.arabic,
+      },
       { label: m.numeralSize, value: share(numeralSize, 'size') },
       { label: m.numeralPosition, value: share(numeralRadius, 'distance') },
       color === 'match'
@@ -143,7 +149,15 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
   }
   if (row.id === 'indices' && config.dial.indices.style !== 'none') {
     const { indexSize, indexRadius } = config.dial.indices;
+    const finish =
+      INDEX_FINISHES.find((item) => item.id === config.dial.indices.finish)?.name ?? 'polished';
     return [
+      {
+        label: all.lume.indexFinish,
+        value: finish === 'printed' ? all.lume.printed : (all.handFinish[finish] ?? finish),
+        swatch: indexColor(config),
+        metal: !['printed', 'lacquer'].includes(finish),
+      },
       { label: m.indexSize, value: share(indexSize, 'size') },
       { label: m.indexPosition, value: share(indexRadius, 'distance') },
     ];
@@ -184,6 +198,27 @@ export function identitySections(
     if (!section) sections.push((section = { title, traits: [] }));
     section.traits.push({ label: row.i18n.name, value: rowValue(row, config) });
     section.traits.push(...colorTraits(row, config, locale));
+    if (row.id === 'hands' || (row.id === 'indices' && config.dial.indices.style !== 'none')) {
+      const part = row.id === 'hands' ? config.hands : config.dial.indices;
+      const lm = m.lume;
+      section.traits.push({
+        label: row.id === 'hands' ? lm.hands : lm.indices,
+        value: hasLume(part) ? lm.enabled : lm.disabled,
+      });
+      if (hasLume(part)) {
+        const selected = lumeChoice(part);
+        const pigment = lumePigment(selected.kind)!;
+        section.traits.push(
+          { label: lm.pigment, value: pigment.name },
+          { label: lm.day, value: tint(selected.day, locale).name, swatch: selected.day },
+          {
+            label: lm.emission,
+            value: tint(selected.night, locale).name,
+            swatch: selected.night,
+          },
+        );
+      }
+    }
   }
   return sections;
 }

@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "style": null,
+  "movement": "nh35",
+  "case": {
+    "shape": "cushion",
+    "profile": "curved",
+    "diameterMm": 44,
+    "thicknessMm": 14,
+    "lugToLugMm": 53,
+    "lugWidthMm": 24,
+    "lugs": "straight",
+    "material": "steel",
+    "finish": "mixed",
+    "caseback": "display"
+  },
+  "crown": {
+    "style": "guarded",
+    "position": "3h",
+    "guard": true,
+    "screwed": false
+  },
+  "bezel": {
+    "type": "smooth",
+    "insert": "none",
+    "scale": "none",
+    "color": "#101418",
+    "pip": "none",
+    "angleDeg": 0
+  },
+  "crystal": {
+    "type": "sapphire-flat",
+    "coating": "none",
+    "cyclops": false
+  },
+  "rehaut": {
+    "profile": "classic",
+    "finish": "dial",
+    "color": "#111317",
+    "scale": "none"
+  },
+  "dial": {
+    "size": "open",
+    "shape": "round",
+    "material": "metal",
+    "finish": "matte",
+    "color": "#101214",
+    "pattern": null,
+    "chapterRing": "none",
+    "indices": {
+      "style": "baton",
+      "finish": "applied-polished",
+      "lume": null,
+      "numerals": "cardinal",
+      "numeralFont": "sans",
+      "numeralSize": 1.35,
+      "numeralRadius": 1,
+      "numeralColor": "#DDDCC9",
+      "indexSize": 1,
+      "indexRadius": 1
+    },
+    "text": {
+      "brand": "",
+      "line2": "",
+      "position": "12h"
+    }
+  },
+  "hands": {
+    "set": "baton",
+    "finish": "polished",
+    "color": "#E8EBF0",
+    "lume": null,
+    "second": {
+      "style": "thin",
+      "color": "match",
+      "counterweight": false
+    }
+  },
+  "complications": [
+    {
+      "type": "date",
+      "position": "3h",
+      "disc": "black",
+      "window": "plain"
+    },
+    {
+      "type": "small-seconds",
+      "position": "9h",
+      "style": "flat"
+    }
+  ],
+  "strap": {
+    "type": "leather",
+    "material": "alligator",
+    "color": "#151515",
+    "stitching": "#D1C2A4",
+    "widthMm": 24,
+    "buckle": "tang"
+  },
+  "view": {
+    "time": "fixed",
+    "lighting": "studio",
+    "night": false
+  }
+}

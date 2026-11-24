@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "style": null,
+  "movement": "nh35",
+  "case": {
+    "shape": "octagon",
+    "profile": "faceted",
+    "diameterMm": 41,
+    "thicknessMm": 10.5,
+    "lugToLugMm": 50,
+    "lugWidthMm": 26,
+    "lugs": "integrated",
+    "material": "steel",
+    "finish": "mixed",
+    "caseback": "solid"
+  },
+  "crown": {
+    "style": "square",
+    "position": "3h",
+    "guard": false,
+    "screwed": true
+  },
+  "bezel": {
+    "type": "smooth",
+    "insert": "none",
+    "scale": "none",
+    "color": "#101418",
+    "pip": "none",
+    "angleDeg": 0
+  },
+  "crystal": {
+    "type": "sapphire-flat",
+    "coating": "none",
+    "cyclops": false
+  },
+  "rehaut": {
+    "profile": "classic",
+    "finish": "dial",
+    "color": "#111317",
+    "scale": "none"
+  },
+  "dial": {
+    "size": "balanced",
+    "shape": "round",
+    "material": "metal",
+    "finish": "clous-de-paris",
+    "color": "#18334C",
+    "pattern": null,
+    "chapterRing": "ticks",
+    "indices": {
+      "style": "baton-facet",
+      "finish": "applied-polished",
+      "lume": null,
+      "numerals": "none",
+      "numeralFont": "sans",
+      "numeralSize": 1,
+      "numeralRadius": 1,
+      "numeralColor": "match",
+      "indexSize": 0.94,
+      "indexRadius": 1.02
+    },
+    "text": {
+      "brand": "",
+      "line2": "",
+      "position": "12h"
+    }
+  },
+  "hands": {
+    "set": "baton",
+    "finish": "polished",
+    "color": "#E8EBF0",
+    "lume": null,
+    "second": {
+      "style": "thin",
+      "color": "match",
+      "counterweight": false
+    }
+  },
+  "complications": [
+    {
+      "type": "date",
+      "position": "3h",
+      "disc": "dial",
+      "window": "plain"
+    }
+  ],
+  "strap": {
+    "type": "metal",
+    "material": "steel",
+    "color": "#151515",
+    "stitching": null,
+    "widthMm": 26,
+    "buckle": "folding"
+  },
+  "view": {
+    "time": "fixed",
+    "lighting": "studio",
+    "night": false
+  }
+}

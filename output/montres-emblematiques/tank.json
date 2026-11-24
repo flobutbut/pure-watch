@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "style": null,
+  "movement": "quartz",
+  "case": {
+    "shape": "rectangle",
+    "profile": "straight",
+    "diameterMm": 30,
+    "thicknessMm": 6.6,
+    "lugToLugMm": 36,
+    "lugWidthMm": 18,
+    "lugs": "none",
+    "material": "steel",
+    "finish": "polished",
+    "caseback": "solid"
+  },
+  "crown": {
+    "style": "pointed",
+    "position": "3h",
+    "guard": false,
+    "screwed": false
+  },
+  "bezel": {
+    "type": "smooth",
+    "insert": "none",
+    "scale": "none",
+    "color": "#101418",
+    "pip": "none",
+    "angleDeg": 0
+  },
+  "crystal": {
+    "type": "sapphire-flat",
+    "coating": "none",
+    "cyclops": false
+  },
+  "rehaut": {
+    "profile": "classic",
+    "finish": "dial",
+    "color": "#111317",
+    "scale": "none"
+  },
+  "dial": {
+    "size": "open",
+    "shape": "rectangle",
+    "material": "metal",
+    "finish": "matte",
+    "color": "#ECEBE6",
+    "pattern": null,
+    "chapterRing": "railroad",
+    "indices": {
+      "style": "none",
+      "finish": "applied-polished",
+      "lume": null,
+      "numerals": "roman",
+      "numeralFont": "serif",
+      "numeralSize": 2,
+      "numeralRadius": 0.96,
+      "numeralColor": "#15191E",
+      "indexSize": 1,
+      "indexRadius": 1
+    },
+    "text": {
+      "brand": "",
+      "line2": "",
+      "position": "12h"
+    }
+  },
+  "hands": {
+    "set": "sword",
+    "finish": "blued",
+    "color": "#E8EBF0",
+    "lume": null,
+    "second": {
+      "style": "thin",
+      "color": "match",
+      "counterweight": false
+    }
+  },
+  "complications": [],
+  "strap": {
+    "type": "leather",
+    "material": "calf-grained",
+    "color": "#151515",
+    "stitching": "#202020",
+    "widthMm": 18,
+    "buckle": "tang"
+  },
+  "view": {
+    "time": "fixed",
+    "lighting": "studio",
+    "night": false
+  }
+}

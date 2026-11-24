@@ -4,6 +4,7 @@ import { parseCatalog } from '../catalog/load';
 import { tint } from '../color/names';
 import { RAL_CLASSIC } from '../color/ral';
 import { RAL_NAMES_EN } from '../color/ral-en';
+import { caseDimensionsError } from '../config/case-dimensions';
 import { defaultConfig } from '../config/defaults';
 import { compatibleMovements, mm } from '../movement/compatibility';
 import { CATALOG_EN, localizeCatalog } from './catalog-en';
@@ -75,11 +76,14 @@ describe('English wording', () => {
     expect(hourLabel('3h', 'en')).toBe('3 o’clock');
   });
 
-  it('explains movements in English', () => {
+  it('explains movements and dimension errors in English', () => {
     const config = defaultConfig();
     const tiny = { ...config, case: { ...config.case, diameterMm: 24, thicknessMm: 5 } };
     const notes = compatibleMovements(tiny, 'en').flatMap((fit) => fit.notes);
     expect(notes.length).toBeGreaterThan(0);
     for (const note of notes) expect(note).not.toMatch(/[éèàç]|Boîtier|calibre qui/);
+    expect(caseDimensionsError(config, { ...config.case, diameterMm: 99 }, 'en')).toBe(
+      'Diameter: choose a value between 22 and 48 mm.',
+    );
   });
 });

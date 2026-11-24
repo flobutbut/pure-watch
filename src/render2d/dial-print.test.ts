@@ -3,6 +3,41 @@ import { dialPrintSvg } from './dial-print';
 import { FONTS } from './fonts';
 
 const base = { dialRadius: 10, chapterRing: 'none', ink: '#000000', numerals: 'cardinal' };
+const labels = (svg: string) => [...svg.matchAll(/<text[^>]*>([^<]+)<\/text>/g)].map((m) => m[1]);
+
+describe('écriture romaine indépendante de la disposition', () => {
+  it.each([
+    ['none', []],
+    ['twelve', ['XII']],
+    ['six-twelve', ['XII', 'VI']],
+    ['cardinal', ['XII', 'III', 'VI', 'IX']],
+    ['explorer', ['III', 'VI', 'IX']],
+    ['all', ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI']],
+  ] as const)('%s porte seulement les chiffres romains demandés', (numerals, expected) => {
+    expect(labels(dialPrintSvg({ ...base, numerals, numeralSystem: 'roman' }))).toEqual(expected);
+  });
+
+  it('retire le chiffre romain occupé par une complication', () => {
+    expect(labels(dialPrintSvg({ ...base, numeralSystem: 'roman', omitHours: [3] }))).toEqual([
+      'XII',
+      'VI',
+      'IX',
+    ]);
+  });
+
+  it('conserve exactement l’impression de l’ancien cadran romain complet', () => {
+    const options = {
+      ...base,
+      chapterRing: 'railroad',
+      numeralFont: 'serif',
+      numeralSize: 1.3,
+      numeralRadius: 0.9,
+    };
+    expect(dialPrintSvg({ ...options, numerals: 'roman' })).toBe(
+      dialPrintSvg({ ...options, numerals: 'all', numeralSystem: 'roman' }),
+    );
+  });
+});
 
 /** Position et taille du chiffre de 12 h (en haut, x = 0). */
 function twelve(svg: string): { y: number; size: number } {

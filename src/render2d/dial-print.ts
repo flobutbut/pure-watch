@@ -13,6 +13,7 @@ export interface DialPrintOptions {
   ink: string;
   /** Jeu de chiffres (voir numeralHours) et famille typographique. */
   numerals?: string;
+  numeralSystem?: 'arabic' | 'roman';
   numeralFont?: string;
   /** Couleur des chiffres des heures (par défaut : l'encre). */
   numeralInk?: string;
@@ -122,18 +123,19 @@ function numeralsMarkup(
   omit: readonly number[] = [],
   sizeFactor = 1,
   radiusFactor = 1,
+  system: 'arabic' | 'roman' = 'arabic',
 ): string {
   const hours = numeralHours(set).filter((h) => !omit.includes(h));
   if (hours.length === 0) return '';
   const font = fontDef(fontId);
-  const roman = set === 'roman';
+  const roman = set === 'roman' || system === 'roman';
   const few = numeralHours(set).length <= 4;
   const fraction = (few ? 0.74 : 0.77) * radiusFactor;
   // Rapprochés du centre, douze chiffres voisins se toucheraient : la taille est bornée par
   // l'écart entre deux heures (« 10 » ≈ 1,25 cadratin, « VIII » ≈ 2,2).
   const neighbours = 2 * R * fraction * Math.sin(Math.PI / (few ? 4 : 12));
   const size = Math.min(
-    R * (roman ? 0.12 : few ? 0.2 : 0.14) * sizeFactor,
+    R * (few ? 0.2 : roman ? 0.12 : 0.14) * sizeFactor,
     neighbours / (roman ? 2.2 : 1.25),
   );
   return hours
@@ -173,7 +175,7 @@ export function dialPrintSvg(options: DialPrintOptions): string {
     (options.fontCss ? `<style>${options.fontCss}</style>` : '') +
     `<g stroke="${options.ink}" fill="${options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt)}</g>` +
     `<g fill="${options.ink}">${text.join('')}</g>` +
-    `<g fill="${options.numeralInk ?? options.ink}">${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius)}</g>` +
+    `<g fill="${options.numeralInk ?? options.ink}">${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem)}</g>` +
     `</svg>`
   );
 }

@@ -37,6 +37,47 @@ function indexExtent(config: WatchConfig) {
 }
 
 describe('taille et position des index', () => {
+  it.each(['dive', 'mixed-batons'])(
+    '%s combine les formes et libère les heures occupées',
+    (style) => {
+      const config = defaultConfig();
+      config.dial.indices.style = style;
+      const spans = () => {
+        const group = buildIndices(config, watchDimensions(config), lib);
+        const buckets = Array.from({ length: 12 }, () => [] as number[]);
+        group.traverse((o) => {
+          if (!(o instanceof THREE.Mesh)) return;
+          const p = o.geometry.getAttribute('position');
+          for (let i = 0; i < p.count; i++) {
+            const x = p.getX(i),
+              y = p.getY(i);
+            const hour = ((Math.round((Math.atan2(x, y) * 6) / Math.PI) % 12) + 12) % 12;
+            buckets[hour]!.push(Math.hypot(x, y));
+          }
+          o.geometry.dispose();
+        });
+        return buckets.map((points) =>
+          points.length ? Math.max(...points) - Math.min(...points) : 0,
+        );
+      };
+      const complete = spans();
+      expect(complete.every((extent) => extent > 0)).toBe(true);
+      expect(complete[3]).toBeGreaterThan(complete[2]! * 1.4);
+      config.dial.indices.numerals = 'twelve';
+      config.complications = [
+        { type: 'date', position: '3h' },
+        { type: 'small-seconds', position: '6h' },
+      ];
+      const occupied = spans();
+      expect([occupied[0], occupied[3], occupied[6]]).toEqual([0, 0, 0]);
+      expect(occupied[9]).toBeGreaterThan(0);
+      config.dial.indices.indexSize = 1.6;
+      config.dial.indices.indexRadius = 1.1;
+      expect(indexExtent(config).outer).toBeLessThanOrEqual(
+        watchDimensions(config).dialSafeRadius * 0.9 + 1e-3,
+      );
+    },
+  );
   it('rapproche les index du centre et les agrandit', () => {
     const reference = indexExtent(defaultConfig());
     const config = defaultConfig();

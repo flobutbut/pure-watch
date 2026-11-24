@@ -178,13 +178,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
   },
   numerals: {
     name: 'Numerals',
-    variants: {
-      none: 'None',
-      twelve: '12 only',
-      'six-twelve': '6 and 12',
-      all: 'All',
-      roman: 'Roman',
-    },
+    variants: { none: 'None', twelve: '12 only', 'six-twelve': '6 and 12', all: 'All' },
   },
   'numeral-font': {
     name: 'Numeral style',
@@ -216,6 +210,8 @@ export const CATALOG_EN: Record<string, RowNames> = {
       triangles: 'Triangles',
       baguettes: 'Baguettes',
       drops: 'Teardrops',
+      dive: 'Dive',
+      'mixed-batons': 'Batons and dots',
       none: 'None',
     },
   },
@@ -249,6 +245,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
       teardrop: 'Teardrop',
       'ring-tail': 'Open counterweight',
       lightning: 'Lightning',
+      none: 'No seconds hand',
     },
   },
   'seconds-color': {

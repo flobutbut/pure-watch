@@ -97,7 +97,7 @@ test('les options inconnues sont remplacées sans perdre les autres choix', asyn
   await expect(page.getByRole('status')).toHaveCount(0);
   const grid = page.getByRole('grid');
   await grid.focus();
-  for (let i = 0; i < 3; i++) await page.keyboard.press('PageUp');
+  for (let i = 0; i < 6; i++) await page.keyboard.press('PageUp');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-case-shape-cushion');
 });
 

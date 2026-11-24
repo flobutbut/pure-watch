@@ -139,6 +139,7 @@ export class Stage {
   readonly renderer: THREE.WebGLRenderer;
   private readonly refinement = refinementFromSearch(location.search);
   readonly materials = new MaterialLibrary(this.refinement === 'refined');
+  private readonly nightMaterials = new MaterialLibrary(this.refinement === 'refined', true);
   private readonly quality = detectCrystalQuality();
   private readonly scene = new THREE.Scene();
   private readonly snapScene = new THREE.Scene();
@@ -368,8 +369,10 @@ export class Stage {
     }
     const version = ++this.liveVersion;
     const materials = transient
-      ? new MaterialLibrary(this.refinement === 'refined')
-      : this.materials;
+      ? new MaterialLibrary(this.refinement === 'refined', config.view.night)
+      : config.view.night
+        ? this.nightMaterials
+        : this.materials;
     const model = buildWatch(config, materials, {
       quality: this.quality,
       refinement: this.refinement,
@@ -396,6 +399,12 @@ export class Stage {
     this.liveMaterials?.dispose();
     this.liveMaterials = transient ? materials : null;
     this.live = model;
+    this.scene.environmentIntensity = config.view.night ? 0.018 : 1;
+    for (const child of this.scene.children) {
+      if (child instanceof THREE.DirectionalLight)
+        child.intensity = config.view.night ? 0.025 : 1.1;
+    }
+    (this.shadow.material as THREE.MeshBasicMaterial).opacity = config.view.night ? 0.05 : 0.32;
     this.liveConfigKey = key;
     this.liveConfig = config;
     this.liveSteps = movementStepsPerSecond(config.movement);
@@ -856,6 +865,7 @@ export class Stage {
     this.shadowTexture.dispose();
     this.environment.dispose();
     this.materials.dispose();
+    this.nightMaterials.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }

@@ -45,6 +45,7 @@
         <span><kbd>1–5</kbd> {t().chrome.views}</span>
         <span><kbd>P</kbd> {t().chrome.pause}</span>
         <span><kbd>I</kbd> {t().chrome.card}</span>
+        <span><kbd>N</kbd> {t().lume.nightHint}</span>
         <span><kbd>{t().chrome.escKey}</kbd> {t().chrome.back}</span>
       {:else}
         <span><kbd>↑ ↓</kbd> {t().chrome.parts}</span>

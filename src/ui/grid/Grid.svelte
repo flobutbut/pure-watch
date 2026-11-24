@@ -5,6 +5,8 @@
   import { tint } from '../../core/color/names';
   import { hasIntrinsicColor } from '../../core/config/dial';
   import { turnBezel } from '../../core/config/bezel';
+  import { matchesValue } from '../../core/config/path';
+  import { mm } from '../../core/movement/compatibility';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
   import type { LiveWatch as LiveHandle, PartRenderer } from '../../render/types';
   import LiveWatch from '../view3d/LiveWatch.svelte';
@@ -29,6 +31,9 @@
     config: WatchConfig;
     previewConfig: WatchConfig | null;
     colorTarget: ColorTarget | null;
+    dimensionsEditing?: boolean;
+    night?: boolean;
+    onnight: () => void;
     renderer: PartRenderer | null;
     /** Dernier rebond de bord, avec un compteur pour rejouer le même. */
     bump: { dir: Bump; n: number };
@@ -36,6 +41,7 @@
     onopen: () => void;
     onclose: () => void;
     oncolor: (target: ColorTarget) => void;
+    ondimensions: () => void;
     onbezel: (angle: number) => void;
     /** Signale l'affichage de la fiche d'identité (le pied de page lui laisse la place). */
     oncard?: (shown: boolean) => void;
@@ -47,17 +53,21 @@
     config,
     previewConfig,
     colorTarget,
+    dimensionsEditing = false,
+    night = false,
+    onnight,
     renderer,
     bump,
     oncommand,
     onopen,
     onclose,
     oncolor,
+    ondimensions,
     onbezel,
     oncard,
   }: Props = $props();
   /** A side panel is open: the grid steps back behind it. */
-  const editing = $derived(colorTarget !== null);
+  const editing = $derived(colorTarget !== null || dimensionsEditing);
 
   let width = $state(0);
   let height = $state(0);
@@ -66,6 +76,13 @@
   const metrics = $derived(gridMetrics(width || 1440, height || 1024));
   const open = $derived(nav.mode === 'opening3d' || nav.mode === 'view3d');
   const selected = (rowIndex: number) => selectedIndex(nav, rows[rowIndex]!.id);
+  const sizePreset = (config: WatchConfig) =>
+    rows
+      .find((row) => row.id === 'case-size')
+      ?.variants.find((v) => matchesValue(config.case, v.value));
+  const sizeLabel = (config: WatchConfig) =>
+    sizePreset(config)?.i18n.name ??
+    `${mm(config.case.diameterMm, 1, i18n.locale)} · ${t().grid.custom}`;
 
   /** Dernière colonne de chaque cellule (non réactif : sert à détecter les sauts). */
   let lastCol: Record<string, number> = {};
@@ -277,6 +294,10 @@
       toggleCard();
       return true;
     }
+    if (event.key === 'n' || event.key === 'N') {
+      onnight();
+      return true;
+    }
     // Les touches qui ouvrent l'aperçu le referment aussi.
     if (event.key === 'Escape' || event.key === ' ' || event.key === 'Enter') {
       onclose();
@@ -381,11 +402,11 @@
         ? 'dial'
         : id === 'hands'
           ? 'hands'
-          : id === 'seconds'
+          : id === 'seconds' && config.hands.second.style !== 'none'
             ? 'seconds'
             : id === 'rehaut'
               ? 'rehaut'
-              : id === 'numeral-font' && config.dial.indices.numerals !== 'none'
+              : id === 'numerals' && config.dial.indices.numerals !== 'none'
                 ? 'numerals'
                 : id === 'indices' && config.dial.indices.style !== 'none'
                   ? 'indices'
@@ -405,6 +426,7 @@
   bind:clientWidth={width}
   bind:clientHeight={height}
   role="grid"
+  aria-busy={nav.mode === 'opening3d' || nav.mode === 'closing3d'}
   tabindex="0"
   aria-label={t().grid.label}
   aria-activedescendant="cell-{activeRowDef.id}-{activeVariant.id}"
@@ -425,6 +447,7 @@
           {@const variant = row.variants[slot.variantIndex]!}
           {@const isActiveRow = slot.dRow === 0}
           {@const isCenter = isActiveRow && slot.dCol === 0}
+          {@const customSize = row.id === 'case-size' && slot.dCol === 0 && !sizePreset(config)}
           {@const h = hierarchy(slot.dCol, slot.dRow)}
           {@const place = pixelSnap(
             width / 2 + slot.dCol * metrics.pitch + (isActiveRow ? dragX + bumpX : 0),
@@ -439,11 +462,12 @@
             class:center={isCenter}
             class:jump={slot.jump}
             role="gridcell"
-            aria-selected={slot.dCol === 0}
-            aria-label="{row.i18n.name}, {variant.i18n.name}, {t().grid.position(
-              slot.variantIndex + 1,
-              row.variants.length,
-            )}{isCenter ? t().grid.center : ''}"
+            aria-selected={slot.dCol === 0 && !customSize}
+            aria-label="{row.i18n.name}, {customSize
+              ? sizeLabel(config)
+              : `${variant.i18n.name}, ${t().grid.position(slot.variantIndex + 1, row.variants.length)}`}{isCenter
+              ? t().grid.center
+              : ''}"
             data-row={rowIndex}
             data-variant={slot.variantIndex}
             style:transform="translate({place.x}px, {place.y}px) scale({place.scale})"
@@ -501,8 +525,23 @@
       >
         <span class="label-name" aria-hidden="true">{row.i18n.name}</span>
         <span class="label-variant" aria-hidden="true">
-          {row.variants[selected(rowIndex)]?.i18n.name}
+          {row.id === 'case-size' ? sizeLabel(config) : row.variants[selected(rowIndex)]?.i18n.name}
         </span>
+        {#if row.id === 'case-size'}
+          <button
+            class="color-button"
+            type="button"
+            tabindex={dRow === 0 ? 0 : -1}
+            aria-label={t().grid.caseDimensions}
+            onclick={ondimensions}
+          >
+            <svg class="settings-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2 5h12M2 11h12" />
+              <circle cx="10.5" cy="5" r="1.8" /><circle cx="5.5" cy="11" r="1.8" />
+            </svg>
+            <span>{t().grid.dimensions}</span>
+          </button>
+        {/if}
         {#if target}
           {#if target === 'dial' && hasIntrinsicColor(config.dial.finish)}
             <span class="natural" title={t().grid.naturalTitle}>
@@ -608,6 +647,17 @@
       </button>
       <button
         class="tool"
+        aria-label={t().lume.preview}
+        aria-pressed={night}
+        title={t().lume.previewTitle}
+        onclick={onnight}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19.6 15.4A8 8 0 0 1 8.6 4.4a8 8 0 1 0 11 11Z" />
+        </svg>
+      </button>
+      <button
+        class="tool"
         aria-label={t().grid.close}
         title={t().grid.closeTitle}
         onclick={onclose}
@@ -630,7 +680,10 @@
     <div class="live-hit" role="presentation" ondblclick={() => live?.view(4)}>
       <LiveWatch
         {renderer}
-        config={previewConfig ?? config}
+        config={{
+          ...(previewConfig ?? config),
+          view: { ...(previewConfig ?? config).view, night },
+        }}
         transient={previewConfig !== null}
         mode={open ? 'inspect' : 'grid'}
         displayScale={livePlace.scale}

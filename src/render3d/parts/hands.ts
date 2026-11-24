@@ -20,6 +20,8 @@ import { buildReserveHand, stickHand } from './power-reserve';
 import { chronoCounters } from '../../core/config/chronograph';
 import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
+import { hasLume } from '../../core/config/lume';
+import { bladeInsert, insertShape } from './inserts';
 
 interface HandDesign {
   samples: Sample[];
@@ -398,35 +400,46 @@ export function buildHands(
   const materials = machined
     ? [lib.handMaterial(config, 'face'), lib.handMaterial(config, 'edge')]
     : steel;
-  const blade = (length: number, slimness: number, radius: number) =>
-    detailed
-      ? buildDetailedHand(config.hands.set, design, length, k, slimness, thick, radius)
-      : machined
-        ? buildMachinedBaton(length, k, slimness, thick, radius)
-        : buildHand(design(length, k, slimness, thick), thick, radius);
-  const hour = new THREE.Mesh(blade(d.hands.hour, 1, (refined ? 0.88 : 1.45) * k), materials);
-  const minute = new THREE.Mesh(
-    blade(d.hands.minute, 0.78, (refined ? 0.65 : 1.15) * k),
-    materials,
-  );
+  const luminous = hasLume(config.hands);
+  const blade = (length: number, slimness: number, radius: number) => {
+    if (luminous)
+      return buildLuminousHand(config.hands.set, design, length, k, slimness, thick, radius);
+    return {
+      blade: detailed
+        ? buildDetailedHand(config.hands.set, design, length, k, slimness, thick, radius)
+        : machined
+          ? buildMachinedBaton(length, k, slimness, thick, radius)
+          : buildHand(design(length, k, slimness, thick), thick, radius),
+      insert: null,
+    };
+  };
+  const hourParts = blade(d.hands.hour, 1, (refined ? 0.88 : 1.45) * k);
+  const minuteParts = blade(d.hands.minute, 0.78, (refined ? 0.65 : 1.15) * k);
+  const hour = new THREE.Mesh(hourParts.blade, materials);
+  const minute = new THREE.Mesh(minuteParts.blade, materials);
 
   const secThick = 0.12;
   const secondDesign = SECONDS[config.hands.second.style] ?? SECONDS['counterweight']!;
   // Petite seconde : même forme et même couleur, à l'échelle du sous-cadran.
   const subdial = subdialCircle(config, d.dialSafeRadius);
-  const secondParts = subdial
-    ? [
-        ...secondDesign(subdial.r * 0.86, subdial.r * 0.26, k * 0.5, secThick),
-        boss(0.42 * k, secThick + 0.05),
-      ]
-    : [
-        ...secondDesign(d.hands.second, d.hands.secondTail, k, secThick),
-        boss((refined ? 0.43 : 0.75) * k, secThick + 0.05),
-      ];
-  const secondGeometry = mergeGeometries(secondParts);
+  const secondParts =
+    config.hands.second.style === 'none'
+      ? []
+      : subdial
+        ? [
+            ...secondDesign(subdial.r * 0.86, subdial.r * 0.26, k * 0.5, secThick),
+            boss(0.42 * k, secThick + 0.05),
+          ]
+        : [
+            ...secondDesign(d.hands.second, d.hands.secondTail, k, secThick),
+            boss((refined ? 0.43 : 0.75) * k, secThick + 0.05),
+          ];
+  const secondGeometry = secondParts.length ? mergeGeometries(secondParts) : null;
   for (const g of secondParts) g.dispose();
   const color = config.hands.second.color;
-  const second = new THREE.Mesh(secondGeometry, color === 'match' ? steel : lib.lacquer(color));
+  const second = secondGeometry
+    ? new THREE.Mesh(secondGeometry, color === 'match' ? steel : lib.lacquer(color))
+    : null;
 
   const cap = new THREE.Mesh(boss((refined ? 0.3 : 0.5) * k, refined ? 0.07 : 0.12), steel);
 
@@ -437,12 +450,21 @@ export function buildHands(
   };
   pivots.hour.add(hour);
   pivots.minute.add(minute);
-  pivots.second.add(second);
+  for (const [name, parts, pivot] of [
+    ['hour', hourParts, pivots.hour],
+    ['minute', minuteParts, pivots.minute],
+  ] as const) {
+    if (!parts.insert) continue;
+    const mesh = new THREE.Mesh(parts.insert, lib.luminous(config.hands));
+    mesh.name = `${name}-lume`;
+    pivot.add(mesh);
+  }
+  if (second) pivots.second.add(second);
   // Gap exceeds the tallest facet (dauphine: 0.2*k) at every supported size.
   const levels = refined ? refinedHandLevels(k) : Z_LEVELS;
   hour.name = 'hour-blade';
   minute.name = 'minute-blade';
-  second.name = 'second-blade';
+  if (second) second.name = 'second-blade';
   cap.name = 'pivot-cap';
   pivots.hour.position.z = levels.hour;
   pivots.minute.position.z = levels.minute;
@@ -460,7 +482,7 @@ export function buildHands(
   if (reserve) group.add(reserve);
   const seconds = new THREE.Group();
   seconds.name = 'seconds';
-  seconds.add(pivots.second);
+  if (second) seconds.add(pivots.second);
 
   // Chronographe au repos : trotteuse du chrono et compteurs à zéro ; les secondes
   // courantes tournent dans leur compteur.
@@ -494,7 +516,7 @@ export function buildHands(
 }
 
 export const HAND_SETS = Object.keys(DESIGNS);
-export const SECOND_STYLES = Object.keys(SECONDS);
+export const SECOND_STYLES = [...Object.keys(SECONDS), 'none'];
 
 /** Clearances are based on the maximum ridge across all available hand sets. */
 export function refinedHandLevels(k: number) {
@@ -548,4 +570,47 @@ function buildDetailedHand(
   blade.dispose();
   hub.dispose();
   return merged;
+}
+
+/** Each luminous fill occupies a real opening and stays below its enclosing metal edge. */
+function buildLuminousHand(
+  set: string,
+  design: DesignFn,
+  length: number,
+  k: number,
+  slimness: number,
+  thickness: number,
+  radius: number,
+) {
+  const shape = design(length, k, slimness, thickness);
+  const holes = shape.cutouts ?? [bladeInsert(shape.samples, length)];
+  const plates =
+    set === 'breguet'
+      ? [
+          extruded(
+            disc(
+              0,
+              length * 0.72,
+              0.82 * k * slimness + Math.min(0.035, k * slimness * 0.055, thickness * 0.24),
+            ),
+            0.06,
+          ),
+        ]
+      : holes.map((hole) => extruded(insertShape(hole), 0.06));
+  const insert = mergeGeometries(plates);
+  for (const g of plates) g.dispose();
+  insert.translate(0, 0, thickness - 0.075);
+  // Baton has a solid fast path, so use the pierced builder directly for all non-Breguet sets.
+  const frame =
+    set === 'breguet'
+      ? piercedBreguet(length, k, slimness, thickness)
+      : piercedProfile(shape.samples, holes, thickness);
+  const hub = boss(radius, thickness + 0.06);
+  const merged = mergeGeometries([frame, hub]);
+  for (const group of frame.groups) merged.addGroup(group.start, group.count, group.materialIndex);
+  merged.addGroup(frame.getAttribute('position').count, hub.getAttribute('position').count, 1);
+  frame.dispose();
+  hub.dispose();
+  for (const extra of shape.extras ?? []) extra.dispose();
+  return { blade: merged, insert };
 }

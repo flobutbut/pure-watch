@@ -25,8 +25,10 @@
   import Grid from './ui/grid/Grid.svelte';
   import Ambience from './ui/Ambience.svelte';
   import ColorPanel from './ui/colors/ColorPanel.svelte';
+  import DimensionsPanel from './ui/dimensions/DimensionsPanel.svelte';
+  import { withCaseDimensions, type CaseDimensions } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
-  import { ambienceFor } from './ui/ambience';
+  import { ambienceFor, NIGHT_AMBIENCE } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
   import { localizeCatalog } from './core/i18n/catalog-en';
   import { i18n, t } from './ui/i18n.svelte';
@@ -42,8 +44,10 @@
   let lastConfigUrl = location.href;
   let config = $state.raw(initialConfig);
   let colorTarget = $state<ColorTarget | null>(null);
-  const editing = $derived(colorTarget !== null);
+  let dimensionsEditing = $state(false);
+  const editing = $derived(colorTarget !== null || dimensionsEditing);
   let cardShown = $state(false);
+  let night = $state(initialConfig.view.night);
   let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
   const rows = $derived(visibleRows(named.rows, config));
@@ -61,7 +65,16 @@
   let bump = $state.raw<{ dir: Bump; n: number }>({ dir: null, n: 0 });
   let announcement = $state('');
   let renderer = $state.raw<PartRenderer | null>(null);
-  const ambience = $derived(ambienceFor((previewConfig ?? config).dial));
+  const nightPreview = $derived(
+    night &&
+      (nav.mode === 'view3d' ||
+        nav.mode === 'opening3d' ||
+        colorTarget === 'hands' ||
+        colorTarget === 'indices'),
+  );
+  const ambience = $derived(
+    nightPreview ? NIGHT_AMBIENCE : ambienceFor((previewConfig ?? config).dial),
+  );
   const colorPresets = $derived([
     // Chiffres : blanc et noir d'impression, puis les accents de la trotteuse.
     ...(colorTarget === 'numerals'
@@ -85,9 +98,28 @@
   ]);
 
   /** Leaves the panel without touching the configuration (a link took over). */
-  function dropColor() {
+  function dropEditor() {
     colorTarget = null;
+    dimensionsEditing = false;
     previewConfig = null;
+  }
+  function previewDimensions(values: CaseDimensions) {
+    if (dimensionsEditing) previewConfig = withCaseDimensions(config, values);
+  }
+  function closeDimensions(values: CaseDimensions) {
+    if (!dimensionsEditing) return;
+    const before = config;
+    const next = withCaseDimensions(config, values);
+    if (encodeConfigHash(next) !== encodeConfigHash(before)) {
+      config = next;
+      nav = {
+        ...nav,
+        selectionByRow: syncSelection(catalog, before, next, nav.selectionByRow, ''),
+      };
+      linkNotice = '';
+      announcement = t().app.dimensionsSaved;
+    }
+    dropEditor();
   }
   function previewColor(choice: ColorChoice) {
     if (colorTarget) previewConfig = withColorChoice(config, colorTarget, choice);
@@ -106,7 +138,7 @@
             ? t().app.indicesSaved
             : t().app.colorSaved;
     }
-    dropColor();
+    dropEditor();
   }
 
   // Couleur de fond du document (barre d'adresse mobile, débordements) et thème clair/sombre.
@@ -130,7 +162,7 @@
 
   function followConfigUrl() {
     if (location.href === lastConfigUrl) return;
-    dropColor();
+    dropEditor();
     lastConfigUrl = location.href;
     const loaded = readConfigUrl(new URL(location.href), catalog);
     linkNotice = loaded.notice;
@@ -231,10 +263,8 @@
 
 <svelte:window
   onkeydown={(e) => {
-    if (e.key === 'Escape') {
-      if (colorTarget) closeColor();
-      else close();
-    }
+    // Modal sheets own Escape and commit their last valid values.
+    if (e.key === 'Escape' && !editing) close();
   }}
 />
 
@@ -252,14 +282,20 @@
     {config}
     {previewConfig}
     {colorTarget}
+    {dimensionsEditing}
     {renderer}
     {bump}
+    night={nightPreview}
+    onnight={() => (night = !night)}
     oncommand={run}
     onopen={open}
     onclose={close}
     oncard={(shown) => (cardShown = shown)}
     oncolor={(target) => {
       colorTarget = target;
+    }}
+    ondimensions={() => {
+      dimensionsEditing = true;
     }}
     onbezel={(angle) => {
       config = { ...config, bezel: { ...config.bezel, angleDeg: bezelAngle(angle) } };
@@ -271,9 +307,13 @@
       target={colorTarget}
       {config}
       presets={colorPresets}
+      {night}
+      onnight={() => (night = !night)}
       onpreview={previewColor}
       onclose={closeColor}
     />
+  {:else if dimensionsEditing}
+    <DimensionsPanel {config} onpreview={previewDimensions} onclose={closeDimensions} />
   {/if}
   <p class="sr-only" aria-live="polite">{announcement}</p>
   {#if linkNotice}<p class="link-notice" role="status">{t().linkNotice[linkNotice]}</p>{/if}

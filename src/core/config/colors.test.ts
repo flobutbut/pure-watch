@@ -46,7 +46,7 @@ describe('free colours', () => {
     expect(hands.hands.second).toBe(config.hands.second);
     const seconds = withColorChoice(hands, 'seconds', { color: 'match', finish: '' });
     expect(targetColor(seconds, 'seconds')).toBe('#C92750');
-    expect(colorChoice(seconds, 'hands')).toEqual({ color: '#C92750', finish: 'lacquer' });
+    expect(colorChoice(seconds, 'hands')).toMatchObject({ color: '#C92750', finish: 'lacquer' });
   });
   it('numerals follow the print ink until a tint is chosen, and can return to it', () => {
     const config = defaultConfig();
@@ -72,7 +72,7 @@ describe('free colours', () => {
     });
     expect(moved.dial.indices).toMatchObject({ numeralSize: 1.4, numeralRadius: 0.7 });
     expect(colorChoice(config, 'dial').layout).toBeUndefined();
-    // Indices only have the two sliders: no colour is written.
+    // Index controls remain independent of numeral and dial colors.
     const indices = withColorChoice(config, 'indices', {
       color: '#D7262E',
       finish: config.dial.indices.finish,

@@ -3,6 +3,7 @@
   import {
     colorChoice,
     HAND_FINISHES,
+    INDEX_FINISHES,
     handColor,
     hexToHsv,
     hsvToHex,
@@ -16,9 +17,11 @@
     type ColorTarget,
   } from '../../core/config/colors';
   import { effectiveDialColor, printInk } from '../../core/config/dial';
+  import type { NumeralSystem } from '../../core/config/numerals';
   import { REHAUT_FINISHES } from '../../core/config/rehaut';
   import type { HexColor, WatchConfig } from '../../core/config/types';
   import Sheet from '../sheet/Sheet.svelte';
+  import LumeControls from './LumeControls.svelte';
   import { tint } from '../../core/color/names';
   import { i18n, t } from '../i18n.svelte';
 
@@ -29,8 +32,18 @@
     onpreview: (choice: ColorChoice) => void;
     /** Every way out keeps the colour shown on the watch: there is no separate save step. */
     onclose: (choice: ColorChoice) => void;
+    night?: boolean;
+    onnight?: () => void;
   }
-  let { target, config, presets, onpreview, onclose }: Props = $props();
+  let {
+    target,
+    config,
+    presets,
+    onpreview,
+    onclose,
+    night = false,
+    onnight = () => {},
+  }: Props = $props();
   const initial = untrack(() => colorChoice(config, target));
   const initialHex = untrack(() =>
     initial.color === 'match' ? targetColor(config, target) : initial.color,
@@ -42,6 +55,8 @@
   /** Chiffres : taille et distance au centre, réglées dans le même panneau. */
   let size = $state(initial.layout?.size ?? 1);
   let radius = $state(initial.layout?.radius ?? 1);
+  let numeralSystem = $state<NumeralSystem>(initial.numeralSystem ?? 'arabic');
+  let lume = $state(initial.lume);
   let recent = $state<HexColor[]>([]);
   let spectrum = $state<HTMLButtonElement>();
   let pointer: number | null = null;
@@ -50,16 +65,17 @@
   /** The HEX field is a power-user tool: folded away unless someone opened it before. */
   let advanced = $state(false);
   const title = $derived(t().colors[target]);
-  /** Index : taille et position seulement, leur matière suit la finition appliquée. */
-  const colorless = $derived(target === 'indices');
   const ranges = $derived(
     target === 'indices'
       ? { size: INDEX_SIZE_RANGE, radius: INDEX_RADIUS_RANGE }
       : { size: NUMERAL_SIZE_RANGE, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    !colorless &&
-      (target === 'rehaut' ? finish === 'custom' : target !== 'hands' || finish === 'lacquer'),
+    target === 'indices'
+      ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
+      : target === 'rehaut'
+        ? finish === 'custom'
+        : target !== 'hands' || finish === 'lacquer',
   );
   const color = $derived(hsvToHex(hsv.h, hsv.s, hsv.v));
   const valid = $derived(!free || matched || normalizeHex(hexInput) !== null);
@@ -67,6 +83,8 @@
     color: matched ? 'match' : color,
     finish,
     ...(initial.layout ? { layout: { size, radius } } : {}),
+    ...(target === 'numerals' ? { numeralSystem } : {}),
+    ...(lume ? { lume } : {}),
   });
   const sameLayout = (a: ColorChoice['layout'], b: ColorChoice['layout']) =>
     Math.abs((a?.size ?? 1) - (b?.size ?? 1)) < 0.005 &&
@@ -83,6 +101,8 @@
   const changed = $derived(
     choice.finish !== initial.finish ||
       !sameColor(choice.color, initial.color) ||
+      choice.numeralSystem !== initial.numeralSystem ||
+      JSON.stringify(choice.lume) !== JSON.stringify(initial.lume) ||
       !sameLayout(choice.layout, initial.layout),
   );
   let previewTimer: ReturnType<typeof setTimeout> | undefined;
@@ -168,6 +188,8 @@
     matched = initial.color === 'match';
     size = initial.layout?.size ?? 1;
     radius = initial.layout?.radius ?? 1;
+    numeralSystem = initial.numeralSystem ?? 'arabic';
+    lume = initial.lume;
   }
   // An unfinished HEX entry is ignored: the last valid colour, still shown on the watch, is kept.
   function close() {
@@ -229,6 +251,23 @@
     </div>
   {/if}
 
+  {#if target === 'indices'}
+    <div class="finishes index-finishes" role="group" aria-label={t().lume.indexFinish}>
+      {#each INDEX_FINISHES as item (item.id)}
+        <button
+          type="button"
+          class:chosen={finish === item.id}
+          aria-pressed={finish === item.id}
+          onclick={() => (finish = item.id)}
+        >
+          <span class="dot" style:--swatch={item.color ?? color} class:metal={item.color !== null}
+          ></span>
+          {item.name === 'printed' ? t().lume.printed : t().handFinish[item.name]}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   {#if target === 'seconds'}
     <div class="links" role="group" aria-label={t().colors.pairings}>
       <button
@@ -247,6 +286,21 @@
     </div>
   {/if}
 
+  {#if target === 'numerals'}
+    <p class="section-label">{t().colors.script}</p>
+    <div class="links" role="group" aria-label={t().colors.scriptLabel}>
+      {#each [{ id: 'arabic', name: t().colors.arabic }, { id: 'roman', name: t().colors.roman }] as system (system.id)}
+        <button
+          type="button"
+          class:chosen={numeralSystem === system.id}
+          aria-pressed={numeralSystem === system.id}
+          onclick={() => (numeralSystem = system.id as NumeralSystem)}
+        >
+          {system.name}
+        </button>
+      {/each}
+    </div>
+  {/if}
   {#if initial.layout}
     <div class="layout">
       <label class="slider">
@@ -297,12 +351,16 @@
       <button type="button" onclick={() => selectHex(handColor(config))}>
         {t().colors.handsColor}
       </button>
-      {#if config.hands.second.color !== 'match'}
+      {#if config.hands.second.style !== 'none' && config.hands.second.color !== 'match'}
         <button type="button" onclick={() => selectHex(targetColor(config, 'seconds'))}>
           {t().colors.secondsColor}
         </button>
       {/if}
     </div>
+  {/if}
+
+  {#if lume}
+    <LumeControls value={lume} onchange={(value) => (lume = value)} {night} {onnight} />
   {/if}
 
   {#if free}
@@ -736,6 +794,9 @@
       font-size: 10px;
       min-height: 58px;
       line-height: 1.1;
+    }
+    .index-finishes {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .hex-label input {
       font-size: 16px;

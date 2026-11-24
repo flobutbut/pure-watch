@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "style": null,
+  "movement": "nh35",
+  "case": {
+    "shape": "round",
+    "profile": "curved",
+    "diameterMm": 42,
+    "thicknessMm": 13.54,
+    "lugToLugMm": 47.5,
+    "lugWidthMm": 20,
+    "lugs": "curved",
+    "material": "steel",
+    "finish": "mixed",
+    "caseback": "solid"
+  },
+  "crown": {
+    "style": "fluted",
+    "position": "3h",
+    "guard": false,
+    "screwed": false
+  },
+  "bezel": {
+    "type": "smooth",
+    "insert": "none",
+    "scale": "none",
+    "color": "#101418",
+    "pip": "none",
+    "angleDeg": 0
+  },
+  "crystal": {
+    "type": "acrylic",
+    "coating": "none",
+    "cyclops": false
+  },
+  "rehaut": {
+    "profile": "sloped",
+    "finish": "custom",
+    "color": "#121416",
+    "scale": "tachymeter"
+  },
+  "dial": {
+    "size": "open",
+    "shape": "round",
+    "material": "metal",
+    "finish": "matte",
+    "color": "#121416",
+    "pattern": null,
+    "chapterRing": "ticks",
+    "indices": {
+      "style": "baton",
+      "finish": "applied-polished",
+      "lume": null,
+      "numerals": "none",
+      "numeralFont": "sans",
+      "numeralSize": 1,
+      "numeralRadius": 1,
+      "numeralColor": "match",
+      "indexSize": 0.95,
+      "indexRadius": 1.04
+    },
+    "text": {
+      "brand": "",
+      "line2": "",
+      "position": "12h"
+    }
+  },
+  "hands": {
+    "set": "pencil",
+    "finish": "lacquer",
+    "color": "#F3F1E8",
+    "lume": null,
+    "second": {
+      "style": "thin",
+      "color": "#F3F1E8",
+      "counterweight": false
+    }
+  },
+  "complications": [
+    {
+      "type": "chronograph",
+      "position": "tricompax",
+      "counters": "black",
+      "pushers": "round"
+    }
+  ],
+  "strap": {
+    "type": "metal",
+    "material": "steel",
+    "color": "#151515",
+    "stitching": null,
+    "widthMm": 20,
+    "buckle": "folding"
+  },
+  "view": {
+    "time": "fixed",
+    "lighting": "studio",
+    "night": false
+  }
+}

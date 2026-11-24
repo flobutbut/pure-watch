@@ -5,6 +5,7 @@ import { dialRadiusAt } from '../../core/geometry/dial-shape';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
 import { effectiveDialColor, numeralColor } from '../../core/config/dial';
+import { numeralSystem } from '../../core/config/numerals';
 import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
@@ -17,6 +18,8 @@ import { buildCounters, buildSubdial, circleOutline, subdialOf } from './subdial
 import { buildReservePrint } from './power-reserve';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
+import { hasLume } from '../../core/config/lume';
+import { indexPlate } from './inserts';
 
 export interface DialParts {
   dial: THREE.Group;
@@ -101,6 +104,7 @@ export function buildDial(
       brand: config.dial.text.brand,
       line2: config.dial.text.line2,
       numerals: config.dial.indices.numerals,
+      numeralSystem: numeralSystem(config.dial.indices),
       numeralFont: config.dial.indices.numeralFont,
       numeralInk: numeralColor(config.dial),
       numeralSize: config.dial.indices.numeralSize,
@@ -274,46 +278,90 @@ export function buildIndices(
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = 'indices';
-  const design = indexDesign(config.dial.indices.style, d.dialSafeRadius);
-  if (!design) return group;
-
-  // Les heures qui portent un chiffre, ou le guichet de date, n'ont pas d'index.
+  // Each composition resolves to existing geometries, shared across its hours.
   const skip = new Set([
     ...numeralHours(config.dial.indices.numerals),
     ...complicationHours(config),
   ]);
-  const unit = design.geometry();
   const { indexSize: size, indexRadius: factor } = config.dial.indices;
-  if (size !== 1) unit.scale(size, size, 1);
-  // Half length along the radius, at the reference size and at the chosen one.
-  unit.computeBoundingBox();
-  // The 12 o'clock index may be enlarged: the edge limit applies to the largest one.
-  const half =
-    Math.max(-unit.boundingBox!.min.y, unit.boundingBox!.max.y) * Math.max(1, design.big ?? 1);
-  const half0 = half / size;
-  // Pushed outwards, an index stops before the minute track (≈ 0.9 R), unless the
-  // reference layout already reaches further.
-  const outer = Math.max(design.radius + half0, d.dialSafeRadius * 0.9);
-  const baseRadius = Math.min(design.radius * factor, outer - half);
+  const luminous = hasLume(config.dial.indices);
+  const printed = config.dial.indices.finish === 'printed';
+  const units = new Map<
+    string,
+    {
+      design: IndexDesign;
+      unit: THREE.BufferGeometry;
+      insert: THREE.BufferGeometry | null;
+      radius: number;
+    }
+  >();
   const parts: THREE.BufferGeometry[] = [];
+  const inserts: THREE.BufferGeometry[] = [];
   for (let hour = 0; hour < 12; hour++) {
     if (skip.has(hour)) continue;
+    const style = config.dial.indices.style;
+    const resolved =
+      style === 'dive'
+        ? hour === 0
+          ? 'triangles'
+          : hour % 3 === 0
+            ? 'baton'
+            : 'dots'
+        : style === 'mixed-batons'
+          ? hour % 3 === 0
+            ? 'baton-facet'
+            : 'dots'
+          : style;
+    let prepared = units.get(resolved);
+    if (!prepared) {
+      const design = indexDesign(resolved, d.dialSafeRadius);
+      if (!design) continue;
+      let unit = design.geometry();
+      let insert: THREE.BufferGeometry | null = null;
+      if (luminous || printed) {
+        const plate = indexPlate(unit, luminous, printed);
+        unit.dispose();
+        unit = plate.base;
+        insert = plate.insert;
+      }
+      if (size !== 1) {
+        unit.scale(size, size, 1);
+        insert?.scale(size, size, 1);
+      }
+      unit.computeBoundingBox();
+      const half =
+        Math.max(-unit.boundingBox!.min.y, unit.boundingBox!.max.y) * Math.max(1, design.big ?? 1);
+      const outer = Math.max(design.radius + half / size, d.dialSafeRadius * 0.9);
+      prepared = { design, unit, insert, radius: Math.min(design.radius * factor, outer - half) };
+      units.set(resolved, prepared);
+    }
+    const { design, unit, insert, radius: baseRadius } = prepared;
     const angle = (hour / 12) * Math.PI * 2;
     const twelve = hour === 0;
     const offsets = twelve && design.twin ? [-design.twin * size, design.twin * size] : [0];
     for (const dx of offsets) {
-      const g = unit.clone();
-      if (twelve && design.big) g.scale(design.big, design.big, 1);
       const radius =
         d.dialShape === 'round'
           ? baseRadius
           : (baseRadius / d.dialSafeRadius) * dialRadiusAt(d, Math.PI / 2 - angle);
-      g.translate(dx, radius, 0);
-      g.rotateZ(-angle);
-      parts.push(g.index ? g.toNonIndexed() : g);
+      for (const [source, destination] of [
+        [unit, parts],
+        [insert, inserts],
+      ] as const) {
+        if (!source) continue;
+        const g = source.clone();
+        if (twelve && design.big) g.scale(design.big, design.big, 1);
+        g.translate(dx, radius, 0);
+        g.rotateZ(-angle);
+        destination.push(g.index ? g.toNonIndexed() : g);
+        if (g.index) g.dispose();
+      }
     }
   }
-  unit.dispose();
+  for (const { unit, insert } of units.values()) {
+    unit.dispose();
+    insert?.dispose();
+  }
   if (parts.length === 0) return group;
   for (const g of parts) {
     g.deleteAttribute('uv');
@@ -321,7 +369,22 @@ export function buildIndices(
   }
   const merged = mergeGeometries(parts);
   for (const g of parts) g.dispose();
-  group.add(new THREE.Mesh(merged, lib.polishedSteel()));
+  const material =
+    printed && luminous
+      ? lib.luminous(config.dial.indices)
+      : config.dial.indices.finish === 'applied-polished'
+        ? lib.polishedSteel()
+        : lib.indexMaterial(config);
+  const base = new THREE.Mesh(merged, material);
+  base.name = printed ? 'indices-printed' : 'indices-metal';
+  group.add(base);
+  if (inserts.length) {
+    const joined = mergeGeometries(inserts);
+    for (const g of inserts) g.dispose();
+    const mesh = new THREE.Mesh(joined, lib.luminous(config.dial.indices));
+    mesh.name = 'indices-lume';
+    group.add(mesh);
+  }
   return group;
 }
 
