@@ -5,6 +5,7 @@
 import type { Catalog, RowDef } from '../core/catalog/types';
 import type { WatchConfig } from '../core/config/types';
 import { getAtPath } from '../core/config/path';
+import { hasBezelInsert } from '../core/config/bezel';
 import { watchDimensions } from '../core/geometry/dimensions';
 import { crownMount } from '../core/geometry/crown-mount';
 import { applyVariant } from '../core/nav/selection';
@@ -43,8 +44,7 @@ function relevantConfig(
   for (const layer of layers ?? LAYERS) for (const key of LAYER_DEPENDENCIES[layer]) keys.add(key);
   const out: Record<string, unknown> = {};
   for (const key of [...keys].sort())
-    out[key] =
-      key === 'dial.shape' && config.bezel.type === 'rotating' ? 'round' : getAtPath(config, key);
+    out[key] = key === 'dial.shape' && hasBezelInsert(config) ? 'round' : getAtPath(config, key);
   return out;
 }
 
@@ -166,6 +166,11 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     frame: headFrame,
   },
   'bezel-scale': {
+    layers: ['case', 'rehaut', 'dial'],
+    context: neutralDial,
+    frame: headFrame,
+  },
+  'fixed-bezel-scale': {
     layers: ['case', 'rehaut', 'dial'],
     context: neutralDial,
     frame: headFrame,
@@ -297,6 +302,7 @@ export class PartRenderer3D implements PartRenderer {
       togglePause: () => stage.togglePause(),
       setBezelControl: (enabled, onchange) => stage.setBezelControl(enabled, onchange),
       setDisplayScale: (scale) => stage.setDisplayScale(scale),
+      capture: (sizePx, background) => stage.capture(sizePx, background),
       destroy: () => {
         if (this.stage === stage) this.stage = null;
         stage.dispose();

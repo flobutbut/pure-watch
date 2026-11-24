@@ -1,19 +1,34 @@
 <script lang="ts">
   import AboutDialog from './AboutDialog.svelte';
-  import ShareDialog from './ShareDialog.svelte';
   import { LOCALES } from '../core/i18n/locale';
   import { i18n, setLocale, t } from './i18n.svelte';
 
   let {
-    url,
+    sharing,
+    onshare,
     inspecting,
     colorEditing,
     sheetShown = false,
-  }: { url: string; inspecting: boolean; colorEditing: boolean; sheetShown?: boolean } = $props();
+  }: {
+    /** The share panel is open beside the 3D watch. */
+    sharing: boolean;
+    onshare: () => void;
+    inspecting: boolean;
+    colorEditing: boolean;
+    sheetShown?: boolean;
+  } = $props();
   let shareButton: HTMLButtonElement;
   let aboutButton = $state<HTMLButtonElement>();
-  let shareDialog: ShareDialog;
   let aboutDialog: AboutDialog;
+  // Focus returns to the button when the panel closes, unless it already went elsewhere.
+  let wasSharing = false;
+  $effect(() => {
+    if (wasSharing && !sharing) {
+      const active = document.activeElement;
+      if (!active || active === document.body) shareButton.focus({ preventScroll: true });
+    }
+    wasSharing = sharing;
+  });
 </script>
 
 <header class="app-header">
@@ -26,8 +41,9 @@
   <button
     class="share-button"
     bind:this={shareButton}
-    onclick={() => shareDialog.open(url)}
+    onclick={onshare}
     aria-haspopup="dialog"
+    aria-expanded={sharing}
     aria-label={t().chrome.shareLabel}
   >
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -80,7 +96,6 @@
   </footer>
 {/if}
 
-<ShareDialog bind:this={shareDialog} onclose={() => shareButton.focus({ preventScroll: true })} />
 <AboutDialog bind:this={aboutDialog} onclose={() => aboutButton?.focus({ preventScroll: true })} />
 
 <style>

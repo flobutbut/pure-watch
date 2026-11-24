@@ -424,10 +424,30 @@ export function readConfigUrl(url: URL, catalog: Catalog): ConfigLink {
   };
 }
 
+/**
+ * A received link opens on the 3D preview. The marker belongs to shared links only: it is
+ * read once at load, then the address bar drops it, so a reload of one's own page does not
+ * keep jumping into the preview.
+ */
+const PREVIEW_PARAM = 'view';
+const PREVIEW_VALUE = '3d';
+
 /** Preserve route and unrelated diagnostics; the pilot name no longer owns the configuration. */
 export function configUrl(config: WatchConfig, source: URL): URL {
   const url = new URL(source.href);
   url.searchParams.delete('pilot');
+  url.searchParams.delete(PREVIEW_PARAM);
   url.hash = encodeConfigHash(config);
   return url;
+}
+
+/** The link handed to someone else: the configuration, opening on the 3D preview. */
+export function shareUrl(config: WatchConfig, source: URL): URL {
+  const url = configUrl(config, source);
+  url.searchParams.set(PREVIEW_PARAM, PREVIEW_VALUE);
+  return url;
+}
+
+export function opensPreview(url: URL): boolean {
+  return url.searchParams.get(PREVIEW_PARAM) === PREVIEW_VALUE;
 }

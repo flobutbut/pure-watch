@@ -48,6 +48,11 @@ export interface LiveWatch {
    * le rendu se fait à la taille réellement affichée, pour rester net.
    */
   setDisplayScale(scale: number): void;
+  /**
+   * PNG image of the live view as it stands (angle, time, lighting), rendered at
+   * `sizePx` on its longer side, on `background` (a CSS colour) or transparent.
+   */
+  capture(sizePx: number, background?: string): Promise<Blob>;
   destroy(): void;
 }
 

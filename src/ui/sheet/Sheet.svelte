@@ -14,6 +14,8 @@
     modal?: boolean;
     /** « side » : centré à droite ; « stage » : sous les outils de la vue 3D. */
     placement?: 'side' | 'stage';
+    /** Non-modal, Escape still closes the panel itself rather than the view behind it. */
+    closeOnEscape?: boolean;
     onclose: () => void;
     children: Snippet;
     /** Stays in place above the scrolling body (tabs, for instance). */
@@ -27,6 +29,7 @@
     closeLabel,
     modal = false,
     placement = 'side',
+    closeOnEscape = false,
     onclose,
     children,
     toolbar,
@@ -75,6 +78,12 @@
     onclose();
   }}
   onkeydown={(event) => {
+    if (closeOnEscape && !modal && event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      onclose();
+      return;
+    }
     // Modal, the panel owns the keyboard; otherwise the 3D view keeps its shortcuts.
     if (modal) event.stopPropagation();
   }}
