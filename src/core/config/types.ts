@@ -40,7 +40,16 @@ export interface BezelConfig {
   /** Clockwise position of the bezel's zero marker, in degrees. */
   angleDeg: number;
   type: Open<
-    'smooth' | 'thin' | 'thick' | 'coin' | 'fluted' | 'notched' | 'rotating' | 'rounded' | 'stepped'
+    | 'smooth'
+    | 'thin'
+    | 'thick'
+    | 'coin'
+    | 'fluted'
+    | 'notched'
+    | 'rotating'
+    | 'rounded'
+    | 'stepped'
+    | 'fixed-scale'
   >;
   insert: Open<'none' | 'aluminium' | 'ceramic' | 'sapphire' | 'engraved-steel'>;
   scale: Open<'none' | 'dive-60' | '12h' | '24h' | 'tachymeter' | 'pulsometer' | 'telemeter'>;

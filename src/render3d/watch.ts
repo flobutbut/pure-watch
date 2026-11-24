@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import type { HandAngles } from '../core/clock/angles';
 import { isBlackTonneau } from '../core/config/instrument';
 import type { WatchConfig } from '../core/config/types';
+import { hasBezelInsert } from '../core/config/bezel';
 import { watchDimensions, type WatchDimensions } from '../core/geometry/dimensions';
 import type { CrystalQuality, MaterialLibrary } from './materials';
 import type { Refinement } from './refinement';
@@ -19,7 +20,7 @@ import { buildDial } from './parts/dial';
 import { buildHands } from './parts/hands';
 import { buildLugs } from './parts/lugs';
 import { decorateRehaut } from './parts/rehaut';
-import { buildRotatingBezel } from './parts/rotating-bezel';
+import { buildGraduatedBezel } from './parts/rotating-bezel';
 
 export const LAYERS = [
   'case',
@@ -101,11 +102,11 @@ export function buildWatch(
           crystalSurface: crystalSurface(config, d, crystalRefined),
         })
       : null;
-  const rotatingBezel =
-    config.bezel.type === 'rotating' && caseParts && wanted('case')
-      ? buildRotatingBezel(config, d, lib, options.printSize)
+  const graduatedBezel =
+    hasBezelInsert(config) && caseParts && wanted('case')
+      ? buildGraduatedBezel(config, d, lib, options.printSize)
       : null;
-  if (rotatingBezel) caseParts!.case.add(rotatingBezel.group);
+  if (graduatedBezel) caseParts!.case.add(graduatedBezel.group);
   const detailedHands = options.handDetail
     ? options.handDetail === 'refined'
     : options.refinement !== 'legacy';
@@ -163,9 +164,11 @@ export function buildWatch(
     root,
     layers,
     dimensions: d,
-    ready: Promise.all([dialParts?.ready, rehautPrint?.ready, rotatingBezel?.ready]).then(() => {}),
+    ready: Promise.all([dialParts?.ready, rehautPrint?.ready, graduatedBezel?.ready]).then(
+      () => {},
+    ),
     setAngles: hands.setAngles,
-    setBezelAngle: (angle) => rotatingBezel?.setAngle(angle),
+    setBezelAngle: (angle) => graduatedBezel?.setAngle(angle),
     showOnly(visible) {
       for (const layer of LAYERS) layers[layer].visible = !visible || visible.includes(layer);
     },
@@ -175,7 +178,7 @@ export function buildWatch(
       disposeGeometries(root);
       for (const resource of dialParts?.owned ?? []) resource.dispose();
       for (const resource of rehautPrint?.owned ?? []) resource.dispose();
-      for (const resource of rotatingBezel?.owned ?? []) resource.dispose();
+      for (const resource of graduatedBezel?.owned ?? []) resource.dispose();
       root.removeFromParent();
     },
   };

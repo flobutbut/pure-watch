@@ -120,6 +120,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     rotating: 7,
     rounded: 8,
     stepped: 9,
+    'fixed-scale': 10,
   }),
   o: field('bezel.insert', id, {
     none: 1,

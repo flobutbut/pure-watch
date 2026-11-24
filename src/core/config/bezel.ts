@@ -9,6 +9,7 @@ export const BEZEL_TYPES = [
   'coin',
   'notched',
   'rotating',
+  'fixed-scale',
 ] as const;
 export type BezelType = (typeof BEZEL_TYPES)[number];
 export function effectiveBezelType(type: string): BezelType {
@@ -18,7 +19,17 @@ export function bezelTypeForConfig(config: WatchConfig): BezelType {
   return effectiveBezelType(config.bezel.type);
 }
 
-export function bezelScale(config: WatchConfig): 'dive-60' | '12h' | '24h' {
+/** A printed circular insert needs a circular glass seat, whether fixed or rotating. */
+export function hasBezelInsert(config: WatchConfig): boolean {
+  return config.bezel.type === 'rotating' || config.bezel.type === 'fixed-scale';
+}
+
+export function bezelScale(config: WatchConfig): 'dive-60' | '12h' | '24h' | 'tachymeter' {
+  if (config.bezel.type === 'fixed-scale') {
+    if (['dive-60', '12h', '24h'].includes(config.bezel.scale))
+      return config.bezel.scale as 'dive-60' | '12h' | '24h';
+    return 'tachymeter';
+  }
   return config.bezel.scale === '12h' ? '12h' : config.bezel.scale === '24h' ? '24h' : 'dive-60';
 }
 /** 120 clicks per revolution; clockwise degrees, zero at twelve. */

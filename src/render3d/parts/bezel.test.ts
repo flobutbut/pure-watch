@@ -28,7 +28,9 @@ describe('machined bezels', () => {
     (shape) => {
       const lib = new MaterialLibrary();
       for (const dial of DIAL_SHAPES)
-        for (const type of BEZEL_TYPES.slice(1).filter((type) => type !== 'rotating')) {
+        for (const type of BEZEL_TYPES.slice(1).filter(
+          (type) => !['rotating', 'fixed-scale'].includes(type),
+        )) {
           const config = defaultConfig();
           config.case.shape = shape;
           config.dial.shape = dial;

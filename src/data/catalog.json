@@ -643,7 +643,7 @@
       "priority": "P1",
       "i18n": {
         "name": "Lunette",
-        "hint": "La lunette tournante utilise une ouverture ronde"
+        "hint": "Les lunettes à insert gradué utilisent une ouverture ronde"
       },
       "variants": [
         {
@@ -695,6 +695,14 @@
           }
         },
         {
+          "id": "fixed-scale",
+          "value": "fixed-scale",
+          "preview": "bezel/fixed-scale.svg",
+          "i18n": {
+            "name": "Fixe graduée · ouverture ronde"
+          }
+        },
+        {
           "id": "rotating",
           "value": "rotating",
           "preview": "bezel/rotating.svg",
@@ -743,6 +751,43 @@
           "i18n": {
             "name": "24 heures"
           }
+        }
+      ]
+    },
+    {
+      "id": "fixed-bezel-scale",
+      "group": "case",
+      "kind": "enum",
+      "path": "bezel.scale",
+      "previewContext": "case-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": { "name": "Graduation de lunette" },
+      "visibleWhen": { "path": "bezel.type", "equals": "fixed-scale" },
+      "variants": [
+        {
+          "id": "tachymeter",
+          "value": "tachymeter",
+          "preview": "bezel-scale/tachymeter.svg",
+          "i18n": { "name": "Tachymètre" }
+        },
+        {
+          "id": "dive-60",
+          "value": "dive-60",
+          "preview": "bezel-scale/dive-60.svg",
+          "i18n": { "name": "60 minutes" }
+        },
+        {
+          "id": "12h",
+          "value": "12h",
+          "preview": "bezel-scale/12h.svg",
+          "i18n": { "name": "12 heures" }
+        },
+        {
+          "id": "24h",
+          "value": "24h",
+          "preview": "bezel-scale/24h.svg",
+          "i18n": { "name": "24 heures" }
         }
       ]
     },
@@ -959,7 +1004,7 @@
       ],
       "visibleWhen": {
         "path": "bezel.type",
-        "notEquals": "rotating"
+        "notIn": ["rotating", "fixed-scale"]
       }
     },
     {

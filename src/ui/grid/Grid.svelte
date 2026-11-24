@@ -4,7 +4,7 @@
   import { targetColor, type ColorTarget } from '../../core/config/colors';
   import { tint } from '../../core/color/names';
   import { hasIntrinsicColor } from '../../core/config/dial';
-  import { turnBezel } from '../../core/config/bezel';
+  import { hasBezelInsert, turnBezel } from '../../core/config/bezel';
   import { matchesValue } from '../../core/config/path';
   import { mm } from '../../core/movement/compatibility';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
@@ -396,7 +396,7 @@
       : tint(targetColor(config, target), i18n.locale).name;
 
   const colorForRow = (id: string): ColorTarget | null =>
-    id === 'bezel' && config.bezel.type === 'rotating'
+    id === 'bezel' && hasBezelInsert(config)
       ? 'bezel'
       : id === 'dial-finish'
         ? 'dial'
