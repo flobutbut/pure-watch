@@ -135,6 +135,13 @@ export function detectCrystalQuality(): CrystalQuality {
   return navigator.hardwareConcurrency > 4 && !coarse ? 'transmission' : 'fallback';
 }
 
+/** Whether `object` is `ancestor` (or named so) or sits inside it. */
+function within(object: THREE.Object3D, ancestor: THREE.Object3D | string): boolean {
+  for (let node: THREE.Object3D | null = object; node; node = node.parent)
+    if (node === ancestor || node.name === ancestor) return true;
+  return false;
+}
+
 export class Stage {
   readonly renderer: THREE.WebGLRenderer;
   private readonly refinement = refinementFromSearch(location.search);
@@ -227,11 +234,13 @@ export class Stage {
     this.floating.updateWorldMatrix(true, true);
     this.bezelRay.setFromCamera(pointer, this.camera);
     if (hitTest) {
-      // A rear view must not let the user grab the hidden ring through the caseback.
-      let object: THREE.Object3D | null =
-        this.bezelRay.intersectObject(this.live.root, true)[0]?.object ?? null;
-      while (object && object !== ring) object = object.parent;
-      if (!object) return null;
+      // The first solid surface under the pointer must belong to the ring: a rear view
+      // must not grab the hidden ring through the caseback. The crystal is see-through
+      // and overlaps the ring's inner edge, so it never stops the grab.
+      const solid = this.bezelRay
+        .intersectObject(this.live.root, true)
+        .find((hit) => !within(hit.object, 'crystal'));
+      if (!solid || !within(solid.object, ring)) return null;
     }
     const normal = new THREE.Vector3(0, 0, 1).transformDirection(ring.matrixWorld);
     const origin = new THREE.Vector3(0, 0, this.live.dimensions.z.bezelTop - 0.045).applyMatrix4(
@@ -268,7 +277,11 @@ export class Stage {
     if (angle === null) return;
     const delta = -Math.atan2(Math.sin(angle - drag.angle), Math.cos(angle - drag.angle)) / DEG;
     drag.angle = angle;
-    drag.remainder += bezelScale(config) === 'dive-60' ? Math.min(0, delta) : delta;
+    // A diving bezel only turns anticlockwise: forcing it the other way shows it is locked.
+    const oneWay = bezelScale(config) === 'dive-60';
+    if (oneWay && Math.abs(delta) > 0.5)
+      this.renderer.domElement.style.cursor = delta > 0 ? 'not-allowed' : 'grabbing';
+    drag.remainder += oneWay ? Math.min(0, delta) : delta;
     const step = Math.trunc(drag.remainder / 3) * 3;
     if (!step) return;
     drag.remainder -= step;
