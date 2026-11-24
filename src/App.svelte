@@ -37,6 +37,7 @@
   let lastConfigUrl = location.href;
   let config = $state.raw(initialConfig);
   let colorTarget = $state<ColorTarget | null>(null);
+  const editing = $derived(colorTarget !== null);
   let cardShown = $state(false);
   let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
@@ -56,15 +57,27 @@
   let announcement = $state('');
   let renderer = $state.raw<PartRenderer | null>(null);
   const ambience = $derived(ambienceFor((previewConfig ?? config).dial));
-  const colorPresets = $derived(
-    (
+  const colorPresets = $derived([
+    // Chiffres : blanc et noir d'impression, puis les accents de la trotteuse.
+    ...(colorTarget === 'numerals'
+      ? [
+          { name: 'Blanc', color: '#F2F1EC' },
+          { name: 'Noir', color: '#1B1F27' },
+          { name: 'Or', color: '#C9A24A' },
+        ]
+      : []),
+    ...(
       catalog.rows.find(
-        (row) => row.id === (colorTarget === 'seconds' ? 'seconds-color' : 'dial-color'),
+        (row) =>
+          row.id ===
+          (colorTarget === 'seconds' || colorTarget === 'numerals'
+            ? 'seconds-color'
+            : 'dial-color'),
       )?.variants ?? []
     )
       .filter((variant) => typeof variant.value === 'string' && variant.value.startsWith('#'))
       .map((variant) => ({ name: variant.i18n.name, color: variant.value as string })),
-  );
+  ]);
 
   /** Leaves the panel without touching the configuration (a link took over). */
   function dropColor() {
@@ -81,7 +94,12 @@
     if (next && encodeConfigHash(next) !== encodeConfigHash(config)) {
       config = next;
       linkNotice = '';
-      announcement = 'Couleur enregistrée';
+      announcement =
+        colorTarget === 'numerals'
+          ? 'Réglages des chiffres enregistrés'
+          : colorTarget === 'indices'
+            ? 'Réglages des index enregistrés'
+            : 'Couleur enregistrée';
     }
     dropColor();
   }
@@ -157,7 +175,7 @@
   });
 
   function run(command: NavCommand) {
-    if (colorTarget) return;
+    if (editing) return;
     const result = step(nav, rowViews, command);
     if (result.bump) bump = { dir: result.bump, n: bump.n + 1 };
     if (!result.changed) return;
@@ -190,7 +208,7 @@
   let modeTimer: ReturnType<typeof setTimeout> | undefined;
 
   function open() {
-    if (colorTarget) return;
+    if (editing) return;
     if (nav.mode !== 'grid') return;
     nav = transition(nav, 'open');
     announcement = 'Vue 3D : faites glisser pour tourner la montre, Échap pour revenir';
@@ -220,7 +238,7 @@
   <AppChrome
     url={configUrl(config, new URL(location.href)).href}
     inspecting={nav.mode === 'view3d' || nav.mode === 'opening3d'}
-    colorEditing={colorTarget !== null}
+    colorEditing={editing}
     sheetShown={cardShown}
   />
   <Grid

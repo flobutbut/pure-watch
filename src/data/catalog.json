@@ -1357,7 +1357,7 @@
       "looping": true,
       "priority": "P0",
       "i18n": {
-        "name": "Typographie des chiffres"
+        "name": "Style des chiffres"
       },
       "visibleWhen": {
         "path": "dial.indices.numerals",
@@ -1450,6 +1450,38 @@
           "preview": "numeral-font/italic.svg",
           "i18n": {
             "name": "Italique"
+          }
+        },
+        {
+          "id": "black",
+          "value": "black",
+          "preview": "numeral-font/black.svg",
+          "i18n": {
+            "name": "Très grasse"
+          }
+        },
+        {
+          "id": "slab",
+          "value": "slab",
+          "preview": "numeral-font/slab.svg",
+          "i18n": {
+            "name": "Slab épaisse"
+          }
+        },
+        {
+          "id": "fat-face",
+          "value": "fat-face",
+          "preview": "numeral-font/fat-face.svg",
+          "i18n": {
+            "name": "Didone grasse"
+          }
+        },
+        {
+          "id": "stencil",
+          "value": "stencil",
+          "preview": "numeral-font/stencil.svg",
+          "i18n": {
+            "name": "Pochoir"
           }
         }
       ]

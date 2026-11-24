@@ -78,8 +78,6 @@
 </script>
 
 <Modal bind:this={modal} title="Partager votre montre" closeLabel="Fermer le partage" {onclose}>
-  <p class="lead">Ce lien contient tous les choix de votre configuration.</p>
-
   <ul class="networks">
     {#each networks as network (network.name)}
       <li>
@@ -142,12 +140,6 @@
 </Modal>
 
 <style>
-  .lead {
-    margin: -6px 0 20px;
-    font-size: 12px;
-    line-height: 1.6;
-    opacity: 0.75;
-  }
   .networks {
     display: grid;
     grid-template-columns: repeat(6, 1fr);

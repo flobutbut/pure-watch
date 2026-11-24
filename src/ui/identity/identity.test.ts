@@ -33,6 +33,46 @@ describe('fiche d’identité', () => {
     });
   });
 
+  it('détaille la taille, la position et la couleur des chiffres sous leur style', () => {
+    const config = defaultConfig();
+    expect(
+      identitySections(visibleRows(catalog.rows, config), config)
+        .flatMap((s) => s.traits)
+        .find((t) => t.label === 'Taille des chiffres'),
+    ).toBeUndefined();
+    config.dial.indices.numerals = 'all';
+    config.dial.indices.numeralSize = 1.3;
+    config.dial.indices.numeralColor = '#D7262E';
+    const all = identitySections(visibleRows(catalog.rows, config), config).flatMap(
+      (s) => s.traits,
+    );
+    const labels = all.map((t) => t.label);
+    const style = labels.indexOf('Style des chiffres');
+    expect(labels.slice(style, style + 4)).toEqual([
+      'Style des chiffres',
+      'Taille des chiffres',
+      'Position des chiffres',
+      'Couleur des chiffres',
+    ]);
+    expect(all.find((t) => t.label === 'Taille des chiffres')?.value).toBe(
+      '130 % de la taille standard',
+    );
+    expect(all.find((t) => t.label === 'Position des chiffres')?.value).toBe('Standard');
+    expect(all.find((t) => t.label === 'Couleur des chiffres')?.swatch).toBe('#D7262E');
+  });
+
+  it('détaille la taille et la position des index', () => {
+    const config = defaultConfig();
+    config.dial.indices.indexRadius = 0.85;
+    const all = identitySections(visibleRows(catalog.rows, config), config).flatMap(
+      (s) => s.traits,
+    );
+    expect(all.find((t) => t.label === 'Taille des index')?.value).toBe('Standard');
+    expect(all.find((t) => t.label === 'Position des index')?.value).toBe(
+      '85 % de la distance standard',
+    );
+  });
+
   it('donne la valeur réellement portée par la montre', () => {
     const config = defaultConfig();
     config.bezel = { ...config.bezel, type: 'rotating', scale: 'none' };

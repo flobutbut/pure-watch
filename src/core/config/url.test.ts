@@ -137,6 +137,36 @@ describe('versioned watch links', () => {
     expect(result.notice).not.toBe('');
   });
 
+  it('carries the numeral size, position, colour and the bold typefaces', () => {
+    const config = defaultConfig();
+    config.dial.indices.numerals = 'all';
+    config.dial.indices.numeralFont = 'black';
+    config.dial.indices.numeralSize = 1.45;
+    config.dial.indices.numeralRadius = 0.73;
+    config.dial.indices.numeralColor = '#C9A24A';
+    config.dial.indices.indexSize = 1.25;
+    config.dial.indices.indexRadius = 0.9;
+    const back = decodeConfigHash(encodeConfigHash(config), catalog);
+    expect(back.notice).toBe('');
+    expect(back.config.dial.indices).toMatchObject({
+      numeralFont: 'black',
+      numeralSize: 1.45,
+      numeralRadius: 0.73,
+      numeralColor: '#C9A24A',
+      indexSize: 1.25,
+      indexRadius: 0.9,
+    });
+    // Older links have none of these fields: the reference layout and ink are kept.
+    const old = decodeConfigHash(encodeConfigHash(defaultConfig()), catalog).config;
+    expect(old.dial.indices).toMatchObject({
+      numeralSize: 1,
+      numeralRadius: 1,
+      numeralColor: 'match',
+      indexSize: 1,
+      indexRadius: 1,
+    });
+  });
+
   it('defaults invalid fields independently and ignores unknown keys', () => {
     const result = decodeConfigHash(
       hash({ a: 999, b: -5, c: 1000, x: '#oops', I: 4, l: 'yes', unknown: { anything: true } }),

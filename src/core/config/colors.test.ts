@@ -48,6 +48,41 @@ describe('free colours', () => {
     expect(targetColor(seconds, 'seconds')).toBe('#C92750');
     expect(colorChoice(seconds, 'hands')).toEqual({ color: '#C92750', finish: 'lacquer' });
   });
+  it('numerals follow the print ink until a tint is chosen, and can return to it', () => {
+    const config = defaultConfig();
+    config.dial.indices.numerals = 'all';
+    expect(colorChoice(config, 'numerals').color).toBe('match');
+    // Dark default dial: light ink. A cream dial gets dark numerals without any choice.
+    expect(targetColor(config, 'numerals')).toBe('#F2F1EC');
+    expect(targetColor({ ...config, dial: { ...config.dial, color: '#EAE6DC' } }, 'numerals')).toBe(
+      '#1B1F27',
+    );
+    const gold = withColorChoice(config, 'numerals', { color: '#C9A24A', finish: 'print' });
+    expect(gold.dial.indices.numeralColor).toBe('#C9A24A');
+    expect(targetColor(gold, 'numerals')).toBe('#C9A24A');
+    expect(gold.dial.color).toBe(config.dial.color);
+    const back = withColorChoice(gold, 'numerals', { color: 'match', finish: 'print' });
+    expect(back.dial.indices.numeralColor).toBe('match');
+    // The same panel carries the size and position sliders.
+    expect(colorChoice(config, 'numerals').layout).toEqual({ size: 1, radius: 1 });
+    const moved = withColorChoice(config, 'numerals', {
+      color: 'match',
+      finish: 'print',
+      layout: { size: 1.4, radius: 0.7 },
+    });
+    expect(moved.dial.indices).toMatchObject({ numeralSize: 1.4, numeralRadius: 0.7 });
+    expect(colorChoice(config, 'dial').layout).toBeUndefined();
+    // Indices only have the two sliders: no colour is written.
+    const indices = withColorChoice(config, 'indices', {
+      color: '#D7262E',
+      finish: config.dial.indices.finish,
+      layout: { size: 1.2, radius: 0.8 },
+    });
+    expect(indices.dial.indices).toMatchObject({ indexSize: 1.2, indexRadius: 0.8 });
+    expect(indices.dial.indices.numeralColor).toBe('match');
+    expect(indices.dial.color).toBe(config.dial.color);
+  });
+
   it('all materials and custom colours survive links, older links stay steel', () => {
     const catalog = parseCatalog(rawCatalog);
     expect(decodeConfigHash('#v1.e30', catalog).config.hands.color).toBe('#E8EBF0');

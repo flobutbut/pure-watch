@@ -55,6 +55,8 @@
     onbezel,
     oncard,
   }: Props = $props();
+  /** A side panel is open: the grid steps back behind it. */
+  const editing = $derived(colorTarget !== null);
 
   let width = $state(0);
   let height = $state(0);
@@ -130,7 +132,7 @@
   }
 
   function onpointerdown(event: PointerEvent) {
-    if (open || colorTarget || event.button > 0 || (event.target as HTMLElement).closest('button'))
+    if (open || editing || event.button > 0 || (event.target as HTMLElement).closest('button'))
       return;
     const touch = event.pointerType !== 'mouse';
     // Zone de 20 px à gauche : réservée au geste « retour » du système (iOS).
@@ -206,7 +208,7 @@
   $effect(() => {
     // Écouteur non passif : on empêche le défilement de la page.
     const onwheel = (event: WheelEvent) => {
-      if (open || colorTarget) return;
+      if (open || editing) return;
       event.preventDefault();
       const { dx, dy } = wheelPixels(event);
       const step = stepper.push(dx, dy, event.timeStamp);
@@ -284,7 +286,7 @@
 
   function onkeydown(event: KeyboardEvent) {
     const target = event.target as HTMLElement;
-    if (colorTarget || target.closest('input, textarea, select')) return;
+    if (editing || target.closest('input, textarea, select')) return;
     // Inside the identity card, keys scroll and activate it; Escape still leaves the 3D view.
     if (target.closest('dialog') && event.key !== 'Escape') return;
     // Buttons retain their native activation; arrows still navigate after closing a colour panel.
@@ -346,16 +348,16 @@
       : Math.min(width * 0.86, cardBand.bottom - cardBand.top + 40, openSize),
   );
   const watchScale = $derived(
-    colorTarget
+    editing
       ? colorWatchSize / Math.max(1, openSize)
       : cardShown
         ? cardWatchSize / Math.max(1, openSize)
         : liveScale,
   );
-  const sidePanel = $derived(colorTarget !== null || cardShown);
-  const watchX = $derived(sidePanel && width >= 760 ? (colorTarget ? -175 : -182) : 0);
+  const sidePanel = $derived(editing || cardShown);
+  const watchX = $derived(sidePanel && width >= 760 ? (editing ? -175 : -182) : 0);
   const watchY = $derived(
-    colorTarget && width < 760
+    editing && width < 760
       ? -height * 0.3
       : cardShown && width < 760
         ? (cardBand.top + cardBand.bottom) / 2 - height / 2
@@ -382,7 +384,11 @@
             ? 'seconds'
             : id === 'rehaut'
               ? 'rehaut'
-              : null;
+              : id === 'numeral-font' && config.dial.indices.numerals !== 'none'
+                ? 'numerals'
+                : id === 'indices' && config.dial.indices.style !== 'none'
+                  ? 'indices'
+                  : null;
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -393,7 +399,7 @@
   class="grid"
   class:dragging={drag?.axis}
   class:open
-  class:color-editing={colorTarget !== null}
+  class:color-editing={editing}
   bind:this={grid}
   bind:clientWidth={width}
   bind:clientHeight={height}
@@ -411,7 +417,7 @@
   {onpointerup}
   onpointercancel={onpointerup}
 >
-  <div class="cells" inert={open || colorTarget !== null}>
+  <div class="cells" inert={open || editing}>
     {#each visibleRows as { row, rowIndex, cells } (row.id)}
       <div class="row" role="row" aria-label={row.i18n.name}>
         {#each cells as slot (row.variants[slot.variantIndex]!.id)}
@@ -512,22 +518,37 @@
                     ? 'Matière et couleur des aiguilles'
                     : target === 'rehaut'
                       ? 'Matière et couleur du réhaut'
-                      : 'Couleur de la trotteuse'}
+                      : target === 'numerals'
+                        ? 'Paramètres des chiffres : taille, position et couleur'
+                        : target === 'indices'
+                          ? 'Paramètres des index : taille et position'
+                          : 'Couleur de la trotteuse'}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              <span class="color-dot" style:background={targetColor(config, target)}></span>
+              {#if target === 'numerals' || target === 'indices'}
+                <svg class="settings-icon" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M2 5h12M2 11h12" />
+                  <circle cx="10.5" cy="5" r="1.8" />
+                  <circle cx="5.5" cy="11" r="1.8" />
+                </svg>
+              {:else}
+                <span class="color-dot" style:background={targetColor(config, target)}></span>
+              {/if}
               <span>
-                Couleur <span class="color-value">
-                  · {target === 'rehaut' && config.rehaut.finish !== 'custom'
-                    ? config.rehaut.finish === 'metal'
-                      ? 'Boîtier'
-                      : 'Cadran'
-                    : target === 'seconds' && config.hands.second.color === 'match'
-                      ? 'Assortie'
-                      : colorLabel(target)}
-                </span>
+                {target === 'numerals' || target === 'indices' ? 'Paramètres' : 'Couleur'}
+                {#if target !== 'indices'}<span class="color-value">
+                    · {target === 'rehaut' && config.rehaut.finish !== 'custom'
+                      ? config.rehaut.finish === 'metal'
+                        ? 'Boîtier'
+                        : 'Cadran'
+                      : target === 'seconds' && config.hands.second.color === 'match'
+                        ? 'Assortie'
+                        : target === 'numerals' && config.dial.indices.numeralColor === 'match'
+                          ? 'Encre'
+                          : colorLabel(target)}
+                  </span>{/if}
               </span>
             </button>
           {/if}
@@ -642,6 +663,16 @@
   .grid.color-editing .cells {
     opacity: 0.12;
     pointer-events: none;
+  }
+  .settings-icon {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.3;
+  }
+  .settings-icon circle {
+    fill: currentColor;
   }
   .color-button {
     display: inline-flex;

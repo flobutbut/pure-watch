@@ -7,7 +7,7 @@ import { dateComplication } from '../../core/config/date';
 import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
-import { effectiveDialColor, hasIntrinsicColor } from '../../core/config/dial';
+import { effectiveDialColor, hasIntrinsicColor, numeralColor } from '../../core/config/dial';
 import { getAtPath, matchesValue } from '../../core/config/path';
 import {
   effectiveRehautProfile,
@@ -132,6 +132,32 @@ function colorTraits(row: RowDef, config: WatchConfig): Trait[] {
         swatch: rehautColor(config),
         metal: config.rehaut.finish === 'metal',
       },
+    ];
+  }
+  // Taille, position et couleur se règlent dans le panneau de la ligne Style des chiffres.
+  if (row.id === 'numeral-font' && config.dial.indices.numerals !== 'none') {
+    const { numeralSize, numeralRadius, numeralColor: color } = config.dial.indices;
+    const share = (value: number, of: string) =>
+      Math.abs(value - 1) < 0.005 ? 'Standard' : `${Math.round(value * 100)} % ${of}`;
+    return [
+      { label: 'Taille des chiffres', value: share(numeralSize, 'de la taille standard') },
+      { label: 'Position des chiffres', value: share(numeralRadius, 'de la distance standard') },
+      color === 'match'
+        ? {
+            label: 'Couleur des chiffres',
+            value: 'Encre du cadran',
+            swatch: numeralColor(config.dial),
+          }
+        : painted('Couleur des chiffres', color),
+    ];
+  }
+  if (row.id === 'indices' && config.dial.indices.style !== 'none') {
+    const { indexSize, indexRadius } = config.dial.indices;
+    const share = (value: number, of: string) =>
+      Math.abs(value - 1) < 0.005 ? 'Standard' : `${Math.round(value * 100)} % ${of}`;
+    return [
+      { label: 'Taille des index', value: share(indexSize, 'de la taille standard') },
+      { label: 'Position des index', value: share(indexRadius, 'de la distance standard') },
     ];
   }
   if (row.id === 'bezel' && config.bezel.type === 'rotating')

@@ -105,7 +105,24 @@ export interface DialConfig {
       | 'condensed'
       | 'futurist'
       | 'italic'
+      | 'black'
+      | 'slab'
+      | 'fat-face'
+      | 'stencil'
     >;
+    /** Facteur de taille des chiffres des heures (1 = taille de référence). */
+    numeralSize: number;
+    /** Facteur de taille des index appliqués (1 = référence). */
+    indexSize: number;
+    /** Distance des index au centre, en facteur de leur position habituelle. */
+    indexRadius: number;
+    /** Teinte des chiffres des heures, ou « match » : l'encre de l'impression. */
+    numeralColor: HexColor | 'match';
+    /**
+     * Distance des chiffres au centre, en facteur du rayon de référence (1 = position
+     * habituelle ; plus petit = plus près du centre).
+     */
+    numeralRadius: number;
   };
   text: { brand: string; line2: string; position: ClockPosition };
 }
