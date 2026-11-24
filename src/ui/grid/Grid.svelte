@@ -4,7 +4,7 @@
   import { targetColor, type ColorTarget } from '../../core/config/colors';
   import { tint } from '../../core/color/names';
   import { hasIntrinsicColor } from '../../core/config/dial';
-  import { turnBezel } from '../../core/config/bezel';
+  import { hasBezelInsert, turnBezel } from '../../core/config/bezel';
   import { matchesValue } from '../../core/config/path';
   import { mm } from '../../core/movement/compatibility';
   import { selectedIndex, type Bump, type NavCommand, type NavState } from '../../core/nav/state';
@@ -12,6 +12,7 @@
   import LiveWatch from '../view3d/LiveWatch.svelte';
   import BezelControl from '../view3d/BezelControl.svelte';
   import IdentityCard from '../identity/IdentityCard.svelte';
+  import ShareDialog from '../ShareDialog.svelte';
   import Cell from './Cell.svelte';
   import { i18n, t } from '../i18n.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
@@ -45,6 +46,12 @@
     onbezel: (angle: number) => void;
     /** Signale l'affichage de la fiche d'identité (le pied de page lui laisse la place). */
     oncard?: (shown: boolean) => void;
+    /** Share panel, shown beside the watch in place of the identity card. */
+    share?: { url: string; prompt: string } | null;
+    /** `back`: also leave the 3D view if it was opened for sharing. */
+    onshareclose?: (back: boolean) => void;
+    /** Background the screenshot is laid on (the page's base colour). */
+    captureBackground?: string;
   }
 
   let {
@@ -65,6 +72,9 @@
     ondimensions,
     onbezel,
     oncard,
+    share = null,
+    onshareclose,
+    captureBackground,
   }: Props = $props();
   /** A side panel is open: the grid steps back behind it. */
   const editing = $derived(colorTarget !== null || dimensionsEditing);
@@ -249,11 +259,21 @@
   let bezelEditing = $state(false);
   /** Choix explicite de l'utilisateur ; par défaut la fiche s'ouvre sur grand écran. */
   let cardWanted = $state<boolean | null>(null);
-  const cardShown = $derived(open && (cardWanted ?? width >= 760));
+  const sharing = $derived(open && share !== null);
+  const cardShown = $derived(open && !sharing && (cardWanted ?? width >= 760));
+  /** One panel at a time beside the watch: the identity card or sharing. */
+  const panelShown = $derived(cardShown || sharing);
   function toggleCard() {
+    if (sharing) {
+      onshareclose?.(false);
+      cardWanted = true;
+      return;
+    }
     cardWanted = !cardShown;
   }
-  $effect(() => oncard?.(cardShown));
+  $effect(() => oncard?.(panelShown));
+  const CAPTURE_PX = 2048;
+  const capture = $derived(live ? () => live!.capture(CAPTURE_PX, captureBackground) : null);
   $effect(() =>
     live?.setBezelControl(open && config.bezel.type === 'rotating' && bezelEditing, onbezel),
   );
@@ -345,9 +365,13 @@
     return () => clearTimeout(timer);
   });
 
-  // Le focus revient sur la grille quand la vue 3D se referme (spec §3.7).
+  // Le focus revient sur la grille quand la vue 3D se referme (spec §3.7). Un lien reçu
+  // s'ouvre directement sur l'aperçu : la vue prend aussi le clavier au chargement, avant
+  // que la fiche ne s'ouvre (elle rend alors le focus à la vue, comme après Entrée).
+  let keyboardGiven = false;
   $effect(() => {
-    if (nav.mode === 'grid') grid.focus({ preventScroll: true });
+    if (nav.mode === 'grid' || !keyboardGiven) grid.focus({ preventScroll: true });
+    keyboardGiven = true;
   });
 
   /* ---------- Montre centrale : petite dans la grille, grande à l'ouverture ---------- */
@@ -372,16 +396,16 @@
   const watchScale = $derived(
     editing
       ? colorWatchSize / Math.max(1, openSize)
-      : cardShown
+      : panelShown
         ? cardWatchSize / Math.max(1, openSize)
         : liveScale,
   );
-  const sidePanel = $derived(editing || cardShown);
+  const sidePanel = $derived(editing || panelShown);
   const watchX = $derived(sidePanel && width >= 760 ? (editing ? -175 : -182) : 0);
   const watchY = $derived(
     editing && width < 760
       ? -height * 0.3
-      : cardShown && width < 760
+      : panelShown && width < 760
         ? (cardBand.top + cardBand.bottom) / 2 - height / 2
         : dragY + bumpY,
   );
@@ -396,7 +420,7 @@
       : tint(targetColor(config, target), i18n.locale).name;
 
   const colorForRow = (id: string): ColorTarget | null =>
-    id === 'bezel' && config.bezel.type === 'rotating'
+    id === 'bezel' && hasBezelInsert(config)
       ? 'bezel'
       : id === 'dial-finish'
         ? 'dial'
@@ -433,7 +457,7 @@
   style:--pitch="{metrics.pitch}px"
   style:--cell="{metrics.cell}px"
   style:--stage-x="{watchX}px"
-  style:--stage-bottom={cardShown && width < 760 ? 'calc(52dvh + 12px)' : null}
+  style:--stage-bottom={panelShown && width < 760 ? 'calc(52dvh + 12px)' : null}
   {onkeydown}
   {onpointerdown}
   {onpointermove}
@@ -665,7 +689,14 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
       </button>
     </div>
-    {#if cardShown && nav.mode === 'view3d'}
+    {#if sharing && share && nav.mode === 'view3d'}
+      <ShareDialog
+        url={share.url}
+        prompt={share.prompt}
+        {capture}
+        onclose={() => onshareclose?.(true)}
+      />
+    {:else if cardShown && nav.mode === 'view3d'}
       <IdentityCard {rows} {config} onclose={() => (cardWanted = false)} />
     {/if}
   {/if}

@@ -687,6 +687,39 @@ export class Stage {
   }
 
   /**
+   * Capture of the live view, redrawn at a higher definition than the screen: the WebGL
+   * buffer is read in the same task as the render, before the browser clears it, then the
+   * canvas returns to its displayed size.
+   */
+  capture(sizePx: number, background?: string): Promise<Blob> {
+    const aspect = this.width / Math.max(1, this.height) || 1;
+    const w = Math.round(aspect >= 1 ? sizePx : sizePx * aspect);
+    const h = Math.round(aspect >= 1 ? sizePx / aspect : sizePx);
+    const out = document.createElement('canvas');
+    out.width = w;
+    out.height = h;
+    const context = out.getContext('2d')!;
+    if (background) {
+      context.fillStyle = background;
+      context.fillRect(0, 0, w, h);
+    }
+    this.renderer.setSize(w, h, false);
+    try {
+      this.updateLiveShadow();
+      this.renderer.setScissorTest(false);
+      this.renderer.setViewport(0, 0, w, h);
+      this.renderer.render(this.scene, this.camera);
+      context.drawImage(this.renderer.domElement, 0, 0);
+    } finally {
+      this.renderer.setSize(this.width, this.height, false);
+      this.dirty = true;
+    }
+    return new Promise((resolve, reject) =>
+      out.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('capture'))), 'image/png'),
+    );
+  }
+
+  /**
    * Canvas à la taille réellement affichée, en pixels physiques : taille du conteneur
    * multipliée par l'échelle CSS de la page. La grille cale cette taille sur un nombre
    * entier de pixels : l'image s'affiche pixel pour pixel. Au-delà d'une densité de 2

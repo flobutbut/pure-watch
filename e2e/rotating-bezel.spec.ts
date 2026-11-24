@@ -64,6 +64,8 @@ test('la lunette tournante conserve sa couleur, sa graduation et sa position dan
   await page.getByRole('button', { name: 'Réinitialiser la lunette', exact: true }).click();
   expect(payload(page).ai).toBeUndefined();
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.getByRole('button', { name: 'Fermer la vue 3D', exact: true })).toHaveCount(0);
   await bezelRow(page);
   await page.keyboard.press('Home');
   expect(payload(page)).toMatchObject({ a: 5, aa: 5, p: 4, q: '#316C4E' });

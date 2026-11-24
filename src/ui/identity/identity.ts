@@ -1,7 +1,7 @@
 /** Contenu de la fiche d'identité : la configuration lue comme une fiche technique. */
 import type { RowDef } from '../../core/catalog/types';
 import { ralName, tint } from '../../core/color/names';
-import { bezelScale } from '../../core/config/bezel';
+import { bezelScale, hasBezelInsert } from '../../core/config/bezel';
 import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
 import { hasLume, lumeChoice, lumePigment } from '../../core/config/lume';
 import { dateComplication } from '../../core/config/date';
@@ -44,6 +44,7 @@ const groupTitle = (group: string, m: Messages['identity']) =>
 /** Values the renderer substitutes: the card shows what the watch actually wears. */
 const EFFECTIVE: Record<string, (config: WatchConfig) => unknown> = {
   'bezel-scale': bezelScale,
+  'fixed-bezel-scale': bezelScale,
   rehaut: effectiveRehautProfile,
   'rehaut-scale': effectiveRehautScale,
   // A rotating bezel needs a round opening, whatever the chosen dial outline.
@@ -162,7 +163,7 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
       { label: m.indexPosition, value: share(indexRadius, 'distance') },
     ];
   }
-  if (row.id === 'bezel' && config.bezel.type === 'rotating')
+  if (row.id === 'bezel' && hasBezelInsert(config))
     return [painted(m.bezelColor, config.bezel.color)];
   return [];
 }

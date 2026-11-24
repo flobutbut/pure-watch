@@ -9,6 +9,7 @@ import { contourExtents, effectiveDialShape, fitAperture } from './dial-shape';
 import type { WatchConfig } from '../config/types';
 import { dialOpeningFactor } from '../config/dial-size';
 import { effectiveRehautProfile } from '../config/rehaut';
+import { hasBezelInsert } from '../config/bezel';
 
 export interface WatchDimensions {
   /** Rayon extérieur du boîtier (hors couronne). */
@@ -57,9 +58,8 @@ export function watchDimensions(config: WatchConfig): WatchDimensions {
   const openingFactor = dialOpeningFactor(config.dial.size);
   const requestedOpening = (caseRadius - nominalBezel) * openingFactor;
   const bezelWidth = openingFactor === 1 ? nominalBezel : caseRadius - requestedOpening;
-  // A turning bezel and its glass seat need a circular opening, on every case outline.
-  const dialShape =
-    config.bezel.type === 'rotating' ? 'round' : effectiveDialShape(config.dial.shape);
+  // Graduated inserts and their glass seat need a circular opening on every case outline.
+  const dialShape = hasBezelInsert(config) ? 'round' : effectiveDialShape(config.dial.shape);
   // Circular apertures also need to fit the narrow sides of tonneau / rectangle cases.
   const available = caseRadius * contourExtents(config.case.shape).min - bezelWidth;
   const openingRadius =

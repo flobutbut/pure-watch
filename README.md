@@ -2,6 +2,8 @@
 
 Prototype web / mobile. Spécification : [`documentation/configurateur.md`](documentation/configurateur.md) · plan : [`documentation/plan-action.md`](documentation/plan-action.md).
 
+Évolutions issues des montres emblématiques : [lots réalisés et suite prévue](documentation/evolutions.md). Dernier lot : [lunette fixe graduée et tachymètre](documentation/fixed-bezel/README.md).
+
 ## Commandes
 
 | Commande           | Effet                                                                                   |

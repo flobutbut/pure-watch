@@ -26,15 +26,16 @@ export function rotatingBezelDimensions(config: WatchConfig, d: WatchDimensions)
   };
 }
 
-/** A separate, always circular part: the case, glass and rehaut never turn with it. */
-export function buildRotatingBezel(
+/** A separate circular insert. Only the rotating variant has grip cuts and an adjustable angle. */
+export function buildGraduatedBezel(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
   size = 2048,
 ) {
   const group = new THREE.Group();
-  group.name = 'rotating-bezel';
+  const rotating = config.bezel.type === 'rotating';
+  group.name = rotating ? 'rotating-bezel' : 'fixed-bezel';
   const { outer, inner, insertOuter, insertInner, bottom, top } = rotatingBezelDimensions(
     config,
     d,
@@ -66,11 +67,15 @@ export function buildRotatingBezel(
       ],
     },
   ];
-  for (const mesh of buildRuns(runs, (surface) => lib.caseMetal(config, surface), 720)) {
+  for (const mesh of buildRuns(
+    runs,
+    (surface) => lib.caseMetal(config, surface),
+    rotating ? 720 : 192,
+  )) {
     const p = mesh.geometry.getAttribute('position');
     for (let i = 0; i < p.count; i++) {
       const r = Math.hypot(p.getX(i), p.getY(i));
-      if (r < outer - 0.025 || p.getZ(i) > top - 0.09) continue;
+      if (!rotating || r < outer - 0.025 || p.getZ(i) > top - 0.09) continue;
       const cut = 0.09 * (0.5 + 0.5 * Math.cos(120 * Math.atan2(p.getY(i), p.getX(i)))) ** 2;
       p.setXY(i, (p.getX(i) * (r - cut)) / r, (p.getY(i) * (r - cut)) / r);
     }
@@ -117,7 +122,7 @@ export function buildRotatingBezel(
     ready = textureReady;
   }
   const setAngle = (angle: number) => {
-    group.rotation.z = (-bezelAngle(angle) * Math.PI) / 180;
+    if (rotating) group.rotation.z = (-bezelAngle(angle) * Math.PI) / 180;
   };
   setAngle(config.bezel.angleDeg);
   return { group, ready, owned, setAngle };

@@ -21,7 +21,7 @@ export function bezelProfile(
   root: P2,
 ): ProfileRun<Surface>[] | null {
   const kind = effectiveBezelType(type);
-  if (kind === 'rotating') {
+  if (kind === 'rotating' || kind === 'fixed-scale') {
     const { R, c, seat, rehautTop } = caseLevels(d);
     const deck = seat - 0.12;
     const shoulder: P2 = [R - c, deck];

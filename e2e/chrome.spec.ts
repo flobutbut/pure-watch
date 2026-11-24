@@ -5,6 +5,12 @@ const link =
   Buffer.from(JSON.stringify({ a: 3, x: '#173548', ac: 3, ad: 3, ae: '#EAE6DC', af: 3 })).toString(
     'base64url',
   );
+/** Shared links carry a marker that opens them on the 3D preview. */
+const shared = (url: string) => {
+  const target = new URL(url);
+  target.searchParams.set('view', '3d');
+  return target.href;
+};
 
 test('le partage ouvre une modale qui copie le lien courant, les aides suivent la vue et le favicon porte Épure', async ({
   page,
@@ -38,10 +44,10 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   await share.click();
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('textbox', { name: 'Lien de la configuration' })).toHaveValue(
-    before,
+    shared(before),
   );
   await dialog.getByRole('button', { name: 'Copier le lien', exact: true }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-copied-link', before);
+  await expect(page.locator('html')).toHaveAttribute('data-copied-link', shared(before));
   await expect(dialog.getByRole('status')).toHaveText('Lien de la configuration copié');
   expect(page.url()).toBe(before);
   await page.keyboard.press('Escape');
@@ -52,7 +58,7 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   expect(changed).not.toBe(before);
   await share.click();
   await dialog.getByRole('button', { name: 'Copier le lien', exact: true }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-copied-link', changed);
+  await expect(page.locator('html')).toHaveAttribute('data-copied-link', shared(changed));
   await dialog.getByRole('button', { name: 'Fermer le partage', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await page.getByRole('grid').press('Enter');
@@ -79,7 +85,7 @@ test('la modale de partage propose les réseaux sociaux et l’e-mail avec le li
   await page.goto(link);
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
   const current = page.url();
-  const encoded = encodeURIComponent(current);
+  const encoded = encodeURIComponent(shared(current));
   await page.getByRole('button', { name: 'Partager la configuration', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Partager votre montre' });
   for (const [name, prefix] of [
@@ -147,13 +153,14 @@ test('un presse-papiers refusé affiche un lien sélectionné et Échap conserve
   const dialog = page.getByRole('dialog', { name: 'Partager votre montre' });
   await expect(dialog).toBeVisible();
   const input = page.getByRole('textbox', { name: 'Lien de la configuration', exact: true });
-  await expect(input).toHaveValue(current);
+  await expect(input).toHaveValue(shared(current));
   const selection = await input.evaluate((element: HTMLInputElement) => ({
     start: element.selectionStart,
     end: element.selectionEnd,
     length: element.value.length,
   }));
-  expect(selection).toEqual({ start: 0, end: current.length, length: current.length });
+  const length = shared(current).length;
+  expect(selection).toEqual({ start: 0, end: length, length });
   await page.getByRole('button', { name: 'Copier le lien', exact: true }).click();
   await expect(dialog.getByRole('status')).toHaveText(/Le lien est sélectionné/);
   await input.press('Escape');
@@ -194,7 +201,7 @@ test('le partage natif reste accessible depuis la modale et une annulation ne co
   await share.click();
   await more.click();
   const sent = JSON.parse((await page.locator('html').getAttribute('data-native-share'))!);
-  expect(sent).toMatchObject({ url: page.url(), title: 'Épure · Ma montre' });
+  expect(sent).toMatchObject({ url: shared(page.url()), title: 'Épure · Ma montre' });
   await expect(dialog).not.toBeVisible();
   await page.evaluate(() => {
     document.documentElement.dataset.cancelShare = 'yes';
@@ -203,4 +210,18 @@ test('le partage natif reste accessible depuis la modale et une annulation ne co
   await more.click();
   await expect(dialog).toBeVisible();
   await expect(page.locator('html')).not.toHaveAttribute('data-unwanted-copy', 'yes');
+});
+
+test('un lien reçu s’ouvre sur l’aperçu 3D, puis la page reprend son adresse', async ({ page }) => {
+  await page.goto(`/?view=3d${link.slice(1)}`);
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
+  const close = page.getByRole('button', { name: 'Fermer', exact: true });
+  await expect(close).toBeVisible();
+  // The marker only opens the preview once: the address bar is the configuration alone.
+  expect(new URL(page.url()).searchParams.has('view')).toBe(false);
+  expect(new URL(page.url()).hash).toBe(link.slice(1));
+  await page.reload();
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
+  await expect(page.getByRole('grid')).toBeFocused();
+  await expect(close).not.toBeVisible();
 });

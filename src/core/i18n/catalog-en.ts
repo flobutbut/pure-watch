@@ -89,7 +89,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
   },
   bezel: {
     name: 'Bezel',
-    hint: 'The rotating bezel uses a round opening',
+    hint: 'Bezels with a graduated insert use a round opening',
     variants: {
       smooth: 'Smooth',
       rounded: 'Domed',
@@ -98,11 +98,21 @@ export const CATALOG_EN: Record<string, RowNames> = {
       coin: 'Coin edge',
       notched: 'Notched',
       rotating: 'Rotating · round opening',
+      'fixed-scale': 'Fixed scale · round opening',
     },
   },
   'bezel-scale': {
     name: 'Bezel scale',
     variants: { 'dive-60': 'Dive · 60 min', '12h': '12 hours', '24h': '24 hours' },
+  },
+  'fixed-bezel-scale': {
+    name: 'Bezel scale',
+    variants: {
+      tachymeter: 'Tachymeter',
+      'dive-60': '60 minutes',
+      '12h': '12 hours',
+      '24h': '24 hours',
+    },
   },
   crystal: {
     name: 'Crystal',

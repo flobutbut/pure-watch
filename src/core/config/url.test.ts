@@ -4,7 +4,14 @@ import { parseCatalog } from '../catalog/load';
 import { applyVariant } from '../nav/selection';
 import { defaultConfig } from './defaults';
 import { blackTonneauPilot, cushionPilot } from './pilot';
-import { configUrl, decodeConfigHash, encodeConfigHash, readConfigUrl } from './url';
+import {
+  configUrl,
+  decodeConfigHash,
+  encodeConfigHash,
+  opensPreview,
+  readConfigUrl,
+  shareUrl,
+} from './url';
 
 const catalog = parseCatalog(rawCatalog);
 const hash = (payload: unknown) =>
@@ -204,6 +211,19 @@ describe('versioned watch links', () => {
     expect(target.searchParams.has('pilot')).toBe(false);
     expect(target.hash).toBe(encodeConfigHash(cushionPilot()));
     expect(source.searchParams.get('pilot')).toBe('black');
+  });
+
+  it('opens shared links on the 3D preview, and only shared links', () => {
+    const source = new URL(`https://example.test/configurator?model=geometry#v1.e30`);
+    const shared = shareUrl(cushionPilot(), source);
+    expect(opensPreview(shared)).toBe(true);
+    expect(shared.searchParams.get('model')).toBe('geometry');
+    expect(readConfigUrl(shared, catalog).config).toEqual(cushionPilot());
+    // The address bar of the receiving page drops the marker once read.
+    const own = configUrl(cushionPilot(), shared);
+    expect(opensPreview(own)).toBe(false);
+    expect(own.searchParams.get('model')).toBe('geometry');
+    expect(opensPreview(configUrl(cushionPilot(), source))).toBe(false);
   });
 
   it('preserves the saved user configuration from the open browser', () => {

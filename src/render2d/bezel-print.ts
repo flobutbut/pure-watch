@@ -1,4 +1,4 @@
-/** Artwork in physical millimetres, projected onto the flat rotating insert. */
+/** Artwork in physical millimetres, projected onto the flat graduated insert. */
 import type { WatchConfig } from '../core/config/types';
 import { bezelScale } from '../core/config/bezel';
 import { inkForDial } from './dial-print';
@@ -22,15 +22,25 @@ export function bezelPrintSvg(config: WatchConfig, inner: number, outer: number)
       `<path d="M${f(x1!)} ${f(y1!)}L${f(x2!)} ${f(y2!)}" stroke="${ink}" stroke-width="${f(width * (major ? 0.055 : 0.035))}"/>`,
     );
   }
-  function label(index: number, count: number, value: number) {
+  function label(index: number, count: number, value: number, small = false) {
     const angle = (index / count) * 360;
     const [x, y] = point((angle * Math.PI) / 180, outer - width * 0.64);
     const turn = angle > 90 && angle < 270 ? angle + 180 : angle;
     marks.push(
-      `<text x="${f(x!)}" y="${f(y!)}" transform="rotate(${turn} ${f(x!)} ${f(y!)})">${value}</text>`,
+      `<text x="${f(x!)}" y="${f(y!)}"${small ? ` font-size="${f(width * 0.46)}"` : ''} transform="rotate(${turn} ${f(x!)} ${f(y!)})">${value}</text>`,
     );
   }
-  if (scale === 'dive-60') {
+  if (scale === 'tachymeter') {
+    // Units per hour after timing a single unit: value = 3600 / elapsed seconds.
+    // Positions are deliberately non-uniform, with 60 at twelve and 120 at six.
+    for (const value of [
+      500, 400, 300, 250, 200, 180, 160, 140, 120, 110, 100, 90, 80, 75, 70, 65, 60,
+    ]) {
+      const seconds = 3600 / value;
+      tick(seconds, 60, true);
+      label(seconds, 60, value, true);
+    }
+  } else if (scale === 'dive-60') {
     for (let m = 1; m < 60; m++) {
       if (m <= 15 || m % 5 === 0) tick(m, 60, m % 5 === 0);
       if (m % 10 === 0) label(m, 60, m);

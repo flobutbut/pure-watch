@@ -1,20 +1,41 @@
 <script lang="ts">
-  import { onDestroy, tick } from 'svelte';
-  import Modal from './Modal.svelte';
+  /**
+   * Partage, en panneau à côté de la montre 3D (comme la fiche d'identité) : réseaux, lien,
+   * prompt de génération pour une IA et capture de la vue telle qu'elle est affichée.
+   */
+  import { onDestroy, onMount } from 'svelte';
+  import Sheet from './sheet/Sheet.svelte';
   import { t } from './i18n.svelte';
 
-  let { onclose }: { onclose?: () => void } = $props();
+  interface Props {
+    url: string;
+    prompt: string;
+    /** PNG of the 3D watch as currently shown; null until the 3D view is mounted. */
+    capture: (() => Promise<Blob>) | null;
+    onclose: () => void;
+  }
+  let { url, prompt, capture, onclose }: Props = $props();
 
   const TITLE = $derived(t().share.shareTitle);
   const TEXT = $derived(t().share.shareText);
 
-  let modal: Modal;
   let linkInput = $state<HTMLInputElement>();
-  let url = $state('');
   let copyState = $state<'idle' | 'copied' | 'manual'>('idle');
+  let promptState = $state<'idle' | 'copied' | 'failed'>('idle');
+  let captureState = $state<'idle' | 'busy' | 'saved' | 'failed'>('idle');
   const nativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   let resetTimer: ReturnType<typeof setTimeout> | undefined;
-  onDestroy(() => clearTimeout(resetTimer));
+  let promptTimer: ReturnType<typeof setTimeout> | undefined;
+  onDestroy(() => {
+    clearTimeout(resetTimer);
+    clearTimeout(promptTimer);
+  });
+
+  // The panel opens on the link, selected, as the modal did.
+  onMount(() => {
+    linkInput?.focus({ preventScroll: true });
+    linkInput?.select();
+  });
 
   const enc = encodeURIComponent;
   const networks = $derived([
@@ -46,15 +67,6 @@
   ]);
   const mailto = $derived(`mailto:?subject=${enc(TITLE)}&body=${enc(`${TEXT}\n\n${url}`)}`);
 
-  export async function open(currentUrl: string) {
-    url = currentUrl;
-    copyState = 'idle';
-    modal.show();
-    await tick();
-    linkInput?.focus({ preventScroll: true });
-    linkInput?.select();
-  }
-
   async function copy() {
     clearTimeout(resetTimer);
     try {
@@ -68,87 +80,154 @@
     }
   }
 
+  async function copyPrompt() {
+    clearTimeout(promptTimer);
+    try {
+      await navigator.clipboard.writeText(prompt);
+      promptState = 'copied';
+      promptTimer = setTimeout(() => (promptState = 'idle'), 2500);
+    } catch {
+      promptState = 'failed';
+    }
+  }
+
+  async function takeCapture() {
+    if (!capture || captureState === 'busy') return;
+    captureState = 'busy';
+    try {
+      const blob = await capture();
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = t().share.captureFile;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(href), 1000);
+      captureState = 'saved';
+    } catch {
+      captureState = 'failed';
+    }
+  }
+
   async function shareNative() {
     try {
       await navigator.share({ title: TITLE, text: TEXT, url });
-      modal.close();
+      onclose();
     } catch {
-      // Une annulation de la feuille native laisse simplement la modale ouverte.
+      // Une annulation de la feuille native laisse simplement le panneau ouvert.
     }
   }
 </script>
 
-<Modal bind:this={modal} title={t().share.title} closeLabel={t().share.close} {onclose}>
-  <ul class="networks">
-    {#each networks as network (network.name)}
+<Sheet
+  id="share-title"
+  eyebrow={t().share.eyebrow}
+  title={t().share.title}
+  closeLabel={t().share.close}
+  placement="stage"
+  closeOnEscape
+  {onclose}
+>
+  <div class="share">
+    <ul class="networks">
+      {#each networks as network (network.name)}
+        <li>
+          <a
+            href={network.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t().share.on(network.name)}
+          >
+            <span class="disc">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={network.icon} /></svg>
+            </span>
+            <span class="label">{network.name}</span>
+          </a>
+        </li>
+      {/each}
       <li>
-        <a
-          href={network.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t().share.on(network.name)}
-        >
+        <a href={mailto} aria-label={t().share.byEmail}>
           <span class="disc">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={network.icon} /></svg>
+            <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
+              <rect x="3" y="5.5" width="18" height="13" rx="2" />
+              <path d="m3.5 7 8.5 6.5L20.5 7" />
+            </svg>
           </span>
-          <span class="label">{network.name}</span>
+          <span class="label">{t().share.email}</span>
         </a>
       </li>
-    {/each}
-    <li>
-      <a href={mailto} aria-label={t().share.byEmail}>
-        <span class="disc">
-          <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
-            <rect x="3" y="5.5" width="18" height="13" rx="2" />
-            <path d="m3.5 7 8.5 6.5L20.5 7" />
-          </svg>
-        </span>
-        <span class="label">{t().share.email}</span>
-      </a>
-    </li>
-  </ul>
+    </ul>
 
-  <label for="configuration-link">{t().share.link}</label>
-  <div class="link-row">
-    <input
-      id="configuration-link"
-      bind:this={linkInput}
-      value={url}
-      readonly
-      onclick={() => linkInput?.select()}
-    />
-    <button class="copy" class:done={copyState === 'copied'} onclick={copy}>
-      {copyState === 'copied' ? t().share.copied : t().share.copy}
-    </button>
-  </div>
-  <p class="status" role="status">
-    {#if copyState === 'copied'}
-      {t().share.copiedStatus}
-    {:else if copyState === 'manual'}
-      {t().share.manual}
+    <label for="configuration-link">{t().share.link}</label>
+    <div class="link-row">
+      <input
+        id="configuration-link"
+        bind:this={linkInput}
+        value={url}
+        readonly
+        onclick={() => linkInput?.select()}
+      />
+      <button class="copy" class:done={copyState === 'copied'} onclick={copy}>
+        {copyState === 'copied' ? t().share.copied : t().share.copy}
+      </button>
+    </div>
+    <p class="status" role="status">
+      {#if copyState === 'copied'}
+        {t().share.copiedStatus}
+      {:else if copyState === 'manual'}
+        {t().share.manual}
+      {/if}
+    </p>
+
+    <section class="prompt" aria-labelledby="generation-prompt">
+      <h3 id="generation-prompt">{t().share.prompt}</h3>
+      <p>{t().share.promptHint}</p>
+      <div class="actions">
+        <button class="copy" class:done={promptState === 'copied'} onclick={copyPrompt}>
+          {promptState === 'copied' ? t().share.copied : t().share.copyPrompt}
+        </button>
+        <button
+          class="capture"
+          disabled={!capture}
+          aria-busy={captureState === 'busy'}
+          onclick={takeCapture}
+        >
+          {captureState === 'busy' ? t().share.capturing : t().share.capture}
+        </button>
+      </div>
+      <p class="status" role="status">
+        {#if promptState === 'copied'}
+          {t().share.promptCopiedStatus}
+        {:else if promptState === 'failed'}
+          {t().share.promptManual}
+        {:else if captureState === 'saved'}
+          {t().share.captureStatus}
+        {:else if captureState === 'failed'}
+          {t().share.captureFailed}
+        {/if}
+      </p>
+    </section>
+
+    {#if nativeShare}
+      <button class="more" onclick={shareNative}>
+        <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
+          <path d="M12 15V3m-4 4 4-4 4 4M7 11H5v10h14V11h-2" />
+        </svg>
+        {t().share.more}
+      </button>
     {/if}
-  </p>
-
-  {#if nativeShare}
-    <button class="more" onclick={shareNative}>
-      <svg viewBox="0 0 24 24" class="stroke" aria-hidden="true">
-        <path d="M12 15V3m-4 4 4-4 4 4M7 11H5v10h14V11h-2" />
-      </svg>
-      {t().share.more}
-    </button>
-  {/if}
-</Modal>
+  </div>
+</Sheet>
 
 <style>
-  .networks {
+  .share .networks {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px 6px;
     margin: 0 0 22px;
     padding: 0;
     list-style: none;
   }
-  .networks a {
+  .share .networks a {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -158,7 +237,7 @@
     color: inherit;
     text-decoration: none;
   }
-  .disc {
+  .share .disc {
     display: grid;
     place-items: center;
     width: 46px;
@@ -170,42 +249,42 @@
       border-color 160ms,
       color 160ms;
   }
-  .networks a:hover .disc {
+  .share .networks a:hover .disc {
     background: var(--ink);
     border-color: var(--ink);
     color: var(--veil);
   }
-  .networks a:focus-visible {
+  .share .networks a:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
-  svg {
+  .share svg {
     width: 19px;
     height: 19px;
     fill: currentColor;
   }
-  svg.stroke {
+  .share svg.stroke {
     fill: none;
     stroke: currentColor;
     stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .label {
+  .share .label {
     font-size: 10px;
     letter-spacing: 0.02em;
     opacity: 0.8;
   }
-  label {
+  .share label {
     display: block;
     margin-bottom: 8px;
     font-size: 11px;
   }
-  .link-row {
+  .share .link-row {
     display: flex;
     gap: 8px;
   }
-  input {
+  .share input {
     flex: 1;
     min-width: 0;
     padding: 11px 12px;
@@ -217,17 +296,17 @@
       12px ui-monospace,
       monospace;
   }
-  button {
+  .share button {
     font: inherit;
     color: inherit;
     cursor: pointer;
   }
-  button:focus-visible,
-  input:focus-visible {
+  .share button:focus-visible,
+  .share input:focus-visible {
     outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
-  .copy {
+  .share .copy {
     flex: none;
     min-width: 116px;
     padding: 0 14px;
@@ -238,18 +317,57 @@
     color: var(--veil);
     font-size: 12px;
   }
-  .status {
+  .share .status {
     min-height: 1em;
     margin: 10px 0 0;
     font-size: 11px;
     line-height: 1.5;
     opacity: 0.75;
   }
-  .status:empty {
+  .share .status:empty {
     margin: 0;
     min-height: 0;
   }
-  .more {
+  .share .prompt {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+  .share .prompt h3 {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: inherit;
+  }
+  .share .prompt p:not(.status) {
+    margin: 0 0 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    opacity: 0.75;
+  }
+  .share .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .share .actions button {
+    min-width: 0;
+    padding: 0 10px;
+  }
+  .share .capture {
+    min-height: 42px;
+    border: 1px solid var(--control-line);
+    border-radius: 10px;
+    background: var(--control);
+    font-size: 12px;
+  }
+  .share .capture:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+  .share .capture[aria-busy='true'] {
+    cursor: progress;
+  }
+  .share .more {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -260,24 +378,20 @@
     font-size: 12px;
     opacity: 0.8;
   }
-  .more:hover {
+  .share .more:hover {
     opacity: 1;
   }
-  .more svg {
+  .share .more svg {
     width: 16px;
     height: 16px;
   }
   @media (max-width: 480px) {
-    .networks {
-      grid-template-columns: repeat(3, 1fr);
-      row-gap: 14px;
-    }
-    input {
+    .share input {
       font-size: 16px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .disc {
+    .share .disc {
       transition: none;
     }
   }

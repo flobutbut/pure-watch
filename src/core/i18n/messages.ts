@@ -60,6 +60,7 @@ const fr = {
   share: {
     shareTitle: 'Épure · Ma montre',
     shareText: 'Une montre composée dans l’atelier Épure.',
+    eyebrow: 'PARTAGE',
     title: 'Partager votre montre',
     close: 'Fermer le partage',
     on: (network: string) => `Partager sur ${network}`,
@@ -72,6 +73,34 @@ const fr = {
     manual:
       'Le lien est sélectionné. Utilisez le menu Copier de votre appareil ou le raccourci clavier habituel.',
     more: 'Autres applications…',
+    prompt: 'Prompt pour une IA',
+    promptHint:
+      'La fiche complète et le lien de la configuration, prêts à coller dans un assistant d’IA pour générer une image de votre montre.',
+    copyPrompt: 'Copier le prompt',
+    capture: 'Prendre une capture',
+    capturing: 'Capture…',
+    captureFile: 'epure-ma-montre.png',
+    captureStatus: 'Capture de la montre enregistrée dans vos téléchargements',
+    captureFailed: 'La capture a échoué. Réessayez une fois la montre affichée.',
+    promptCopiedStatus: 'Prompt de génération copié',
+    promptManual:
+      'La copie a échoué. Autorisez l’accès au presse-papiers dans votre navigateur, puis réessayez.',
+  },
+  prompt: {
+    colon: ' : ',
+    task: 'Génère une image photoréaliste de la montre décrite ci-dessous, conçue dans l’atelier virtuel Épure. Respecte fidèlement chaque caractéristique : formes, proportions, matières, finitions et couleurs.',
+    referenceTitle: 'Référence visuelle',
+    reference:
+      'Ce lien ouvre la configuration dans un rendu 3D interactif (JavaScript et WebGL nécessaires). Si tu peux naviguer sur le web, ouvre-le dans un navigateur, attends la fin du chargement, puis fais une capture d’écran de la montre et sers-t’en comme référence pour les formes et les proportions. Si tu ne peux pas l’ouvrir, appuie-toi uniquement sur la fiche ci-dessous. En cas d’écart entre la capture et la fiche, la fiche fait foi.',
+    sheetTitle: 'Fiche technique',
+    renderTitle: 'Consignes de rendu',
+    render: [
+      'Photographie de produit en studio : vue de face légèrement tournée de trois quarts, tête de montre seule, sans bracelet (le bracelet ne fait pas partie de la configuration).',
+      'Fond neutre et uni, éclairage doux qui révèle les finitions du métal et du cadran.',
+      'Aiguilles sur 10 h 10.',
+      'Les couleurs hexadécimales et les références RAL entre parenthèses sont les teintes exactes à reproduire.',
+      'N’ajoute aucun logo, texte, marque ni élément absent de la fiche.',
+    ],
   },
   app: {
     dimensionsSaved: 'Dimensions enregistrées',
@@ -381,6 +410,7 @@ const en: Messages = {
   share: {
     shareTitle: 'Épure · My watch',
     shareText: 'A watch composed in the Épure workshop.',
+    eyebrow: 'SHARE',
     title: 'Share your watch',
     close: 'Close sharing',
     on: (network: string) => `Share on ${network}`,
@@ -392,6 +422,33 @@ const en: Messages = {
     copiedStatus: 'Configuration link copied',
     manual: 'The link is selected. Use your device’s Copy menu or the usual keyboard shortcut.',
     more: 'Other apps…',
+    prompt: 'Prompt for an AI',
+    promptHint:
+      'The full specification and the configuration link, ready to paste into an AI assistant to generate an image of your watch.',
+    copyPrompt: 'Copy prompt',
+    capture: 'Take a screenshot',
+    capturing: 'Capturing…',
+    captureFile: 'epure-my-watch.png',
+    captureStatus: 'Watch screenshot saved to your downloads',
+    captureFailed: 'The screenshot failed. Try again once the watch is displayed.',
+    promptCopiedStatus: 'Generation prompt copied',
+    promptManual: 'Copying failed. Allow clipboard access in your browser, then try again.',
+  },
+  prompt: {
+    colon: ': ',
+    task: 'Generate a photorealistic image of the watch described below, designed in the Épure virtual workshop. Faithfully follow every specification: shapes, proportions, materials, finishes and colours.',
+    referenceTitle: 'Visual reference',
+    reference:
+      'This link opens the configuration in an interactive 3D render (JavaScript and WebGL required). If you can browse the web, open it in a browser, wait for loading to finish, then take a screenshot of the watch and use it as a reference for shapes and proportions. If you cannot open it, rely on the specification below alone. Where the screenshot and the specification differ, the specification prevails.',
+    sheetTitle: 'Specification',
+    renderTitle: 'Rendering instructions',
+    render: [
+      'Studio product photograph: front view turned slightly to three-quarters, watch head only, without a strap (the strap is not part of the configuration).',
+      'Plain neutral background, soft lighting that brings out the metal and dial finishes.',
+      'Hands set to 10:10.',
+      'Hexadecimal colours and RAL references in brackets are the exact shades to reproduce.',
+      'Do not add any logo, text, brand or element that is not in the specification.',
+    ],
   },
   app: {
     dimensionsSaved: 'Dimensions saved',

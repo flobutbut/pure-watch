@@ -3,7 +3,13 @@
   import rawCatalog from './data/catalog.json';
   import { parseCatalog } from './core/catalog/load';
   import { visibleRows } from './core/rules/visibility';
-  import { configUrl, encodeConfigHash, readConfigUrl } from './core/config/url';
+  import {
+    configUrl,
+    encodeConfigHash,
+    opensPreview,
+    readConfigUrl,
+    shareUrl as sharedLink,
+  } from './core/config/url';
   import { bezelAngle } from './core/config/bezel';
   import type { WatchConfig } from './core/config/types';
   import { withColorChoice, type ColorChoice, type ColorTarget } from './core/config/colors';
@@ -20,6 +26,7 @@
     transition,
     type Bump,
     type NavCommand,
+    type NavState,
   } from './core/nav/state';
   import type { PartRenderer } from './render/types';
   import Grid from './ui/grid/Grid.svelte';
@@ -28,6 +35,7 @@
   import DimensionsPanel from './ui/dimensions/DimensionsPanel.svelte';
   import { withCaseDimensions, type CaseDimensions } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
+  import { generationPrompt } from './ui/identity/prompt';
   import { ambienceFor, NIGHT_AMBIENCE } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
   import { localizeCatalog } from './core/i18n/catalog-en';
@@ -39,6 +47,8 @@
   const named = $derived(catalogs[i18n.locale]);
 
   const initialLink = readConfigUrl(new URL(location.href), catalog);
+  /** A received link opens straight on the 3D preview (the address bar then drops the marker). */
+  const initialPreview = opensPreview(new URL(location.href));
   const initialConfig = initialLink.config;
   let linkNotice = $state(initialLink.notice);
   let lastConfigUrl = location.href;
@@ -47,20 +57,29 @@
   let dimensionsEditing = $state(false);
   const editing = $derived(colorTarget !== null || dimensionsEditing);
   let cardShown = $state(false);
+
   let night = $state(initialConfig.view.night);
   let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
   const rows = $derived(visibleRows(named.rows, config));
   const rowViews = $derived(toRowViews(rows));
-
+  /** Share panel open beside the 3D watch; `opened`: the 3D view was opened for it. */
+  let sharing = $state<{ opened: boolean } | null>(null);
+  const shareUrl = $derived(sharedLink(config, new URL(location.href)).href);
+  const share = $derived(
+    sharing
+      ? { url: shareUrl, prompt: generationPrompt(rows, config, shareUrl, i18n.locale) }
+      : null,
+  );
   const initialRows = visibleRows(catalog.rows, initialConfig);
-  let nav = $state.raw({
+  let nav = $state.raw<NavState>({
     // La sélection est mémorisée pour toutes les lignes, visibles ou non.
     ...createNavState(toRowViews(catalog.rows), selectionFromConfig(catalog, initialConfig)),
     activeRow: Math.max(
       0,
       initialRows.findIndex((row) => row.id === 'hands'),
     ),
+    mode: initialPreview ? 'view3d' : 'grid',
   });
   let bump = $state.raw<{ dir: Bump; n: number }>({ dir: null, n: 0 });
   let announcement = $state('');
@@ -253,7 +272,24 @@
     modeTimer = setTimeout(() => (nav = transition(nav, 'opened')), OPEN_MS);
   }
 
+  /** Sharing shows the watch in 3D beside the panel, as the identity card does. */
+  function openShare() {
+    if (editing) return;
+    if (sharing) return closeShare(true);
+    const opened = nav.mode === 'grid';
+    if (opened) open();
+    else if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
+    sharing = { opened };
+  }
+
+  function closeShare(back: boolean) {
+    const opened = sharing?.opened ?? false;
+    sharing = null;
+    if (back && opened) close();
+  }
+
   function close() {
+    sharing = null;
     if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
     nav = transition(nav, 'close');
     clearTimeout(modeTimer);
@@ -271,7 +307,8 @@
 <main style:--ink={ambience.ink} style:--veil={ambience.veil}>
   <Ambience {ambience} />
   <AppChrome
-    url={configUrl(config, new URL(location.href)).href}
+    sharing={sharing !== null}
+    onshare={openShare}
     inspecting={nav.mode === 'view3d' || nav.mode === 'opening3d'}
     colorEditing={editing}
     sheetShown={cardShown}
@@ -291,6 +328,9 @@
     onopen={open}
     onclose={close}
     oncard={(shown) => (cardShown = shown)}
+    {share}
+    onshareclose={closeShare}
+    captureBackground={ambience.base}
     oncolor={(target) => {
       colorTarget = target;
     }}

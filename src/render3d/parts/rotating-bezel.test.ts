@@ -20,9 +20,17 @@ it('snaps at three degrees, wraps and respects the diving ratchet', () => {
   expect(turnBezel(config, 3)).toBe(3);
 });
 
-it.each(CASE_SHAPES)(
-  '%s: a circular ring clears the glass and fits the case at every aperture and profile',
-  (shape) => {
+it.each(
+  CASE_SHAPES.flatMap(
+    (shape) =>
+      [
+        [shape, 'rotating'],
+        [shape, 'fixed-scale'],
+      ] as const,
+  ),
+)(
+  '%s / %s: a circular ring clears the glass and fits the case at every aperture and profile',
+  (shape, type) => {
     const lib = new MaterialLibrary();
     for (const diameter of [22, 48])
       for (const size of ['compact', 'balanced', 'open'])
@@ -31,7 +39,8 @@ it.each(CASE_SHAPES)(
           Object.assign(config.case, proportionsForDiameter(diameter), { shape, profile });
           config.dial.shape = shape;
           config.dial.size = size;
-          config.bezel.type = 'rotating';
+          config.bezel.type = type;
+          config.bezel.angleDeg = 42;
           const model = buildWatch(config, lib, {
             quality: 'fallback',
             layers: ['case', 'rehaut', 'crystal'],
@@ -39,7 +48,11 @@ it.each(CASE_SHAPES)(
           const d = model.dimensions;
           expect(d.dialShape).toBe('round');
           expect(config.dial.shape).toBe(shape);
-          const ring = model.layers.case.getObjectByName('rotating-bezel')!;
+          const ring = model.layers.case.getObjectByName(
+            type === 'rotating' ? 'rotating-bezel' : 'fixed-bezel',
+          )!;
+          expect(ring).toBeTruthy();
+          expect(ring.rotation.z).toBeCloseTo(type === 'rotating' ? (-42 * Math.PI) / 180 : 0);
           const { outer, inner, insertInner, insertOuter, bottom, top } = rotatingBezelDimensions(
             config,
             d,
@@ -75,7 +88,7 @@ it.each(CASE_SHAPES)(
             .filter((o) => o !== ring)
             .map((o) => o.quaternion.toArray());
           model.setBezelAngle(153);
-          expect(ring.rotation.z).toBeCloseTo((-153 * Math.PI) / 180);
+          expect(ring.rotation.z).toBeCloseTo(type === 'rotating' ? (-153 * Math.PI) / 180 : 0);
           expect(model.layers.crystal.quaternion.toArray()).toEqual(glass);
           expect(
             model.layers.case.children.filter((o) => o !== ring).map((o) => o.quaternion.toArray()),
