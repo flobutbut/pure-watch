@@ -80,6 +80,11 @@ export interface DialConfig {
     | 'concentric'
     | 'vertical-brushed'
     | 'hammered'
+    | 'leather'
+    | 'circular-brushed'
+    | 'tapisserie'
+    | 'waves'
+    | 'scales'
   >;
   color: HexColor;
   pattern: string | null;

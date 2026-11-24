@@ -6,6 +6,11 @@ export const DIAL_PATTERN_FINISHES = [
   'concentric',
   'vertical-brushed',
   'hammered',
+  'leather',
+  'circular-brushed',
+  'tapisserie',
+  'waves',
+  'scales',
 ] as const;
 export type DialPatternFinish = (typeof DIAL_PATTERN_FINISHES)[number];
 export const DIAL_PATTERN_SETTINGS: Record<
@@ -18,6 +23,11 @@ export const DIAL_PATTERN_SETTINGS: Record<
   concentric: { heightMm: 0.018, roughness: [0.26, 0.42], metalness: 0.78 },
   'vertical-brushed': { heightMm: 0.012, roughness: [0.3, 0.48], metalness: 0.76 },
   hammered: { heightMm: 0.13, roughness: [0.24, 0.48], metalness: 0.72 },
+  leather: { heightMm: 0.11, roughness: [0.72, 0.94], metalness: 0 },
+  'circular-brushed': { heightMm: 0.009, roughness: [0.34, 0.56], metalness: 0.72 },
+  tapisserie: { heightMm: 0.075, roughness: [0.28, 0.5], metalness: 0.64 },
+  waves: { heightMm: 0.045, roughness: [0.27, 0.49], metalness: 0.66 },
+  scales: { heightMm: 0.045, roughness: [0.3, 0.52], metalness: 0.64 },
 };
 export function isDialPatternFinish(finish: string): finish is DialPatternFinish {
   return DIAL_PATTERN_FINISHES.some((value) => value === finish);
@@ -25,6 +35,10 @@ export function isDialPatternFinish(finish: string): finish is DialPatternFinish
 
 const TAU = Math.PI * 2;
 const fract = (x: number) => x - Math.floor(x);
+const smooth = (lo: number, hi: number, value: number) => {
+  const t = Math.max(0, Math.min(1, (value - lo) / (hi - lo)));
+  return t * t * (3 - 2 * t);
+};
 function noise(x: number, y: number): number {
   let n = Math.imul(x, 374761393) ^ Math.imul(y, 668265263);
   n = Math.imul(n ^ (n >>> 13), 1274126177);
@@ -84,6 +98,50 @@ export function dialPatternHeight(finish: DialPatternFinish, x: number, y: numbe
           );
         }
       return 1 - dent;
+    }
+    case 'leather': {
+      const pitch = 0.95;
+      const cx = Math.floor(x / pitch),
+        cy = Math.floor(y / pitch);
+      let first = Infinity,
+        second = Infinity;
+      for (let j = cy - 1; j <= cy + 1; j++)
+        for (let i = cx - 1; i <= cx + 1; i++) {
+          const px = (i + 0.18 + 0.64 * noise(i, j)) * pitch;
+          const py = (j + 0.18 + 0.64 * noise(j + 47, i - 11)) * pitch;
+          const distance = (x - px) ** 2 + (y - py) ** 2;
+          if (distance < first) {
+            second = first;
+            first = distance;
+          } else if (distance < second) second = distance;
+        }
+      const edge = Math.sqrt(second) - Math.sqrt(first);
+      const pores = 0.025 * Math.sin(x * 51 + Math.sin(y * 23)) * Math.sin(y * 47);
+      return 0.12 + 0.84 * smooth(0.015, 0.22, edge) + pores;
+    }
+    case 'circular-brushed':
+      return (
+        0.5 +
+        0.23 * Math.sin((TAU * r) / 0.22 + 0.25 * Math.sin(x * 2 + y)) +
+        0.15 * Math.sin((TAU * r) / 0.37 + 0.3 * Math.sin(y * 1.7)) +
+        0.08 * Math.sin((TAU * r) / 0.53)
+      );
+    case 'tapisserie': {
+      const u = fract(x / 1.15),
+        v = fract(y / 1.15);
+      const edge = Math.min(u, 1 - u, v, 1 - v) * 1.15;
+      const top = smooth(0.035, 0.17, edge);
+      return 0.08 + top * (0.88 + 0.025 * Math.sin((TAU * x) / 0.16) * Math.sin((TAU * y) / 0.16));
+    }
+    case 'waves':
+      return 0.5 + 0.5 * Math.cos((TAU * (y + 0.42 * Math.sin((TAU * x) / 4.2))) / 0.95);
+    case 'scales': {
+      const row = Math.floor(y / 1.2);
+      const offset = (row % 2) * 1.2;
+      const dx = x - offset - Math.round((x - offset) / 2.4) * 2.4;
+      const dy = y - row * 1.2;
+      const edge = Math.abs(Math.hypot(dx, dy) - 1.2);
+      return 0.95 - 0.88 * Math.exp(-((edge / 0.095) ** 2));
     }
   }
 }

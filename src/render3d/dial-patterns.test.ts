@@ -77,6 +77,7 @@ it.each(DIAL_PATTERN_FINISHES)(
     // AO needs a canvas. Pattern pixels and physical materials are exercised directly in Node.
     const ao = new THREE.CanvasTexture();
     vi.spyOn(textures, 'radialOcclusionTexture').mockReturnValue(ao);
+    vi.spyOn(textures, 'radialAnisotropyTexture').mockReturnValue(new THREE.CanvasTexture());
     const lib = new MaterialLibrary();
     const config = defaultConfig();
     config.dial.finish = finish;
@@ -85,6 +86,14 @@ it.each(DIAL_PATTERN_FINISHES)(
     expect(material.color.getHexString()).toBe('3570a1');
     expect(material.normalMap).toBeTruthy();
     expect(material.roughnessMap).toBeTruthy();
+    if (finish === 'leather') {
+      expect(material.metalness).toBe(0);
+      expect(material.clearcoat).toBe(0);
+    }
+    if (finish === 'circular-brushed') {
+      expect(material.anisotropy).toBeGreaterThan(0);
+      expect(material.anisotropyMap).toBeTruthy();
+    }
     config.dial.color = '#D8B681';
     const warm = lib.dial(config);
     expect(warm).not.toBe(material);

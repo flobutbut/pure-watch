@@ -15,7 +15,7 @@ async function dialRow(page: Page) {
   await expect(grid).toHaveAttribute('aria-activedescendant', /cell-dial-finish-/);
 }
 
-test('les six finitions conservent couleur, forme et lien partagé', async ({ page }) => {
+test('les finitions conservent couleur, forme et lien partagé', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(hash({ a: 5, aa: 5, x: '#123ABC' }));
@@ -30,6 +30,11 @@ test('les six finitions conservent couleur, forme et lien partagé', async ({ pa
     ['concentric', 12],
     ['vertical-brushed', 13],
     ['hammered', 14],
+    ['leather', 15],
+    ['circular-brushed', 16],
+    ['tapisserie', 17],
+    ['waves', 18],
+    ['scales', 19],
   ] as const;
   for (const [index, [finish, id]] of choices.entries()) {
     if (index) await page.keyboard.press('ArrowRight');
@@ -48,7 +53,7 @@ test('les six finitions conservent couleur, forme et lien partagé', async ({ pa
   await dialRow(page);
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
-    'cell-dial-finish-hammered',
+    'cell-dial-finish-scales',
   );
   expect(page.url()).toBe(saved);
   await page.keyboard.press('Enter');

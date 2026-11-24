@@ -1115,6 +1115,36 @@
           "i18n": {
             "name": "Martelé"
           }
+        },
+        {
+          "id": "leather",
+          "value": "leather",
+          "preview": "dial-finish/leather.svg",
+          "i18n": { "name": "Effet cuir" }
+        },
+        {
+          "id": "circular-brushed",
+          "value": "circular-brushed",
+          "preview": "dial-finish/circular-brushed.svg",
+          "i18n": { "name": "Brossé circulaire" }
+        },
+        {
+          "id": "tapisserie",
+          "value": "tapisserie",
+          "preview": "dial-finish/tapisserie.svg",
+          "i18n": { "name": "Tapisserie" }
+        },
+        {
+          "id": "waves",
+          "value": "waves",
+          "preview": "dial-finish/waves.svg",
+          "i18n": { "name": "Vagues" }
+        },
+        {
+          "id": "scales",
+          "value": "scales",
+          "preview": "dial-finish/scales.svg",
+          "i18n": { "name": "Écailles" }
         }
       ]
     },

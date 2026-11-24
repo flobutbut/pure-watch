@@ -81,6 +81,11 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
     case 'linen':
     case 'concentric':
     case 'vertical-brushed':
+    case 'leather':
+    case 'circular-brushed':
+    case 'tapisserie':
+    case 'waves':
+    case 'scales':
     case 'hammered': {
       const line = rgba(tone === 'dark' ? '#ffffff' : '#000000', 0.025);
       const patterns: Record<string, string> = {
@@ -89,6 +94,11 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
         linen: `repeating-linear-gradient(0deg, ${line} 0px 1px, transparent 1px 5px), repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 7px)`,
         concentric: `repeating-radial-gradient(circle at 50% 46%, transparent 0px 14px, ${line} 15px 16px)`,
         'vertical-brushed': `repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 4px)`,
+        leather: `${glow(30, 42, 45, 40, '#ffffff', 0.025)}, ${glow(68, 65, 35, 48, '#000000', 0.035)}`,
+        'circular-brushed': `repeating-radial-gradient(circle at 50% 46%, transparent 0px 3px, ${line} 4px 5px)`,
+        tapisserie: `repeating-linear-gradient(0deg, ${line} 0px 1px, transparent 1px 12px), repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 12px)`,
+        waves: `repeating-radial-gradient(ellipse at 15% 130%, transparent 0px 20px, ${line} 21px 23px)`,
+        scales: `repeating-radial-gradient(ellipse at 50% 110%, transparent 0px 12px, ${line} 13px 14px)`,
         hammered: [
           glow(25, 35, 24, 28, '#ffffff', 0.035),
           glow(72, 62, 30, 24, '#ffffff', 0.04),

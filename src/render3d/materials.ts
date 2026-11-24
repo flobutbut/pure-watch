@@ -296,19 +296,20 @@ export class MaterialLibrary {
     );
   }
 
-  private fineGrainCache: ReturnType<typeof grainTextures> | null = null;
+  private dialGrainCache: ReturnType<typeof grainTextures> | null = null;
 
   private grainCache: ReturnType<typeof grainTextures> | null = null;
 
   /** Textures de grain, partagées par toutes les couleurs de cadran grainé. */
   private grain(refined = false): ReturnType<typeof grainTextures> {
     if (refined) {
-      if (!this.fineGrainCache) {
-        this.fineGrainCache = grainTextures(512, 7);
-        this.keep(this.fineGrainCache.normal);
-        this.keep(this.fineGrainCache.roughness);
+      if (!this.dialGrainCache) {
+        // Keep the grains above the minification threshold at the normal watch size.
+        this.dialGrainCache = grainTextures(512, 1.5);
+        this.keep(this.dialGrainCache.normal);
+        this.keep(this.dialGrainCache.roughness);
       }
-      return this.fineGrainCache;
+      return this.dialGrainCache;
     }
     if (!this.grainCache) {
       this.grainCache = grainTextures();
@@ -326,7 +327,7 @@ export class MaterialLibrary {
   dial(config: WatchConfig): THREE.MeshPhysicalMaterial {
     const finish = config.dial.finish;
     const color = effectiveDialColor(config.dial);
-    const refined = this.refined && config.case.shape === 'cushion';
+    const refined = this.refined;
     const shape = effectiveDialShape(config.dial.shape);
     const span = isDialPatternFinish(finish)
       ? Number((2 * watchDimensions(config).dialExtent).toFixed(3))
@@ -369,10 +370,14 @@ export class MaterialLibrary {
         roughnessMap: maps.roughness,
         normalMap: maps.normal,
         normalScale: new THREE.Vector2(1, 1),
-        anisotropy: finish === 'vertical-brushed' ? 0.88 : 0,
+        anisotropy: finish === 'vertical-brushed' ? 0.88 : finish === 'circular-brushed' ? 0.78 : 0,
+        anisotropyMap: finish === 'circular-brushed' ? this.keep(radialAnisotropyTexture()) : null,
         anisotropyRotation: Math.PI / 2,
         clearcoat: finish === 'hammered' ? 0.25 : 0,
         clearcoatRoughness: 0.24,
+        sheen: finish === 'leather' ? 0.12 : 0,
+        sheenRoughness: 0.9,
+        sheenColor: finish === 'leather' ? c : new THREE.Color('#ffffff'),
       });
     }
     return (() => {
@@ -426,17 +431,17 @@ export class MaterialLibrary {
             anisotropyMap: this.keep(radialAnisotropyTexture()),
           });
         }
-        // Grainé : surface sablée, reflets diffus et texture fine.
-        // Grainé : relief de grains visibles et grains polis qui scintillent (≠ mat).
+        // Grainé : visible relief and scattered reflections, independent of case shape.
         case 'grained': {
           const grain = this.grain(refined);
+          const strength = refined ? (light ? 0.35 : 0.65) : 1.4;
           return new THREE.MeshPhysicalMaterial({
             color: c,
-            metalness: refined ? 0.32 : 0.62,
+            metalness: refined ? 0.45 : 0.62,
             roughness: 1,
             roughnessMap: grain.roughness,
             normalMap: grain.normal,
-            normalScale: new THREE.Vector2(refined ? 0.22 : 1.4, refined ? 0.22 : 1.4),
+            normalScale: new THREE.Vector2(strength, strength),
           });
         }
         // Laqué : couleur profonde sous un vernis miroir.
