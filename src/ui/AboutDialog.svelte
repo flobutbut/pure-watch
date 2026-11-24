@@ -1,5 +1,6 @@
 <script lang="ts">
   import Modal from './Modal.svelte';
+  import { t } from './i18n.svelte';
 
   let { onclose }: { onclose?: () => void } = $props();
 
@@ -13,63 +14,46 @@
   }
 </script>
 
-<Modal bind:this={modal} title="À propos d’Épure" closeLabel="Fermer À propos" wide {onclose}>
+<Modal bind:this={modal} title={t().about.title} closeLabel={t().about.close} wide {onclose}>
+  {@const m = t().about}
   <div class="content">
     <p class="intro">
-      Épure est un atelier horloger virtuel : un configurateur pour composer sa montre pièce par
-      pièce et la partager. Le projet a été imaginé, conçu et développé par
-      <strong>{AUTHOR}</strong>.
+      {m.introBefore}
+      <strong>{AUTHOR}</strong>{m.introAfter}
     </p>
 
     <section>
-      <h3>Contact</h3>
+      <h3>{m.contact}</h3>
       <p>
-        Une question, une suggestion, une collaboration ?
+        {m.contactText}
         <a href="mailto:{EMAIL}?subject={encodeURIComponent('Épure')}">{EMAIL}</a>
       </p>
     </section>
 
     <section>
-      <h3>Droits réservés</h3>
-      <p>
-        © {year}
-        {AUTHOR}. Tous droits réservés. Le nom Épure, son logo, le code, les visuels et les rendus
-        générés par le configurateur sont protégés par le droit d’auteur. Toute reproduction ou
-        réutilisation, totale ou partielle, sans autorisation écrite préalable est interdite. Le
-        partage des liens de configuration est bien sûr libre.
-      </p>
+      <h3>{m.rights}</h3>
+      <p>{m.rightsText(year, AUTHOR)}</p>
     </section>
 
     <section>
-      <h3>Mentions légales</h3>
+      <h3>{m.legal}</h3>
       <dl>
-        <dt>Éditeur et directeur de la publication</dt>
-        <dd>{AUTHOR}, particulier — <a href="mailto:{EMAIL}">{EMAIL}</a></dd>
-        <dt>Hébergement</dt>
-        <dd>Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis — vercel.com</dd>
+        <dt>{m.publisher}</dt>
+        <dd>{AUTHOR}, {m.individual} — <a href="mailto:{EMAIL}">{EMAIL}</a></dd>
+        <dt>{m.hosting}</dt>
+        <dd>{m.hostAddress}</dd>
       </dl>
-      <p>
-        Les montres présentées sont des créations virtuelles : les rendus sont indicatifs et non
-        contractuels. Épure ne vend aucun produit et n’est affilié à aucune marque horlogère.
-      </p>
+      <p>{m.disclaimer}</p>
     </section>
 
     <section>
-      <h3>Données personnelles</h3>
-      <p>
-        Aucun compte, aucun cookie. Votre configuration est enregistrée uniquement dans le lien de
-        la page et ne quitte pas votre navigateur, sauf si vous choisissez de la partager. Une
-        mesure d’audience anonyme et agrégée (Vercel Web Analytics, sans cookie) permet de suivre la
-        fréquentation du site.
-      </p>
+      <h3>{m.privacy}</h3>
+      <p>{m.privacyText}</p>
     </section>
 
     <section>
-      <h3>Crédits</h3>
-      <p>
-        Rendu 3D avec Three.js. Polices Bebas Neue, Cinzel, Federant, Orbitron, Playfair Display et
-        Poiret One, sous licence SIL Open Font License.
-      </p>
+      <h3>{m.credits}</h3>
+      <p>{m.creditsText}</p>
     </section>
   </div>
 </Modal>

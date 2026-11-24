@@ -11,6 +11,8 @@ import { smallSeconds } from '../config/small-seconds';
 import type { WatchConfig } from '../config/types';
 import { contourExtents } from '../geometry/dial-shape';
 import { watchDimensions } from '../geometry/dimensions';
+import { formatNumber, hourLabel, type Locale } from '../i18n/locale';
+import { MESSAGES } from '../i18n/messages';
 import { MOVEMENTS, type MovementSpec } from './movements';
 
 /** Cadran standard des NH3x, et le grand format accepté par certains boîtiers (§7.3). */
@@ -32,8 +34,8 @@ export interface MovementFit {
 
 const ORDER: Record<Fit, number> = { ok: 0, adapt: 1, check: 2, no: 3 };
 
-export const mm = (value: number, digits = 1) =>
-  `${value.toLocaleString('fr-FR', { maximumFractionDigits: digits })} mm`;
+export const mm = (value: number, digits = 1, locale: Locale = 'fr') =>
+  `${formatNumber(value, locale, digits)} mm`;
 
 /** Largeur du cadran visible sous le réhaut, au plus large : le disque doit la couvrir. */
 export function visibleDialMm(config: WatchConfig): number {
@@ -46,85 +48,55 @@ function hasDateWindow(config: WatchConfig): boolean {
   return config.complications.some((c) => c.type === 'date' || c.type === 'day-date');
 }
 
-export function movementFit(config: WatchConfig, movement: MovementSpec): MovementFit {
+export function movementFit(
+  config: WatchConfig,
+  movement: MovementSpec,
+  locale: Locale = 'fr',
+): MovementFit {
+  const m = MESSAGES[locale].movement;
+  const len = (value: number) => mm(value, 1, locale);
   if (movement.kind === 'quartz' && powerReserve(config))
-    return {
-      movement,
-      fit: 'no',
-      notes: ['Un quartz n’a pas de réserve de marche à indiquer : il tourne sur sa pile.'],
-    };
+    return { movement, fit: 'no', notes: [m.quartzReserve] };
   if (movement.kind === 'quartz' && chronograph(config))
-    return {
-      movement,
-      fit: 'check',
-      notes: [
-        'Chronographe à quartz ou mécaquartz (série Seiko VK, par exemple) : disposition des compteurs selon le calibre.',
-      ],
-    };
+    return { movement, fit: 'check', notes: [m.quartzChrono] };
   if (movement.kind === 'quartz' || movement.heightMm === undefined)
-    return { movement, fit: 'check', notes: ['Cotes et fonctions selon le calibre choisi.'] };
+    return { movement, fit: 'check', notes: [m.quartzCheck] };
 
   const blocking: string[] = [];
   const adapt: string[] = [];
   const width = config.case.diameterMm * contourExtents(config.case.shape).min;
   if (width - 2 * WALL_MM < STANDARD_DIAL_MM)
-    blocking.push(
-      `Boîtier trop étroit : le cadran de ${mm(STANDARD_DIAL_MM)} demande ${mm(
-        STANDARD_DIAL_MM + 2 * WALL_MM,
-      )} de large.`,
-    );
+    blocking.push(m.tooNarrow(len(STANDARD_DIAL_MM), len(STANDARD_DIAL_MM + 2 * WALL_MM)));
   const thickness = Math.ceil((movement.heightMm + STACK_MM) * 2) / 2;
   if (config.case.thicknessMm < thickness)
-    blocking.push(
-      `Boîtier trop fin : ${mm(config.case.thicknessMm)}, il en faut au moins ${mm(thickness)}.`,
-    );
+    blocking.push(m.tooThin(len(config.case.thicknessMm), len(thickness)));
 
   const visible = visibleDialMm(config);
-  if (visible > LARGE_DIAL_MM)
-    adapt.push(`Ouverture de ${mm(visible)} : cadran sur mesure et cercle d’emboîtage.`);
-  else if (visible > STANDARD_DIAL_MM)
-    adapt.push(`Ouverture de ${mm(visible)} : cadran grand format de ${mm(LARGE_DIAL_MM)}.`);
+  if (visible > LARGE_DIAL_MM) adapt.push(m.customDial(len(visible)));
+  else if (visible > STANDARD_DIAL_MM) adapt.push(m.largeDial(len(visible), len(LARGE_DIAL_MM)));
 
   if (config.crown.position !== movement.stem)
-    adapt.push(
-      `Couronne à ${config.crown.position.replace('h', ' h')} : mouvement pivoté, cadran percé en conséquence.`,
-    );
+    adapt.push(m.crown(hourLabel(config.crown.position, locale)));
 
   // Les NH3x portent leur trotteuse au centre ; une petite seconde demande un autre calibre.
-  if (smallSeconds(config))
-    blocking.push(
-      `Trotteuse au centre sur le ${movement.name} : la petite seconde demande un calibre qui la porte.`,
-    );
-  if (chronograph(config))
-    blocking.push(
-      `Pas de chronographe dans le ${movement.name} : il faut un calibre chronographe.`,
-    );
-  if (powerReserve(config))
-    blocking.push(
-      `Pas d’indicateur de réserve sur le ${movement.name} : il faut un calibre qui le porte.`,
-    );
+  if (smallSeconds(config)) blocking.push(m.smallSeconds(movement.name));
+  if (chronograph(config)) blocking.push(m.chronograph(movement.name));
+  if (powerReserve(config)) blocking.push(m.powerReserve(movement.name));
   const window = hasDateWindow(config);
-  if (window && movement.calendar === 'none')
-    blocking.push('Pas de date pour le guichet du cadran.');
+  if (window && movement.calendar === 'none') blocking.push(m.noDateWindow);
   const datePosition = dateComplication(config)?.position;
   if (datePosition && movement.calendar !== 'none' && datePosition !== movement.stem)
-    adapt.push(
-      `Date à ${datePosition.replace('h30', ' h 30').replace(/h$/, ' h')} : le ${movement.name} l’affiche face à la tige de remontoir, calibre ou module à adapter.`,
-    );
+    adapt.push(m.datePosition(hourLabel(datePosition, locale), movement.name));
   if (!window && movement.calendar !== 'none')
-    adapt.push(
-      movement.calendar === 'day-date'
-        ? 'Jour et date masqués : le cadran n’a pas de guichet.'
-        : 'Date masquée : le cadran n’a pas de guichet.',
-    );
+    adapt.push(movement.calendar === 'day-date' ? m.dayDateHidden : m.dateHidden);
 
   const fit: Fit = blocking.length ? 'no' : adapt.length ? 'adapt' : 'ok';
   return { movement, fit, notes: [...blocking, ...adapt] };
 }
 
 /** Tous les mouvements connus, du mieux adapté au moins adapté. */
-export function compatibleMovements(config: WatchConfig): MovementFit[] {
+export function compatibleMovements(config: WatchConfig, locale: Locale = 'fr'): MovementFit[] {
   return Object.values(MOVEMENTS)
-    .map((movement) => movementFit(config, movement))
+    .map((movement) => movementFit(config, movement, locale))
     .sort((a, b) => ORDER[a.fit] - ORDER[b.fit]);
 }

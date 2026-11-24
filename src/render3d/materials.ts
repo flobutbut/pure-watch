@@ -8,6 +8,8 @@ import { watchDimensions } from '../core/geometry/dimensions';
 import { DIAL_PATTERN_SETTINGS, isDialPatternFinish } from './dial-patterns';
 import { isBlackTonneau } from '../core/config/instrument';
 import { effectiveDialColor } from '../core/config/dial';
+import { indexColor } from '../core/config/colors';
+import { lumeChoice, lumePigment } from '../core/config/lume';
 import type { WatchConfig } from '../core/config/types';
 import { rehautColor, rehautSettings } from '../core/config/rehaut';
 import {
@@ -107,7 +109,10 @@ function polishedTransmission(material: THREE.MeshPhysicalMaterial): THREE.MeshP
 }
 
 export class MaterialLibrary {
-  constructor(private readonly refined = true) {}
+  constructor(
+    private readonly refined = true,
+    private readonly night = false,
+  ) {}
   private readonly cache = new Map<string, THREE.Material>();
   private readonly textures: THREE.Texture[] = [];
 
@@ -213,6 +218,42 @@ export class MaterialLibrary {
   polishedSteel(): THREE.MeshPhysicalMaterial {
     return this.cached('hands-steel', () => {
       return new THREE.MeshPhysicalMaterial({ color: '#E8EBF0', metalness: 1, roughness: 0.14 });
+    });
+  }
+
+  indexMaterial(config: WatchConfig): THREE.MeshStandardMaterial {
+    if (config.dial.indices.finish === 'printed') return this.matte(indexColor(config));
+    return this.handMaterial(
+      {
+        ...config,
+        hands: {
+          ...config.hands,
+          finish: config.dial.indices.finish.replace(/^applied-/, ''),
+          color: config.dial.indices.color,
+        },
+      },
+      'face',
+    );
+  }
+
+  luminous(part: {
+    lume?: string | null;
+    lumeColor: `#${string}`;
+    lumeEmission: `#${string}`;
+  }): THREE.MeshStandardMaterial {
+    const { day, night, kind } = lumeChoice(part);
+    const pigment = lumePigment(kind);
+    const gain = pigment?.lookGain ?? 1;
+    return this.cached(`lume:${day}:${night}:${gain}`, () => {
+      const material = new THREE.MeshStandardMaterial({
+        color: day,
+        roughness: 0.83,
+        metalness: 0,
+        emissive: night,
+        emissiveIntensity: this.night ? 1.45 * gain : 0,
+      });
+      material.name = 'lume';
+      return material;
     });
   }
 

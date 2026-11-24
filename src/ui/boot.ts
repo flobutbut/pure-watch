@@ -7,17 +7,19 @@
  * délai de secours (WebGL absent, réseau très lent) : on n'enferme jamais l'utilisateur.
  */
 
+import { t } from './i18n.svelte';
+
 type Stage = 'script' | 'app' | 'engine' | 'watch';
 
 /**
  * Part de la progression atteinte quand l'étape est franchie, et libellé de ce qui
  * commence alors. Les pièces autour de la montre font le reste, jusqu'à 1.
  */
-const STAGES: Record<Stage, { at: number; label: string }> = {
-  script: { at: 0.12, label: "Préparation de l'atelier" },
-  app: { at: 0.24, label: 'Usinage des pièces' },
-  engine: { at: 0.5, label: 'Assemblage de la montre' },
-  watch: { at: 0.72, label: 'Mise en lumière' },
+const STAGES: Record<Stage, { at: number }> = {
+  script: { at: 0.12 },
+  app: { at: 0.24 },
+  engine: { at: 0.5 },
+  watch: { at: 0.72 },
 };
 
 /** Durée minimale d'affichage : le cadran a le temps de se dessiner. */
@@ -65,8 +67,8 @@ function maybeFinish(): void {
 /** Étape franchie. */
 export function bootStage(stage: Stage): void {
   reached.add(stage);
-  const { at, label } = STAGES[stage];
-  advance(stage === 'watch' ? at + (1 - at) * cellsShare() : at, label);
+  const { at } = STAGES[stage];
+  advance(stage === 'watch' ? at + (1 - at) * cellsShare() : at, t().boot[stage]);
 }
 
 /** Une pièce proche du centre est attendue avant de révéler la grille. */

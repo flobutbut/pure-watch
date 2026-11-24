@@ -12,6 +12,19 @@ import { buildHands, HAND_SETS, SECOND_STYLES } from './hands';
 const additions = ['spear', 'pencil', 'spade', 'art-deco', 'skeleton', 'cathedral'];
 const newSeconds = ['baton', 'diamond', 'teardrop', 'ring-tail', 'lightning'];
 const catalog = parseCatalog(rawCatalog);
+it('sans trotteuse conserve heures, minutes et cache-pivot sans géométrie de seconde', () => {
+  const config = defaultConfig();
+  config.hands.second.style = 'none';
+  const lib = new MaterialLibrary();
+  const hands = buildHands(config, watchDimensions(config), lib, true, false, true);
+  expect(hands.seconds.children).toHaveLength(0);
+  expect(hands.group.getObjectByName('hour-blade')).toBeDefined();
+  expect(hands.group.getObjectByName('minute-blade')).toBeDefined();
+  expect(hands.group.getObjectByName('pivot-cap')).toBeDefined();
+  expect(() => hands.setAngles({ hour: 30, minute: 90, second: 180 })).not.toThrow();
+  dispose(hands.group);
+  lib.dispose();
+});
 function dispose(root: THREE.Object3D) {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.geometry.dispose();
@@ -55,7 +68,7 @@ it.each(CASE_SHAPES)(
   (shape) => {
     const lib = new MaterialLibrary();
     for (const diameter of [22, 40, 48])
-      for (const [index, second] of SECOND_STYLES.entries()) {
+      for (const [index, second] of SECOND_STYLES.filter((style) => style !== 'none').entries()) {
         const config = defaultConfig();
         config.case.shape = config.dial.shape = shape;
         Object.assign(config.case, proportionsForDiameter(diameter));

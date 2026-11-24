@@ -1,0 +1,693 @@
+[
+  {
+    "id": "submariner",
+    "name": "Rolex Submariner",
+    "reference": "124060",
+    "source": "https://www.rolex.com/watches/submariner/m124060-0001",
+    "config": {
+      "schema": 1,
+      "style": null,
+      "movement": "nh35",
+      "case": {
+        "shape": "round",
+        "profile": "curved",
+        "diameterMm": 41,
+        "thicknessMm": 12,
+        "lugToLugMm": 48,
+        "lugWidthMm": 21,
+        "lugs": "straight",
+        "material": "steel",
+        "finish": "mixed",
+        "caseback": "solid"
+      },
+      "crown": {
+        "style": "guarded",
+        "position": "3h",
+        "guard": true,
+        "screwed": true
+      },
+      "bezel": {
+        "type": "rotating",
+        "insert": "ceramic",
+        "scale": "dive-60",
+        "color": "#101114",
+        "pip": "lume",
+        "angleDeg": 0
+      },
+      "crystal": {
+        "type": "sapphire-flat",
+        "coating": "none",
+        "cyclops": false
+      },
+      "rehaut": {
+        "profile": "classic",
+        "finish": "dial",
+        "color": "#111317",
+        "scale": "none"
+      },
+      "dial": {
+        "size": "balanced",
+        "shape": "round",
+        "material": "metal",
+        "finish": "lacquer",
+        "color": "#080A0C",
+        "pattern": null,
+        "chapterRing": "ticks",
+        "indices": {
+          "style": "dots",
+          "finish": "applied-polished",
+          "lume": null,
+          "numerals": "none",
+          "numeralFont": "sans",
+          "numeralSize": 1,
+          "numeralRadius": 1,
+          "numeralColor": "match",
+          "indexSize": 1.25,
+          "indexRadius": 0.98
+        },
+        "text": {
+          "brand": "",
+          "line2": "",
+          "position": "12h"
+        }
+      },
+      "hands": {
+        "set": "sword",
+        "finish": "polished",
+        "color": "#E8EBF0",
+        "lume": null,
+        "second": {
+          "style": "lollipop",
+          "color": "match",
+          "counterweight": true
+        }
+      },
+      "complications": [],
+      "strap": {
+        "type": "metal",
+        "material": "steel",
+        "color": "#151515",
+        "stitching": null,
+        "widthMm": 21,
+        "buckle": "folding"
+      },
+      "view": {
+        "time": "fixed",
+        "lighting": "studio",
+        "night": false
+      }
+    },
+    "hash": "#v1.eyJiIjo0MSwiYyI6MTIsImQiOjQ4LCJlIjoyMSwiaiI6NiwibCI6MSwibiI6NywibyI6MywicCI6MiwicSI6IiMxMDExMTQiLCJyIjoyLCJzIjoxLCJ3Ijo4LCJ4IjoiIzA4MEEwQyIsInoiOjQsIkEiOjQsIkwiOjMsIk0iOiJtYXRjaCIsIlAiOiJtZXRhbCIsIlEiOiJzdGVlbCIsIlIiOiIjMTUxNTE1IiwiUyI6bnVsbCwiVCI6MjEsIlUiOiJmb2xkaW5nIiwiViI6MiwiYWciOjIsImFtIjoxLjI1LCJhbiI6MC45OH0",
+    "localUrl": "http://127.0.0.1:5173/#v1.eyJiIjo0MSwiYyI6MTIsImQiOjQ4LCJlIjoyMSwiaiI6NiwibCI6MSwibiI6NywibyI6MywicCI6MiwicSI6IiMxMDExMTQiLCJyIjoyLCJzIjoxLCJ3Ijo4LCJ4IjoiIzA4MEEwQyIsInoiOjQsIkEiOjQsIkwiOjMsIk0iOiJtYXRjaCIsIlAiOiJtZXRhbCIsIlEiOiJzdGVlbCIsIlIiOiIjMTUxNTE1IiwiUyI6bnVsbCwiVCI6MjEsIlUiOiJmb2xkaW5nIiwiViI6MiwiYWciOjIsImFtIjoxLjI1LCJhbiI6MC45OH0",
+    "publicUrl": "https://pure-watch-six.vercel.app/#v1.eyJiIjo0MSwiYyI6MTIsImQiOjQ4LCJlIjoyMSwiaiI6NiwibCI6MSwibiI6NywibyI6MywicCI6MiwicSI6IiMxMDExMTQiLCJyIjoyLCJzIjoxLCJ3Ijo4LCJ4IjoiIzA4MEEwQyIsInoiOjQsIkEiOjQsIkwiOjMsIk0iOiJtYXRjaCIsIlAiOiJtZXRhbCIsIlEiOiJzdGVlbCIsIlIiOiIjMTUxNTE1IiwiUyI6bnVsbCwiVCI6MjEsIlUiOiJmb2xkaW5nIiwiViI6MiwiYWciOjIsImFtIjoxLjI1LCJhbiI6MC45OH0",
+    "dimensions": {
+      "caseRadius": 20.5,
+      "caseThickness": 12,
+      "bezelWidth": 3.735099999999999,
+      "openingRadius": 16.7649,
+      "dialRadius": 16.149900000000002,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 16.149900000000002,
+      "dialExtent": 16.149900000000002,
+      "z": {
+        "back": -8.879999999999999,
+        "bezelTop": 2.88,
+        "crystalTop": 3.12,
+        "dial": 0
+      },
+      "lugToLug": 48,
+      "lugWidth": 21,
+      "lugThickness": 2.665,
+      "hands": {
+        "hour": 10.093687500000001,
+        "minute": 14.938657500000001,
+        "second": 15.7461525,
+        "secondTail": 4.4412225
+      },
+      "crown": {
+        "radius": 3.4850000000000003,
+        "length": 2.87
+      }
+    },
+    "notes": "Diamètre 41 mm sourcé ; épaisseur 12 mm, longueur 48 mm et entre-cornes 21 mm sont des choix d’étude, pas des mesures certifiées."
+  },
+  {
+    "id": "tank",
+    "name": "Cartier Tank Must",
+    "reference": "WSTA0109",
+    "source": "https://www.cartier.com.br/wsta0109-relogio-tank-must-de-cartier/p",
+    "config": {
+      "schema": 1,
+      "style": null,
+      "movement": "quartz",
+      "case": {
+        "shape": "rectangle",
+        "profile": "straight",
+        "diameterMm": 30,
+        "thicknessMm": 6.6,
+        "lugToLugMm": 36,
+        "lugWidthMm": 18,
+        "lugs": "none",
+        "material": "steel",
+        "finish": "polished",
+        "caseback": "solid"
+      },
+      "crown": {
+        "style": "pointed",
+        "position": "3h",
+        "guard": false,
+        "screwed": false
+      },
+      "bezel": {
+        "type": "smooth",
+        "insert": "none",
+        "scale": "none",
+        "color": "#101418",
+        "pip": "none",
+        "angleDeg": 0
+      },
+      "crystal": {
+        "type": "sapphire-flat",
+        "coating": "none",
+        "cyclops": false
+      },
+      "rehaut": {
+        "profile": "classic",
+        "finish": "dial",
+        "color": "#111317",
+        "scale": "none"
+      },
+      "dial": {
+        "size": "open",
+        "shape": "rectangle",
+        "material": "metal",
+        "finish": "matte",
+        "color": "#ECEBE6",
+        "pattern": null,
+        "chapterRing": "railroad",
+        "indices": {
+          "style": "none",
+          "finish": "applied-polished",
+          "lume": null,
+          "numerals": "roman",
+          "numeralFont": "serif",
+          "numeralSize": 2,
+          "numeralRadius": 0.96,
+          "numeralColor": "#15191E",
+          "indexSize": 1,
+          "indexRadius": 1
+        },
+        "text": {
+          "brand": "",
+          "line2": "",
+          "position": "12h"
+        }
+      },
+      "hands": {
+        "set": "sword",
+        "finish": "blued",
+        "color": "#E8EBF0",
+        "lume": null,
+        "second": {
+          "style": "thin",
+          "color": "match",
+          "counterweight": false
+        }
+      },
+      "complications": [],
+      "strap": {
+        "type": "leather",
+        "material": "calf-grained",
+        "color": "#151515",
+        "stitching": "#202020",
+        "widthMm": 18,
+        "buckle": "tang"
+      },
+      "view": {
+        "time": "fixed",
+        "lighting": "studio",
+        "night": false
+      }
+    },
+    "hash": "#v1.eyJhIjo2LCJiIjozMCwiYyI6Ni42LCJkIjozNiwiZSI6MTgsImYiOjgsImgiOjMsImoiOjMsIm0iOjAsInMiOjEsIngiOiIjRUNFQkU2IiwiQSI6OCwiRCI6NywiRSI6NCwiSiI6ImJsdWVkIiwiTCI6MSwiTSI6Im1hdGNoIiwiTiI6MCwiUiI6IiMxNTE1MTUiLCJTIjoiIzIwMjAyMCIsIlQiOjE4LCJWIjoyLCJaIjoicXVhcnR6IiwiYWEiOjYsImFoIjoxLCJhaiI6MiwiYWsiOjAuOTYsImFsIjoiIzE1MTkxRSJ9",
+    "localUrl": "http://127.0.0.1:5173/#v1.eyJhIjo2LCJiIjozMCwiYyI6Ni42LCJkIjozNiwiZSI6MTgsImYiOjgsImgiOjMsImoiOjMsIm0iOjAsInMiOjEsIngiOiIjRUNFQkU2IiwiQSI6OCwiRCI6NywiRSI6NCwiSiI6ImJsdWVkIiwiTCI6MSwiTSI6Im1hdGNoIiwiTiI6MCwiUiI6IiMxNTE1MTUiLCJTIjoiIzIwMjAyMCIsIlQiOjE4LCJWIjoyLCJaIjoicXVhcnR6IiwiYWEiOjYsImFoIjoxLCJhaiI6MiwiYWsiOjAuOTYsImFsIjoiIzE1MTkxRSJ9",
+    "publicUrl": "https://pure-watch-six.vercel.app/#v1.eyJhIjo2LCJiIjozMCwiYyI6Ni42LCJkIjozNiwiZSI6MTgsImYiOjgsImgiOjMsImoiOjMsIm0iOjAsInMiOjEsIngiOiIjRUNFQkU2IiwiQSI6OCwiRCI6NywiRSI6NCwiSiI6ImJsdWVkIiwiTCI6MSwiTSI6Im1hdGNoIiwiTiI6MCwiUiI6IiMxNTE1MTUiLCJTIjoiIzIwMjAyMCIsIlQiOjE4LCJWIjoyLCJaIjoicXVhcnR6IiwiYWEiOjYsImFoIjoxLCJhaiI6MiwiYWsiOjAuOTYsImFsIjoiIzE1MTkxRSJ9",
+    "dimensions": {
+      "caseRadius": 15,
+      "caseThickness": 6.6,
+      "bezelWidth": 1.9500000000000002,
+      "openingRadius": 13.05,
+      "dialRadius": 12.600000000000001,
+      "dialShape": "rectangle",
+      "dialScale": 0.9607183908045976,
+      "dialSafeRadius": 9.664673296551724,
+      "dialExtent": 15.279413723344156,
+      "z": {
+        "back": -4.884,
+        "bezelTop": 1.5839999999999999,
+        "crystalTop": 1.7159999999999997,
+        "dial": 0
+      },
+      "lugToLug": 36,
+      "lugWidth": 18,
+      "lugThickness": 1.9500000000000002,
+      "hands": {
+        "hour": 6.040420810344828,
+        "minute": 8.939822799310345,
+        "second": 9.42305646413793,
+        "secondTail": 2.657785156551724
+      },
+      "crown": {
+        "radius": 2.5500000000000003,
+        "length": 2.1
+      }
+    },
+    "notes": "La référence mesure 33,7 × 25,5 × 6,6 mm. Le rectangle générique, nominal 30 mm, produit environ 33,6 × 24 mm ; le rapport largeur/hauteur est imposé. Les 18 mm d’entre-cornes sont un choix d’étude. La trotteuse supplémentaire ne peut pas être supprimée."
+  },
+  {
+    "id": "royal-oak",
+    "name": "Audemars Piguet Royal Oak",
+    "reference": "15510ST.OO.1320ST.06",
+    "source": "https://www.audemarspiguet.com/en/watch-collection/royal-oak/15510ST.OO.1320ST.06",
+    "config": {
+      "schema": 1,
+      "style": null,
+      "movement": "nh35",
+      "case": {
+        "shape": "octagon",
+        "profile": "faceted",
+        "diameterMm": 41,
+        "thicknessMm": 10.5,
+        "lugToLugMm": 50,
+        "lugWidthMm": 26,
+        "lugs": "integrated",
+        "material": "steel",
+        "finish": "mixed",
+        "caseback": "solid"
+      },
+      "crown": {
+        "style": "square",
+        "position": "3h",
+        "guard": false,
+        "screwed": true
+      },
+      "bezel": {
+        "type": "smooth",
+        "insert": "none",
+        "scale": "none",
+        "color": "#101418",
+        "pip": "none",
+        "angleDeg": 0
+      },
+      "crystal": {
+        "type": "sapphire-flat",
+        "coating": "none",
+        "cyclops": false
+      },
+      "rehaut": {
+        "profile": "classic",
+        "finish": "dial",
+        "color": "#111317",
+        "scale": "none"
+      },
+      "dial": {
+        "size": "balanced",
+        "shape": "round",
+        "material": "metal",
+        "finish": "clous-de-paris",
+        "color": "#18334C",
+        "pattern": null,
+        "chapterRing": "ticks",
+        "indices": {
+          "style": "baton-facet",
+          "finish": "applied-polished",
+          "lume": null,
+          "numerals": "none",
+          "numeralFont": "sans",
+          "numeralSize": 1,
+          "numeralRadius": 1,
+          "numeralColor": "match",
+          "indexSize": 0.94,
+          "indexRadius": 1.02
+        },
+        "text": {
+          "brand": "",
+          "line2": "",
+          "position": "12h"
+        }
+      },
+      "hands": {
+        "set": "baton",
+        "finish": "polished",
+        "color": "#E8EBF0",
+        "lume": null,
+        "second": {
+          "style": "thin",
+          "color": "match",
+          "counterweight": false
+        }
+      },
+      "complications": [
+        {
+          "type": "date",
+          "position": "3h",
+          "disc": "dial",
+          "window": "plain"
+        }
+      ],
+      "strap": {
+        "type": "metal",
+        "material": "steel",
+        "color": "#151515",
+        "stitching": null,
+        "widthMm": 26,
+        "buckle": "folding"
+      },
+      "view": {
+        "time": "fixed",
+        "lighting": "studio",
+        "night": false
+      }
+    },
+    "hash": "#v1.eyJhIjo0LCJiIjo0MSwiYyI6MTAuNSwiZCI6NTAsImUiOjI2LCJmIjo3LCJqIjo0LCJzIjoxLCJ3IjoxMCwieCI6IiMxODMzNEMiLCJ6Ijo0LCJBIjoyLCJJIjoxLCJMIjoxLCJNIjoibWF0Y2giLCJOIjowLCJPIjpbeyJ0eXBlIjoiZGF0ZSIsInBvc2l0aW9uIjoiM2giLCJkaXNjIjoiZGlhbCIsIndpbmRvdyI6InBsYWluIn1dLCJQIjoibWV0YWwiLCJRIjoic3RlZWwiLCJSIjoiIzE1MTUxNSIsIlMiOm51bGwsIlQiOjI2LCJVIjoiZm9sZGluZyIsIlYiOjIsImFnIjoyLCJhaCI6MywiYW0iOjAuOTQsImFuIjoxLjAyfQ",
+    "localUrl": "http://127.0.0.1:5173/#v1.eyJhIjo0LCJiIjo0MSwiYyI6MTAuNSwiZCI6NTAsImUiOjI2LCJmIjo3LCJqIjo0LCJzIjoxLCJ3IjoxMCwieCI6IiMxODMzNEMiLCJ6Ijo0LCJBIjoyLCJJIjoxLCJMIjoxLCJNIjoibWF0Y2giLCJOIjowLCJPIjpbeyJ0eXBlIjoiZGF0ZSIsInBvc2l0aW9uIjoiM2giLCJkaXNjIjoiZGlhbCIsIndpbmRvdyI6InBsYWluIn1dLCJQIjoibWV0YWwiLCJRIjoic3RlZWwiLCJSIjoiIzE1MTUxNSIsIlMiOm51bGwsIlQiOjI2LCJVIjoiZm9sZGluZyIsIlYiOjIsImFnIjoyLCJhaCI6MywiYW0iOjAuOTQsImFuIjoxLjAyfQ",
+    "publicUrl": "https://pure-watch-six.vercel.app/#v1.eyJhIjo0LCJiIjo0MSwiYyI6MTAuNSwiZCI6NTAsImUiOjI2LCJmIjo3LCJqIjo0LCJzIjoxLCJ3IjoxMCwieCI6IiMxODMzNEMiLCJ6Ijo0LCJBIjoyLCJJIjoxLCJMIjoxLCJNIjoibWF0Y2giLCJOIjowLCJPIjpbeyJ0eXBlIjoiZGF0ZSIsInBvc2l0aW9uIjoiM2giLCJkaXNjIjoiZGlhbCIsIndpbmRvdyI6InBsYWluIn1dLCJQIjoibWV0YWwiLCJRIjoic3RlZWwiLCJSIjoiIzE1MTUxNSIsIlMiOm51bGwsIlQiOjI2LCJVIjoiZm9sZGluZyIsIlYiOjIsImFnIjoyLCJhaCI6MywiYW0iOjAuOTQsImFuIjoxLjAyfQ",
+    "dimensions": {
+      "caseRadius": 20.5,
+      "caseThickness": 10.5,
+      "bezelWidth": 3.735099999999999,
+      "openingRadius": 16.731370149189527,
+      "dialRadius": 16.116370149189528,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 16.116370149189528,
+      "dialExtent": 16.116370149189528,
+      "z": {
+        "back": -7.77,
+        "bezelTop": 2.52,
+        "crystalTop": 2.73,
+        "dial": 0
+      },
+      "lugToLug": 50,
+      "lugWidth": 26,
+      "lugThickness": 2.665,
+      "hands": {
+        "hour": 10.072731343243454,
+        "minute": 14.907642388000312,
+        "second": 15.71346089545979,
+        "secondTail": 4.43200179102712
+      },
+      "crown": {
+        "radius": 3.4850000000000003,
+        "length": 2.87
+      }
+    },
+    "notes": "Diamètre 41 mm sourcé ; autres dimensions choisies pour l’étude. Clous de Paris utilisé comme approximation de la Grande Tapisserie. Bracelet stocké dans le lien mais absent du rendu 3D."
+  },
+  {
+    "id": "speedmaster",
+    "name": "Omega Speedmaster Moonwatch",
+    "reference": "310.30.42.50.01.001",
+    "source": "https://www.omegawatches.com/watch-omega-speedmaster-moonwatch-professional-co-axial-master-chronometer-chronograph-42-mm-31030425001001",
+    "config": {
+      "schema": 1,
+      "style": null,
+      "movement": "nh35",
+      "case": {
+        "shape": "round",
+        "profile": "curved",
+        "diameterMm": 42,
+        "thicknessMm": 13.54,
+        "lugToLugMm": 47.5,
+        "lugWidthMm": 20,
+        "lugs": "curved",
+        "material": "steel",
+        "finish": "mixed",
+        "caseback": "solid"
+      },
+      "crown": {
+        "style": "fluted",
+        "position": "3h",
+        "guard": false,
+        "screwed": false
+      },
+      "bezel": {
+        "type": "smooth",
+        "insert": "none",
+        "scale": "none",
+        "color": "#101418",
+        "pip": "none",
+        "angleDeg": 0
+      },
+      "crystal": {
+        "type": "acrylic",
+        "coating": "none",
+        "cyclops": false
+      },
+      "rehaut": {
+        "profile": "sloped",
+        "finish": "custom",
+        "color": "#121416",
+        "scale": "tachymeter"
+      },
+      "dial": {
+        "size": "open",
+        "shape": "round",
+        "material": "metal",
+        "finish": "matte",
+        "color": "#121416",
+        "pattern": null,
+        "chapterRing": "ticks",
+        "indices": {
+          "style": "baton",
+          "finish": "applied-polished",
+          "lume": null,
+          "numerals": "none",
+          "numeralFont": "sans",
+          "numeralSize": 1,
+          "numeralRadius": 1,
+          "numeralColor": "match",
+          "indexSize": 0.95,
+          "indexRadius": 1.04
+        },
+        "text": {
+          "brand": "",
+          "line2": "",
+          "position": "12h"
+        }
+      },
+      "hands": {
+        "set": "pencil",
+        "finish": "lacquer",
+        "color": "#F3F1E8",
+        "lume": null,
+        "second": {
+          "style": "thin",
+          "color": "#F3F1E8",
+          "counterweight": false
+        }
+      },
+      "complications": [
+        {
+          "type": "chronograph",
+          "position": "tricompax",
+          "counters": "black",
+          "pushers": "round"
+        }
+      ],
+      "strap": {
+        "type": "metal",
+        "material": "steel",
+        "color": "#151515",
+        "stitching": null,
+        "widthMm": 20,
+        "buckle": "folding"
+      },
+      "view": {
+        "time": "fixed",
+        "lighting": "studio",
+        "night": false
+      }
+    },
+    "hash": "#v1.eyJiIjo0MiwiYyI6MTMuNTQsImQiOjQ3LjUsImYiOjIsImoiOjEsIm0iOjAsInMiOjUsIngiOiIjMTIxNDE2IiwieiI6NCwiSSI6OCwiSiI6ImxhY3F1ZXIiLCJMIjoxLCJNIjoiI0YzRjFFOCIsIk4iOjAsIk8iOlt7InR5cGUiOiJjaHJvbm9ncmFwaCIsInBvc2l0aW9uIjoidHJpY29tcGF4IiwiY291bnRlcnMiOiJibGFjayIsInB1c2hlcnMiOiJyb3VuZCJ9XSwiUCI6Im1ldGFsIiwiUSI6InN0ZWVsIiwiUiI6IiMxNTE1MTUiLCJTIjpudWxsLCJVIjoiZm9sZGluZyIsIlYiOjIsImFiIjoiI0YzRjFFOCIsImFjIjoyLCJhZCI6MywiYWUiOiIjMTIxNDE2IiwiYWYiOjUsImFtIjowLjk1LCJhbiI6MS4wNH0",
+    "localUrl": "http://127.0.0.1:5173/#v1.eyJiIjo0MiwiYyI6MTMuNTQsImQiOjQ3LjUsImYiOjIsImoiOjEsIm0iOjAsInMiOjUsIngiOiIjMTIxNDE2IiwieiI6NCwiSSI6OCwiSiI6ImxhY3F1ZXIiLCJMIjoxLCJNIjoiI0YzRjFFOCIsIk4iOjAsIk8iOlt7InR5cGUiOiJjaHJvbm9ncmFwaCIsInBvc2l0aW9uIjoidHJpY29tcGF4IiwiY291bnRlcnMiOiJibGFjayIsInB1c2hlcnMiOiJyb3VuZCJ9XSwiUCI6Im1ldGFsIiwiUSI6InN0ZWVsIiwiUiI6IiMxNTE1MTUiLCJTIjpudWxsLCJVIjoiZm9sZGluZyIsIlYiOjIsImFiIjoiI0YzRjFFOCIsImFjIjoyLCJhZCI6MywiYWUiOiIjMTIxNDE2IiwiYWYiOjUsImFtIjowLjk1LCJhbiI6MS4wNH0",
+    "publicUrl": "https://pure-watch-six.vercel.app/#v1.eyJiIjo0MiwiYyI6MTMuNTQsImQiOjQ3LjUsImYiOjIsImoiOjEsIm0iOjAsInMiOjUsIngiOiIjMTIxNDE2IiwieiI6NCwiSSI6OCwiSiI6ImxhY3F1ZXIiLCJMIjoxLCJNIjoiI0YzRjFFOCIsIk4iOjAsIk8iOlt7InR5cGUiOiJjaHJvbm9ncmFwaCIsInBvc2l0aW9uIjoidHJpY29tcGF4IiwiY291bnRlcnMiOiJibGFjayIsInB1c2hlcnMiOiJyb3VuZCJ9XSwiUCI6Im1ldGFsIiwiUSI6InN0ZWVsIiwiUiI6IiMxNTE1MTUiLCJTIjpudWxsLCJVIjoiZm9sZGluZyIsIlYiOjIsImFiIjoiI0YzRjFFOCIsImFjIjoyLCJhZCI6MywiYWUiOiIjMTIxNDE2IiwiYWYiOjUsImFtIjowLjk1LCJhbiI6MS4wNH0",
+    "dimensions": {
+      "caseRadius": 21,
+      "caseThickness": 13.54,
+      "bezelWidth": 2.73,
+      "openingRadius": 18.27,
+      "dialRadius": 16.38,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 16.38,
+      "dialExtent": 16.38,
+      "z": {
+        "back": -8.123999999999999,
+        "bezelTop": 3.2495999999999996,
+        "crystalTop": 5.4159999999999995,
+        "dial": 0
+      },
+      "lugToLug": 47.5,
+      "lugWidth": 20,
+      "lugThickness": 2.73,
+      "hands": {
+        "hour": 10.237499999999999,
+        "minute": 15.151499999999999,
+        "second": 15.9705,
+        "secondTail": 4.5045
+      },
+      "crown": {
+        "radius": 3.5700000000000003,
+        "length": 2.9400000000000004
+      }
+    },
+    "notes": "42 mm, 13,54 mm, corne à corne 47,5 mm et entre-cornes 20 mm sourcés. Tachymètre reporté sur le réhaut faute de lunette fixe tachymétrique."
+  },
+  {
+    "id": "luminor",
+    "name": "Panerai Luminor Marina",
+    "reference": "PAM03312",
+    "source": "https://www.panerai.com/fr/fr/collections/watch-collection/luminor/pam03312-luminor-marina.html",
+    "config": {
+      "schema": 1,
+      "style": null,
+      "movement": "nh35",
+      "case": {
+        "shape": "cushion",
+        "profile": "curved",
+        "diameterMm": 44,
+        "thicknessMm": 14,
+        "lugToLugMm": 53,
+        "lugWidthMm": 24,
+        "lugs": "straight",
+        "material": "steel",
+        "finish": "mixed",
+        "caseback": "display"
+      },
+      "crown": {
+        "style": "guarded",
+        "position": "3h",
+        "guard": true,
+        "screwed": false
+      },
+      "bezel": {
+        "type": "smooth",
+        "insert": "none",
+        "scale": "none",
+        "color": "#101418",
+        "pip": "none",
+        "angleDeg": 0
+      },
+      "crystal": {
+        "type": "sapphire-flat",
+        "coating": "none",
+        "cyclops": false
+      },
+      "rehaut": {
+        "profile": "classic",
+        "finish": "dial",
+        "color": "#111317",
+        "scale": "none"
+      },
+      "dial": {
+        "size": "open",
+        "shape": "round",
+        "material": "metal",
+        "finish": "matte",
+        "color": "#101214",
+        "pattern": null,
+        "chapterRing": "none",
+        "indices": {
+          "style": "baton",
+          "finish": "applied-polished",
+          "lume": null,
+          "numerals": "cardinal",
+          "numeralFont": "sans",
+          "numeralSize": 1.35,
+          "numeralRadius": 1,
+          "numeralColor": "#DDDCC9",
+          "indexSize": 1,
+          "indexRadius": 1
+        },
+        "text": {
+          "brand": "",
+          "line2": "",
+          "position": "12h"
+        }
+      },
+      "hands": {
+        "set": "baton",
+        "finish": "polished",
+        "color": "#E8EBF0",
+        "lume": null,
+        "second": {
+          "style": "thin",
+          "color": "match",
+          "counterweight": false
+        }
+      },
+      "complications": [
+        {
+          "type": "date",
+          "position": "3h",
+          "disc": "black",
+          "window": "plain"
+        },
+        {
+          "type": "small-seconds",
+          "position": "9h",
+          "style": "flat"
+        }
+      ],
+      "strap": {
+        "type": "leather",
+        "material": "alligator",
+        "color": "#151515",
+        "stitching": "#D1C2A4",
+        "widthMm": 24,
+        "buckle": "tang"
+      },
+      "view": {
+        "time": "fixed",
+        "lighting": "studio",
+        "night": false
+      }
+    },
+    "hash": "#v1.eyJhIjoyLCJiIjo0NCwiYyI6MTQsImQiOjUzLCJlIjoyNCwiaSI6MiwiaiI6NiwibCI6MSwibSI6MCwicyI6MSwieCI6IiMxMDEyMTQiLCJ6IjoxLCJEIjozLCJJIjoxLCJMIjoxLCJNIjoibWF0Y2giLCJOIjowLCJPIjpbeyJ0eXBlIjoiZGF0ZSIsInBvc2l0aW9uIjoiM2giLCJkaXNjIjoiYmxhY2siLCJ3aW5kb3ciOiJwbGFpbiJ9LHsidHlwZSI6InNtYWxsLXNlY29uZHMiLCJwb3NpdGlvbiI6IjloIiwic3R5bGUiOiJmbGF0In1dLCJRIjoiYWxsaWdhdG9yIiwiUiI6IiMxNTE1MTUiLCJTIjoiI0QxQzJBNCIsIlQiOjI0LCJWIjoyLCJhaiI6MS4zNSwiYWwiOiIjREREQ0M5In0",
+    "localUrl": "http://127.0.0.1:5173/#v1.eyJhIjoyLCJiIjo0NCwiYyI6MTQsImQiOjUzLCJlIjoyNCwiaSI6MiwiaiI6NiwibCI6MSwibSI6MCwicyI6MSwieCI6IiMxMDEyMTQiLCJ6IjoxLCJEIjozLCJJIjoxLCJMIjoxLCJNIjoibWF0Y2giLCJOIjowLCJPIjpbeyJ0eXBlIjoiZGF0ZSIsInBvc2l0aW9uIjoiM2giLCJkaXNjIjoiYmxhY2siLCJ3aW5kb3ciOiJwbGFpbiJ9LHsidHlwZSI6InNtYWxsLXNlY29uZHMiLCJwb3NpdGlvbiI6IjloIiwic3R5bGUiOiJmbGF0In1dLCJRIjoiYWxsaWdhdG9yIiwiUiI6IiMxNTE1MTUiLCJTIjoiI0QxQzJBNCIsIlQiOjI0LCJWIjoyLCJhaiI6MS4zNSwiYWwiOiIjREREQ0M5In0",
+    "publicUrl": "https://pure-watch-six.vercel.app/#v1.eyJhIjoyLCJiIjo0NCwiYyI6MTQsImQiOjUzLCJlIjoyNCwiaSI6MiwiaiI6NiwibCI6MSwibSI6MCwicyI6MSwieCI6IiMxMDEyMTQiLCJ6IjoxLCJEIjozLCJJIjoxLCJMIjoxLCJNIjoibWF0Y2giLCJOIjowLCJPIjpbeyJ0eXBlIjoiZGF0ZSIsInBvc2l0aW9uIjoiM2giLCJkaXNjIjoiYmxhY2siLCJ3aW5kb3ciOiJwbGFpbiJ9LHsidHlwZSI6InNtYWxsLXNlY29uZHMiLCJwb3NpdGlvbiI6IjloIiwic3R5bGUiOiJmbGF0In1dLCJRIjoiYWxsaWdhdG9yIiwiUiI6IiMxNTE1MTUiLCJTIjoiI0QxQzJBNCIsIlQiOjI0LCJWIjoyLCJhaiI6MS4zNSwiYWwiOiIjREREQ0M5In0",
+    "dimensions": {
+      "caseRadius": 22,
+      "caseThickness": 14,
+      "bezelWidth": 2.8600000000000003,
+      "openingRadius": 19.14,
+      "dialRadius": 18.48,
+      "dialShape": "round",
+      "dialScale": 1,
+      "dialSafeRadius": 18.48,
+      "dialExtent": 18.48,
+      "z": {
+        "back": -10.36,
+        "bezelTop": 3.36,
+        "crystalTop": 3.6399999999999997,
+        "dial": 0
+      },
+      "lugToLug": 53,
+      "lugWidth": 24,
+      "lugThickness": 2.8600000000000003,
+      "hands": {
+        "hour": 11.55,
+        "minute": 17.094,
+        "second": 18.018,
+        "secondTail": 5.082
+      },
+      "crown": {
+        "radius": 3.74,
+        "length": 3.08
+      }
+    },
+    "notes": "44 mm et bracelet 24/22 mm sourcés ; épaisseur 14 mm et longueur 53 mm sont des choix d’étude. Protège-couronne générique à deux ailettes, sans pont ni levier."
+  }
+]

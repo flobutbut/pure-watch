@@ -6,6 +6,9 @@ import { getAtPath, isPlainObject, setAtPath } from './path';
 import { blackTonneauPilot, cushionPilot } from './pilot';
 import type { WatchConfig } from './types';
 import frozenDefaults from './url-v1-defaults.json';
+import { withoutSeconds } from './seconds';
+import { normalizeNumerals } from './numerals';
+import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
 
 // Wire defaults and identifiers are immutable for v1. Changing application defaults
 // or reordering the catalog must never reinterpret an already shared link.
@@ -21,6 +24,9 @@ const V1_DEFAULTS = {
     size: 'open',
     indices: {
       ...frozenDefaults.dial.indices,
+      color: '#E8EBF0',
+      ...DEFAULT_LUME,
+      numeralSystem: 'arabic',
       numeralSize: 1,
       numeralRadius: 1,
       numeralColor: 'match',
@@ -28,7 +34,7 @@ const V1_DEFAULTS = {
       indexRadius: 1,
     },
   },
-  hands: { ...frozenDefaults.hands, color: '#E8EBF0' },
+  hands: { ...frozenDefaults.hands, color: '#E8EBF0', ...DEFAULT_LUME },
   rehaut: { profile: 'classic', finish: 'dial', color: '#111317', scale: 'none' },
 } as WatchConfig;
 const MAX_HASH_LENGTH = 16_384;
@@ -185,6 +191,8 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     baguettes: 6,
     drops: 7,
     none: 8,
+    dive: 9,
+    'mixed-batons': 10,
   }),
   B: field('dial.indices.finish'),
   C: field('dial.indices.lume', text.nullable()),
@@ -244,6 +252,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     teardrop: 8,
     'ring-tail': 9,
     lightning: 10,
+    none: 11,
   }),
   M: field('hands.second.color', z.union([hex, z.literal('match')])),
   N: bit('hands.second.counterweight'),
@@ -283,6 +292,12 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   al: field('dial.indices.numeralColor', z.union([hex, z.literal('match')])),
   am: field('dial.indices.indexSize', z.number().finite().min(0.5).max(2)),
   an: field('dial.indices.indexRadius', z.number().finite().min(0.4).max(1.2)),
+  ao: field('dial.indices.numeralSystem', z.enum(['arabic', 'roman']), { arabic: 1, roman: 2 }),
+  ap: field('dial.indices.color', hex),
+  aq: field('dial.indices.lumeColor', hex),
+  ar: field('dial.indices.lumeEmission', hex),
+  as: field('hands.lumeColor', hex),
+  at: field('hands.lumeEmission', hex),
 };
 
 function base64url(text: string): string {
@@ -295,6 +310,7 @@ function base64url(text: string): string {
 
 /** Small default-free payload; colors, Unicode text and unexposed options are retained. */
 export function encodeConfigHash(config: WatchConfig): string {
+  config = normalizeNumerals(normalizeLume(config));
   const payload: Record<string, unknown> = {};
   for (const [key, descriptor] of Object.entries(FIELDS_V1)) {
     const value = getAtPath(config, descriptor.path);
@@ -310,14 +326,16 @@ export function encodeConfigHash(config: WatchConfig): string {
   return `#v1.${base64url(JSON.stringify(payload))}`;
 }
 
+/** What went wrong with a link; the interface words it in the visitor's language. */
+export type LinkNotice = '' | 'invalid' | 'adjusted' | 'unsupported';
+
 export interface ConfigLink {
   config: WatchConfig;
-  notice: string;
+  notice: LinkNotice;
 }
 
-const INVALID = 'Ce lien de configuration est invalide. La montre par défaut est affichée.';
-const ADJUSTED =
-  'Certaines options du lien ne sont pas reconnues ; leurs valeurs par défaut ont été utilisées.';
+const INVALID = 'invalid';
+const ADJUSTED = 'adjusted';
 
 /** New catalog identifiers can travel literally until a later wire version assigns a token. */
 function catalogContains(catalog: Catalog, path: string, value: string): boolean {
@@ -333,12 +351,9 @@ function catalogContains(catalog: Catalog, path: string, value: string): boolean
 }
 
 export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
-  const fallback = (notice: string): ConfigLink => ({ config: defaultConfig(), notice });
+  const fallback = (notice: LinkNotice): ConfigLink => ({ config: defaultConfig(), notice });
   if (!hash || hash === '#') return fallback('');
-  if (!hash.startsWith('#v1.'))
-    return fallback(
-      'Cette version de lien n’est pas prise en charge. La montre par défaut est affichée.',
-    );
+  if (!hash.startsWith('#v1.')) return fallback('unsupported');
   if (hash.length > MAX_HASH_LENGTH || !/^#v1\.[A-Za-z0-9_-]+$/.test(hash))
     return fallback(INVALID);
   try {
@@ -376,7 +391,13 @@ export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
       }
       config = setAtPath(config, descriptor.path, checked.data);
     }
-    return { config, notice: adjusted ? ADJUSTED : '' };
+    adjusted ||= [config.hands, config.dial.indices].some(
+      (part) => Boolean(part.lume) && !lumePigment(part.lume),
+    );
+    return {
+      config: withoutSeconds(normalizeNumerals(normalizeLume(config))),
+      notice: adjusted ? ADJUSTED : '',
+    };
   } catch {
     return fallback(INVALID);
   }

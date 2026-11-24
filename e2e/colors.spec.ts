@@ -53,7 +53,7 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
   await dialRow(page);
   await expect(trigger).toHaveAttribute('data-color', '#7C3AED');
   await trigger.click();
-  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#7C3AED');
+  await expect(await hexField(page)).toHaveValue('#7C3AED');
   await expect(
     page
       .getByRole('group', { name: 'Couleurs récentes' })
@@ -94,7 +94,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
   await expect
     .poll(async () => {
       const field = await page.getByRole('textbox', { name: 'Code HEX' }).boundingBox();
-      const body = await page.locator('dialog .body').boundingBox();
+      const body = await page.locator('dialog[open] .body').boundingBox();
       return field !== null && body !== null && field.y + field.height <= body.y + body.height;
     })
     .toBe(true);
@@ -110,7 +110,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
     'aria-pressed',
     'true',
   );
-  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#B83D91');
+  await expect(await hexField(page)).toHaveValue('#B83D91');
 });
 
 test('les champs et le clavier restent dans le panneau, un code invalide ne s’applique pas', async ({
@@ -159,7 +159,7 @@ test('la teinte naturelle remplace le réglage sans perdre la couleur personnell
   await expect(page.getByText('Teinte naturelle', { exact: true })).toBeVisible();
   await page.keyboard.press('Home');
   await page.getByRole('button', { name: 'Couleur du cadran', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#124578');
+  await expect(await hexField(page)).toHaveValue('#124578');
   expect(payload(page).x).toBe('#124578');
 });
 

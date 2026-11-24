@@ -48,3 +48,7 @@ Couleurs libres du cadran et des aiguilles : [panneau, matières et compatibilit
 Catalogue étendu à 12 jeux d’aiguilles et 10 trotteuses : [nouvelles formes et planches 3D](documentation/hand-variants/README.md).
 
 Treize finitions de cadran, dont six nouvelles surfaces texturées : [comparaison et fonctionnement](documentation/dial-finishes/README.md).
+
+## Langues
+
+Le site existe en français et en anglais. Au premier passage, il suit la langue du navigateur (anglais si ni le français ni l’anglais ne sont demandés) ; le sélecteur « FR · EN » du pied de page change de langue et retient le choix. Textes : [`src/core/i18n/messages.ts`](src/core/i18n/messages.ts) ; noms anglais du catalogue : [`src/core/i18n/catalog-en.ts`](src/core/i18n/catalog-en.ts) (un test signale toute ligne ou variante nouvelle sans traduction).

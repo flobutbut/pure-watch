@@ -24,6 +24,16 @@ export interface Ambience {
   drift: boolean;
 }
 
+export const NIGHT_AMBIENCE: Ambience = {
+  key: 'night-preview',
+  base: '#080D14',
+  layers: 'none',
+  tone: 'dark',
+  ink: '#F2F1EC',
+  veil: '#080D14',
+  drift: false,
+};
+
 type Rgb = [number, number, number];
 
 export function hexToRgb(hex: string): Rgb {

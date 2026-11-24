@@ -86,12 +86,26 @@ export interface DialConfig {
   chapterRing: Open<'none' | 'railroad' | 'dots' | 'ticks' | 'five-minute'>;
   indices: {
     style: Open<
-      'baton' | 'baton-facet' | 'dauphine' | 'dots' | 'triangles' | 'baguettes' | 'drops' | 'none'
+      | 'baton'
+      | 'baton-facet'
+      | 'dauphine'
+      | 'dots'
+      | 'triangles'
+      | 'baguettes'
+      | 'drops'
+      | 'dive'
+      | 'mixed-batons'
+      | 'none'
     >;
     finish: string;
     lume: string | null;
+    color: HexColor;
+    lumeColor: HexColor;
+    lumeEmission: HexColor;
     /** Jeu de chiffres : quelles heures portent un chiffre (les index y sont retirés). */
     numerals: Open<'none' | 'all' | 'cardinal' | 'twelve' | 'six-twelve' | 'explorer' | 'roman'>;
+    /** Independent of the hour positions. `numerals: roman` is a legacy alias only. */
+    numeralSystem: 'arabic' | 'roman';
     /** Famille typographique des chiffres et textes imprimés. */
     numeralFont: Open<
       | 'sans'
@@ -133,6 +147,8 @@ export interface HandsConfig {
   /** Couleur conservée pour la finition laquée, indépendamment des métaux. */
   color: HexColor;
   lume: string | null;
+  lumeColor: HexColor;
+  lumeEmission: HexColor;
   second: {
     style: Open<
       | 'thin'
@@ -145,6 +161,7 @@ export interface HandsConfig {
       | 'teardrop'
       | 'ring-tail'
       | 'lightning'
+      | 'none'
     >;
     /** Couleur laquée, ou « match » : même matière que les aiguilles. */
     color: HexColor | 'match';

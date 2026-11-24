@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { WatchConfig } from '../../core/config/types';
   import { bezelAngle, bezelScale, turnBezel } from '../../core/config/bezel';
+  import { t } from '../i18n.svelte';
   let {
     config,
     editing = $bindable(false),
@@ -16,45 +17,45 @@
   const angle = $derived(bezelAngle(config.bezel.angleDeg));
 </script>
 
-<div class="bezel-control" role="group" aria-label="Réglage de la lunette">
+<div class="bezel-control" role="group" aria-label={t().bezel.label}>
   <button
     class:chosen={editing}
     aria-pressed={editing}
-    title="Glisser sur l’anneau pour le tourner (B)"
+    title={t().bezel.editTitle}
     onclick={() => {
       editing = !editing;
       if (editing) onedit();
     }}
   >
-    Régler la lunette
+    {t().bezel.edit}
   </button>
   <button
-    aria-label="Tourner la lunette dans le sens antihoraire"
-    title="Un cran antihoraire"
+    aria-label={t().bezel.ccw}
+    title={t().bezel.ccwTitle}
     onclick={() => onchange(turnBezel(config, -3))}
   >
     ↶
   </button>
   {#if !diving}
     <button
-      aria-label="Tourner la lunette dans le sens horaire"
-      title="Un cran horaire"
+      aria-label={t().bezel.cw}
+      title={t().bezel.cwTitle}
       onclick={() => onchange(turnBezel(config, 3))}
     >
       ↷
     </button>
   {/if}
-  <output aria-label="Position de la lunette">{angle}°</output>
+  <output aria-label={t().bezel.position}>{angle}°</output>
   <button
-    aria-label="Réinitialiser la lunette"
-    title="Ramener le repère à 12 h"
+    aria-label={t().bezel.reset}
+    title={t().bezel.resetTitle}
     disabled={angle === 0}
     onclick={() => onchange(0)}
   >
     0
   </button>
   {#if editing}<span class="hint">
-      Glisser sur l’anneau · {diving ? 'sens antihoraire' : 'deux sens'}
+      {t().bezel.hint(diving)}
     </span>{/if}
 </div>
 

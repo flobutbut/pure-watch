@@ -131,7 +131,7 @@
     <div
       id="boot"
       role="progressbar"
-      aria-label="Chargement de l'atelier Épure"
+      aria-label="Chargement de l’atelier Épure"
       aria-valuemin="0"
       aria-valuemax="100"
       aria-valuenow="5"
@@ -156,8 +156,37 @@
         <circle class="pivot" r="1.8" />
       </svg>
       <p class="name">ÉPURE</p>
-      <p class="label">Préparation de l'atelier</p>
+      <p class="label">Préparation de l’atelier</p>
     </div>
+    <script>
+      // Langue avant tout JavaScript applicatif : même règle que src/ui/i18n.svelte.ts.
+      (function () {
+        var locale = null;
+        try {
+          locale = localStorage.getItem('epure:locale:v1');
+        } catch (e) {}
+        if (locale !== 'fr' && locale !== 'en') {
+          locale = 'en';
+          var tags =
+            navigator.languages && navigator.languages.length
+              ? navigator.languages
+              : [navigator.language || ''];
+          for (var i = 0; i < tags.length; i++) {
+            var base = String(tags[i]).toLowerCase().split(/[-_]/)[0];
+            if (base === 'fr' || base === 'en') {
+              locale = base;
+              break;
+            }
+          }
+        }
+        document.documentElement.lang = locale;
+        if (locale === 'en') {
+          var boot = document.getElementById('boot');
+          boot.setAttribute('aria-label', 'Loading the Épure workshop');
+          boot.querySelector('.label').textContent = 'Preparing the workshop';
+        }
+      })();
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

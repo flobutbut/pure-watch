@@ -5,6 +5,7 @@
 import type { Catalog, RowDef, RowId } from '../catalog/types';
 import { getAtPath, matchesValue, setAtPath } from '../config/path';
 import { resolveLayout } from '../config/complications';
+import { restoreSeconds, withoutSeconds } from '../config/seconds';
 import type { WatchConfig } from '../config/types';
 import type { RowView } from './state';
 
@@ -20,7 +21,19 @@ export function toRowViews(rows: readonly RowDef[]): RowView[] {
 export function variantIndexFromConfig(row: RowDef, config: WatchConfig): number {
   const actual = getAtPath(config, row.path);
   const index = row.variants.findIndex((variant) => matchesValue(actual, variant.value));
-  return index === -1 ? 0 : index;
+  if (index !== -1) return index;
+  // A custom size remains between nearby presets rather than jumping to 22 mm.
+  if (row.id === 'case-size') {
+    return row.variants.reduce((closest, variant, i) => {
+      const diameter = (variant.value as { diameterMm: number }).diameterMm;
+      const previous = (row.variants[closest]!.value as { diameterMm: number }).diameterMm;
+      return Math.abs(diameter - config.case.diameterMm) <
+        Math.abs(previous - config.case.diameterMm)
+        ? i
+        : closest;
+    }, 0);
+  }
+  return 0;
 }
 
 /** Sélection initiale de chaque ligne, déduite d'une configuration (chargement d'un lien). */
@@ -37,8 +50,13 @@ export function selectionFromConfig(catalog: Catalog, config: WatchConfig): Reco
 export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: number): WatchConfig {
   const variant = row.variants[variantIndex];
   if (!variant) return config;
-  const next = setAtPath(config, row.path, variant.value);
+  let next = setAtPath(config, row.path, variant.value);
+  if (row.id === 'case-size' && next.case.lugWidthMm !== config.case.lugWidthMm)
+    next = { ...next, strap: { ...next.strap, widthMm: next.case.lugWidthMm } };
+  if (row.id === 'seconds') next = withoutSeconds(next);
   const type = /^complications\.([^.]+)$/.exec(row.path)?.[1];
+  if ((type === 'small-seconds' || type === 'chronograph') && variant.value !== null)
+    next = restoreSeconds(next);
   return type ? resolveLayout(next, type) : next;
 }
 

@@ -33,7 +33,7 @@ describe('fiche d’identité', () => {
     });
   });
 
-  it('détaille la taille, la position et la couleur des chiffres sous leur style', () => {
+  it('détaille l’écriture, la taille, la position et la couleur sous la disposition des chiffres', () => {
     const config = defaultConfig();
     expect(
       identitySections(visibleRows(catalog.rows, config), config)
@@ -47,9 +47,10 @@ describe('fiche d’identité', () => {
       (s) => s.traits,
     );
     const labels = all.map((t) => t.label);
-    const style = labels.indexOf('Style des chiffres');
-    expect(labels.slice(style, style + 4)).toEqual([
-      'Style des chiffres',
+    const style = labels.indexOf('Chiffres');
+    expect(labels.slice(style, style + 5)).toEqual([
+      'Chiffres',
+      'Écriture des chiffres',
       'Taille des chiffres',
       'Position des chiffres',
       'Couleur des chiffres',
@@ -103,6 +104,7 @@ describe('fiche d’identité', () => {
     const config = defaultConfig();
     config.hands.second.color = '#2255AA';
     config.case.diameterMm = 41;
+    config.case.thicknessMm = 13.54;
     const sections = identitySections(visibleRows(catalog.rows, config), config);
     const all = sections.flatMap((s) => s.traits);
     const seconds = all.find((t) => t.label === 'Couleur de la trotteuse');
@@ -112,6 +114,7 @@ describe('fiche d’identité', () => {
     });
     expect(seconds?.value).not.toMatch(/#/);
     expect(all.find((t) => t.label === 'Diamètre')?.value).toBe('41 mm');
+    expect(all.find((t) => t.label === 'Épaisseur')?.value).toBe('13,54 mm');
   });
 
   it('montre la date avec ses valeurs par défaut', () => {

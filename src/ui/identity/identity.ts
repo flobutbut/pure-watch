@@ -1,22 +1,25 @@
 /** Contenu de la fiche d'identité : la configuration lue comme une fiche technique. */
 import type { RowDef } from '../../core/catalog/types';
-import { tint } from '../../core/color/names';
+import { ralName, tint } from '../../core/color/names';
 import { bezelScale } from '../../core/config/bezel';
-import { HAND_FINISHES, handColor } from '../../core/config/colors';
+import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
+import { hasLume, lumeChoice, lumePigment } from '../../core/config/lume';
 import { dateComplication } from '../../core/config/date';
 import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
+import { numeralSystem } from '../../core/config/numerals';
 import { effectiveDialColor, hasIntrinsicColor, numeralColor } from '../../core/config/dial';
 import { getAtPath, matchesValue } from '../../core/config/path';
 import {
   effectiveRehautProfile,
   effectiveRehautScale,
-  REHAUT_FINISHES,
   rehautColor,
 } from '../../core/config/rehaut';
 import type { WatchConfig } from '../../core/config/types';
 import { watchDimensions } from '../../core/geometry/dimensions';
+import type { Locale } from '../../core/i18n/locale';
+import { MESSAGES, type Messages } from '../../core/i18n/messages';
 import { mm, visibleDialMm } from '../../core/movement/compatibility';
 
 export interface Trait {
@@ -34,12 +37,9 @@ export interface TraitSection {
   traits: Trait[];
 }
 
-const GROUP_TITLES: Record<string, string> = {
-  case: 'Boîtier',
-  face: 'Cadran',
-  hands: 'Aiguilles',
-  complications: 'Complications',
-};
+const GROUP_TITLES = ['case', 'face', 'hands', 'complications'] as const;
+const groupTitle = (group: string, m: Messages['identity']) =>
+  GROUP_TITLES.find((id) => id === group) ? m[group as (typeof GROUP_TITLES)[number]] : m.others;
 
 /** Values the renderer substitutes: the card shows what the watch actually wears. */
 const EFFECTIVE: Record<string, (config: WatchConfig) => unknown> = {
@@ -66,127 +66,159 @@ function rowValue(row: RowDef, config: WatchConfig): string {
 
 /** Finitions dont la couleur vient d'une peinture ou d'une laque : RAL a un sens. */
 const PAINTED_DIALS = new Set(['matte', 'lacquer']);
-const SAMPLE = 'Teinte de finition, à valider sur échantillon';
-
-/** A painted or lacquered surface: its name, and the nearest RAL as a maker's reference. */
-function painted(label: string, color: string): Trait {
-  const { name, ral } = tint(color);
-  return {
-    label,
-    value: name,
-    swatch: color,
-    reference: ral
-      ? `≈ RAL ${ral.code}${ral.name === name ? '' : ` ${ral.name}`}`
-      : 'Pas d’équivalent RAL proche',
-  };
-}
 
 /** Colours are not grid rows: they follow the row whose panel edits them. */
-function colorTraits(row: RowDef, config: WatchConfig): Trait[] {
+function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] {
+  const all = MESSAGES[locale];
+  const m = all.identity;
+  const tintName = (color: string) => tint(color, locale).name;
+  /** A painted or lacquered surface: its name, and the nearest RAL as a maker's reference. */
+  const painted = (label: string, color: string): Trait => {
+    const { name, ral } = tint(color, locale);
+    const ralLabel = ral ? ralName(ral, locale) : '';
+    return {
+      label,
+      value: name,
+      swatch: color,
+      reference: ral ? `≈ RAL ${ral.code}${ralLabel === name ? '' : ` ${ralLabel}`}` : m.noRal,
+    };
+  };
+  const share = (value: number, of: 'size' | 'distance') =>
+    Math.abs(value - 1) < 0.005 ? m.standard : m.share(Math.round(value * 100), of);
+
   if (row.id === 'dial-finish' && !hasIntrinsicColor(config.dial.finish)) {
     const color = effectiveDialColor(config.dial);
-    if (PAINTED_DIALS.has(config.dial.finish)) return [painted('Couleur du cadran', color)];
+    if (PAINTED_DIALS.has(config.dial.finish)) return [painted(m.dialColor, color)];
     // Sunburst, guilloché, fumé… : the tone comes from a galvanic or PVD process, not a paint.
-    return [
-      { label: 'Couleur du cadran', value: tint(color).name, swatch: color, reference: SAMPLE },
-    ];
+    return [{ label: m.dialColor, value: tintName(color), swatch: color, reference: m.sample }];
   }
   if (row.id === 'hands') {
     if (config.hands.finish === 'lacquer')
       return [
         {
-          ...painted('Matière des aiguilles', config.hands.color),
-          value: `Laqué ${tint(config.hands.color).name.toLowerCase()}`,
+          ...painted(m.handsMaterial, config.hands.color),
+          value: m.lacquered(tintName(config.hands.color)),
         },
       ];
-    const finish = HAND_FINISHES.find((f) => f.id === config.hands.finish);
     return [
       {
-        label: 'Matière des aiguilles',
-        value: finish?.name ?? config.hands.finish,
+        label: m.handsMaterial,
+        value: all.handFinish[config.hands.finish] ?? config.hands.finish,
         swatch: handColor(config),
         metal: true,
       },
     ];
   }
-  if (row.id === 'seconds') {
+  if (row.id === 'seconds' && config.hands.second.style !== 'none') {
     if (config.hands.second.color !== 'match')
-      return [painted('Couleur de la trotteuse', config.hands.second.color)];
+      return [painted(m.secondsColor, config.hands.second.color)];
     return [
       {
-        label: 'Couleur de la trotteuse',
-        value: 'Assortie aux aiguilles',
+        label: m.secondsColor,
+        value: m.matchHands,
         swatch: handColor(config),
         metal: config.hands.finish !== 'lacquer',
       },
     ];
   }
   if (row.id === 'rehaut') {
-    if (config.rehaut.finish === 'custom')
-      return [painted('Teinte du réhaut', config.rehaut.color)];
-    const finish = REHAUT_FINISHES.find((f) => f.id === config.rehaut.finish);
+    if (config.rehaut.finish === 'custom') return [painted(m.rehautTint, config.rehaut.color)];
     return [
       {
-        label: 'Teinte du réhaut',
-        value: finish?.name ?? config.rehaut.finish,
+        label: m.rehautTint,
+        value: all.rehautFinish[config.rehaut.finish] ?? config.rehaut.finish,
         swatch: rehautColor(config),
         metal: config.rehaut.finish === 'metal',
       },
     ];
   }
-  // Taille, position et couleur se règlent dans le panneau de la ligne Style des chiffres.
-  if (row.id === 'numeral-font' && config.dial.indices.numerals !== 'none') {
+  // Writing system and layout share the panel attached to the numeral positions.
+  if (row.id === 'numerals' && config.dial.indices.numerals !== 'none') {
     const { numeralSize, numeralRadius, numeralColor: color } = config.dial.indices;
-    const share = (value: number, of: string) =>
-      Math.abs(value - 1) < 0.005 ? 'Standard' : `${Math.round(value * 100)} % ${of}`;
     return [
-      { label: 'Taille des chiffres', value: share(numeralSize, 'de la taille standard') },
-      { label: 'Position des chiffres', value: share(numeralRadius, 'de la distance standard') },
+      {
+        label: m.numeralScript,
+        value: numeralSystem(config.dial.indices) === 'roman' ? m.roman : m.arabic,
+      },
+      { label: m.numeralSize, value: share(numeralSize, 'size') },
+      { label: m.numeralPosition, value: share(numeralRadius, 'distance') },
       color === 'match'
-        ? {
-            label: 'Couleur des chiffres',
-            value: 'Encre du cadran',
-            swatch: numeralColor(config.dial),
-          }
-        : painted('Couleur des chiffres', color),
+        ? { label: m.numeralColor, value: m.dialInk, swatch: numeralColor(config.dial) }
+        : painted(m.numeralColor, color),
     ];
   }
   if (row.id === 'indices' && config.dial.indices.style !== 'none') {
     const { indexSize, indexRadius } = config.dial.indices;
-    const share = (value: number, of: string) =>
-      Math.abs(value - 1) < 0.005 ? 'Standard' : `${Math.round(value * 100)} % ${of}`;
+    const finish =
+      INDEX_FINISHES.find((item) => item.id === config.dial.indices.finish)?.name ?? 'polished';
     return [
-      { label: 'Taille des index', value: share(indexSize, 'de la taille standard') },
-      { label: 'Position des index', value: share(indexRadius, 'de la distance standard') },
+      {
+        label: all.lume.indexFinish,
+        value: finish === 'printed' ? all.lume.printed : (all.handFinish[finish] ?? finish),
+        swatch: indexColor(config),
+        metal: !['printed', 'lacquer'].includes(finish),
+      },
+      { label: m.indexSize, value: share(indexSize, 'size') },
+      { label: m.indexPosition, value: share(indexRadius, 'distance') },
     ];
   }
   if (row.id === 'bezel' && config.bezel.type === 'rotating')
-    return [painted('Couleur de la lunette', config.bezel.color)];
+    return [painted(m.bezelColor, config.bezel.color)];
   return [];
 }
 
 /** Cotes d'abord, puis chaque pièce dans l'ordre de la grille. */
-export function identitySections(rows: readonly RowDef[], config: WatchConfig): TraitSection[] {
+export function identitySections(
+  rows: readonly RowDef[],
+  config: WatchConfig,
+  locale: Locale = 'fr',
+): TraitSection[] {
+  const m = MESSAGES[locale];
+  const len = (value: number, digits = 2) => mm(value, digits, locale);
   const sections: TraitSection[] = [
     {
-      title: 'Dimensions',
+      title: m.identity.dimensions,
       traits: [
-        { label: 'Diamètre', value: mm(config.case.diameterMm) },
-        { label: 'Épaisseur', value: mm(config.case.thicknessMm) },
-        { label: 'Entre-cornes', value: mm(config.case.lugToLugMm) },
-        { label: 'Largeur du bracelet', value: mm(config.case.lugWidthMm) },
-        { label: 'Cadran visible', value: mm(Math.round(visibleDialMm(config) * 10) / 10) },
+        { label: m.dimensions.diameterMm, value: len(config.case.diameterMm) },
+        { label: m.dimensions.thicknessMm, value: len(config.case.thicknessMm) },
+        { label: m.dimensions.lugToLugMm, value: len(config.case.lugToLugMm) },
+        { label: m.dimensions.lugWidthMm, value: len(config.case.lugWidthMm) },
+        {
+          label: m.identity.visibleDial,
+          value: len(Math.round(visibleDialMm(config) * 10) / 10, 1),
+        },
       ],
     },
   ];
   for (const row of rows) {
     // La taille est déjà détaillée dans les cotes.
     if (row.id === 'case-size') continue;
-    const title = GROUP_TITLES[row.group] ?? 'Autres';
+    const title = groupTitle(row.group, m.identity);
     let section = sections.find((s) => s.title === title);
     if (!section) sections.push((section = { title, traits: [] }));
     section.traits.push({ label: row.i18n.name, value: rowValue(row, config) });
-    section.traits.push(...colorTraits(row, config));
+    section.traits.push(...colorTraits(row, config, locale));
+    if (row.id === 'hands' || (row.id === 'indices' && config.dial.indices.style !== 'none')) {
+      const part = row.id === 'hands' ? config.hands : config.dial.indices;
+      const lm = m.lume;
+      section.traits.push({
+        label: row.id === 'hands' ? lm.hands : lm.indices,
+        value: hasLume(part) ? lm.enabled : lm.disabled,
+      });
+      if (hasLume(part)) {
+        const selected = lumeChoice(part);
+        const pigment = lumePigment(selected.kind)!;
+        section.traits.push(
+          { label: lm.pigment, value: pigment.name },
+          { label: lm.day, value: tint(selected.day, locale).name, swatch: selected.day },
+          {
+            label: lm.emission,
+            value: tint(selected.night, locale).name,
+            swatch: selected.night,
+          },
+        );
+      }
+    }
   }
   return sections;
 }

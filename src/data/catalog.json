@@ -1337,14 +1337,6 @@
           "i18n": {
             "name": "Tous"
           }
-        },
-        {
-          "id": "roman",
-          "value": "roman",
-          "preview": "numerals/roman.svg",
-          "i18n": {
-            "name": "Romains"
-          }
         }
       ]
     },
@@ -1556,6 +1548,22 @@
           "preview": "indices/drops.svg",
           "i18n": {
             "name": "Gouttes"
+          }
+        },
+        {
+          "id": "dive",
+          "value": "dive",
+          "preview": "indices/dive.svg",
+          "i18n": {
+            "name": "Plongée"
+          }
+        },
+        {
+          "id": "mixed-batons",
+          "value": "mixed-batons",
+          "preview": "indices/mixed-batons.svg",
+          "i18n": {
+            "name": "Bâtons et points"
           }
         },
         {
@@ -1798,6 +1806,17 @@
           "preview": "seconds/lightning.svg",
           "i18n": {
             "name": "Éclair"
+          }
+        },
+        {
+          "id": "none",
+          "value": {
+            "style": "none",
+            "counterweight": false
+          },
+          "preview": "seconds/none.svg",
+          "i18n": {
+            "name": "Sans trotteuse"
           }
         }
       ]
@@ -2090,8 +2109,16 @@
         }
       ],
       "visibleWhen": {
-        "path": "complications.chronograph",
-        "equals": null
+        "all": [
+          {
+            "path": "complications.chronograph",
+            "equals": null
+          },
+          {
+            "path": "hands.second.style",
+            "notEquals": "none"
+          }
+        ]
       }
     },
     {

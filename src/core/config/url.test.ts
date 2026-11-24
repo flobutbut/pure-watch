@@ -78,6 +78,7 @@ describe('versioned watch links', () => {
     config.dial.text = { brand: 'Épure 東京 ⌚', line2: 'Série n° 01 — été', position: '6h' };
     config.hands.finish = 'blued';
     config.hands.lume = 'c1';
+    config.hands.lumeColor = '#F0F0E8';
     config.hands.second.color = 'match';
     config.hands.second.counterweight = false;
     config.complications = [{ type: 'date', position: '3h', frame: true, discColor: 'white' }];
