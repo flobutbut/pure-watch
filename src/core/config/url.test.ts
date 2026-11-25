@@ -4,6 +4,9 @@ import { parseCatalog } from '../catalog/load';
 import { applyVariant } from '../nav/selection';
 import { defaultConfig } from './defaults';
 import { decodeLinkPayload } from './link-codec';
+import { colorChoice, targetColor, withColorChoice, type ColorTarget } from './colors';
+import { getAtPath, setAtPath } from './path';
+import type { WatchConfig } from './types';
 import { blackTonneauPilot, cushionPilot } from './pilot';
 import {
   configUrl,
@@ -260,5 +263,122 @@ describe('versioned watch links', () => {
       set: 'baton',
       second: { style: 'counterweight', color: '#F2C230' },
     });
+  });
+});
+
+/** Same value, whatever the order of the keys. */
+function same(a: unknown, b: unknown): boolean {
+  const canonical = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value.map(canonical)
+      : value && typeof value === 'object'
+        ? Object.fromEntries(
+            Object.keys(value)
+              .sort()
+              .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
+          )
+        : value;
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+}
+
+/** Every leaf of a configuration, as dotted paths (arrays count as one value). */
+function leaves(value: unknown, prefix = ''): string[] {
+  if (value && typeof value === 'object' && !Array.isArray(value))
+    return Object.entries(value).flatMap(([key, child]) =>
+      leaves(child, prefix ? `${prefix}.${key}` : key),
+    );
+  return [prefix];
+}
+
+/** Another valid value for a leaf, within the link's bounds. */
+function changed(path: string, value: unknown): unknown {
+  if (typeof value === 'boolean') return !value;
+  if (typeof value === 'number')
+    return path === 'bezel.angleDeg' ? 42 : path === 'bezel.height' ? 1.2 : value * 0.95;
+  if (typeof value === 'string' && /^#[\da-f]{6}$/i.test(value))
+    return value.toUpperCase() === '#2A7F62' ? '#123456' : '#2A7F62';
+  if (path === 'dial.text.brand' || path === 'dial.text.line2') return 'Épure ✦';
+  if (path === 'dial.indices.lume' || path === 'hands.lume') return 'bgw9';
+  if (path === 'complications') return [{ type: 'date', position: '3h' }];
+  return value;
+}
+
+describe('every setting travels in the link', () => {
+  // Lume colours follow the chosen pigment (a pigment is one value), and `schema` is the
+  // format itself: neither is a free setting of its own.
+  const TIED = new Set([
+    'schema',
+    'dial.indices.lumeColor',
+    'dial.indices.lumeEmission',
+    'hands.lumeColor',
+    'hands.lumeEmission',
+  ]);
+
+  it('keeps each value of the configuration through a round trip', () => {
+    const base = defaultConfig();
+    const lost: string[] = [];
+    for (const path of leaves(base)) {
+      if (TIED.has(path)) continue;
+      const next = changed(path, getAtPath(base, path));
+      const config = setAtPath(base, path, next) as WatchConfig;
+      const back = getAtPath(decodeConfigHash(encodeConfigHash(config), catalog).config, path);
+      if (!same(back, next)) lost.push(path);
+    }
+    expect(lost).toEqual([]);
+  });
+
+  it('keeps every variant of every row of the catalog', () => {
+    const lost: string[] = [];
+    for (const row of catalog.rows)
+      row.variants.forEach((variant, index) => {
+        const config = applyVariant(defaultConfig(), row, index);
+        const back = decodeConfigHash(encodeConfigHash(config), catalog);
+        const sent = getAtPath(config, row.path);
+        if (back.notice !== '' || !same(getAtPath(back.config, row.path), sent))
+          lost.push(`${row.id}/${variant.id}`);
+      });
+    expect(lost).toEqual([]);
+  });
+
+  it('keeps a pigment with its day and night colours', () => {
+    const config = defaultConfig();
+    config.hands.lume = 'bgw9';
+    config.dial.indices.lume = 'old-radium';
+    const back = decodeConfigHash(encodeConfigHash(config), catalog).config;
+    expect(back.hands.lume).toBe('bgw9');
+    expect(back.dial.indices.lume).toBe('old-radium');
+    expect(back.hands.lumeColor).not.toBe(back.dial.indices.lumeColor);
+  });
+
+  it('shows after the link the colour each panel showed', () => {
+    const targets: ColorTarget[] = [
+      'dial',
+      'hands',
+      'seconds',
+      'rehaut',
+      'numerals',
+      'indices',
+      'chapterRing',
+      'bezel',
+      'lugs',
+    ];
+    for (const target of targets)
+      for (const finish of target === 'rehaut' ? ['custom', 'dial', 'metal'] : [undefined]) {
+        const base = defaultConfig();
+        base.dial.indices.numerals = 'all';
+        base.rehaut.profile = 'sloped';
+        const choice = {
+          ...colorChoice(base, target),
+          color: '#2A7F62' as const,
+          ...(finish ? { finish } : {}),
+        };
+        const config = withColorChoice(base, target, choice);
+        const back = decodeConfigHash(encodeConfigHash(config), catalog).config;
+        expect([target, finish, targetColor(back, target)]).toEqual([
+          target,
+          finish,
+          targetColor(config, target),
+        ]);
+      }
   });
 });
