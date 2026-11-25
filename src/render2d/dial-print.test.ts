@@ -5,6 +5,34 @@ import { FONTS } from './fonts';
 const base = { dialRadius: 10, chapterRing: 'none', ink: '#000000', numerals: 'cardinal' };
 const labels = (svg: string) => [...svg.matchAll(/<text[^>]*>([^<]+)<\/text>/g)].map((m) => m[1]);
 
+it('scales complete minute dots down to 5%, preserving positions and five-minute hierarchy', () => {
+  const options = { ...base, chapterRing: 'dots' };
+  const dots = (svg: string) =>
+    [
+      ...svg.matchAll(
+        /<circle cx="([\d.-]+)" cy="([\d.-]+)" r="([\d.]+)" stroke-width="([\d.]+)"/g,
+      ),
+    ].map((m) => ({ x: Number(m[1]), y: Number(m[2]), r: Number(m[3]), stroke: Number(m[4]) }));
+  const original = dots(dialPrintSvg(options));
+  expect(dialPrintSvg(options)).toBe(dialPrintSvg({ ...options, chapterRingDotSize: 1 }));
+  for (const factor of [0.05, 0.25, 2]) {
+    const scaled = dots(dialPrintSvg({ ...options, chapterRingDotSize: factor }));
+    expect(scaled).toHaveLength(60);
+    for (let i = 0; i < 60; i++) {
+      expect(scaled[i]!.x).toBe(original[i]!.x);
+      expect(scaled[i]!.y).toBe(original[i]!.y);
+      expect(scaled[i]!.r).toBeCloseTo(original[i]!.r * factor, 3);
+      expect(scaled[i]!.stroke).toBeCloseTo(original[i]!.stroke * factor, 3);
+      expect(original[i]!.r).toBe(i % 5 === 0 ? 0.16 : 0.07);
+    }
+  }
+  for (const chapterRing of ['none', 'railroad', 'ticks', 'five-minute']) {
+    expect(dialPrintSvg({ ...base, chapterRing, chapterRingDotSize: 2 })).toBe(
+      dialPrintSvg({ ...base, chapterRing }),
+    );
+  }
+});
+
 it.each(['railroad', 'ticks', 'dots', 'five-minute'])(
   'colore la piste %s sans changer les chiffres ni les textes',
   (chapterRing) => {

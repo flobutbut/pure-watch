@@ -123,6 +123,7 @@ export function buildDial(
       radiusAt: d.dialShape === 'round' ? undefined : (angle) => dialRadiusAt(d, angle),
       chapterRing: config.dial.chapterRing,
       chapterRingInk: chapterRingColor(config.dial),
+      chapterRingDotSize: config.details?.chapterRing?.dotSize,
       ink: inkForDial(effectiveDialColor(config.dial)),
       brand: config.dial.text.brand,
       line2: config.dial.text.line2,

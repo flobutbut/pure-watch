@@ -40,6 +40,8 @@
   import ComplicationSettings from './ComplicationSettings.svelte';
   import SubdialHandSettings from './SubdialHandSettings.svelte';
   import SubdialPrintSettings from './SubdialPrintSettings.svelte';
+  import DetailRange from './DetailRange.svelte';
+  import { CHAPTER_DOT_SIZE_RANGE } from '../../core/config/details';
   import BezelSettings from './BezelSettings.svelte';
   import LugSettings from './LugSettings.svelte';
   import DetailSettings from './DetailSettings.svelte';
@@ -515,6 +517,18 @@
     </div>
   {/if}
   {#if target === 'numerals' || target === 'chapterRing'}
+    {#if target === 'chapterRing' && config.dial.chapterRing === 'dots'}
+      <div class="layout">
+        <DetailRange
+          label={t().colors.dotSize}
+          value={details.chapterRing?.dotSize ?? 1}
+          min={CHAPTER_DOT_SIZE_RANGE.min}
+          max={CHAPTER_DOT_SIZE_RANGE.max}
+          onchange={(dotSize) =>
+            (details = { ...details, chapterRing: { ...details.chapterRing, dotSize } })}
+        />
+      </div>
+    {/if}
     <div class="element-color">{@render elementColor()}</div>
   {/if}
 
@@ -565,7 +579,12 @@
   {#if free && !colorModes}{@render elementColor()}{/if}
   {#snippet footer()}
     <RestoreButton
-      title={initial.layout || handLayout || bezelLayout || lugJoin || complicationTarget
+      title={initial.layout ||
+      handLayout ||
+      bezelLayout ||
+      lugJoin ||
+      complicationTarget ||
+      target === 'chapterRing'
         ? t().colors.restoreSettings
         : t().colors.restoreColor}
       disabled={!changed}
