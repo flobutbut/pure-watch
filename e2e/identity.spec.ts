@@ -1,17 +1,17 @@
 import { expect, test } from '@playwright/test';
 
-test('la fiche d’identité accompagne la vue 3D et liste les mouvements', async ({ page }, info) => {
+test('la fiche d’identité accompagne la vue 3D et liste les mouvements', async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto('/');
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
   await page.getByRole('grid').focus();
   await page.keyboard.press('Enter');
   const toggle = page.getByRole('button', { name: 'Fiche d’identité', exact: true });
   const card = page.getByRole('dialog', { name: 'Votre montre' });
-  // Ouverte d'office sur grand écran, à la demande sur téléphone.
-  if (info.project.name === 'mobile') {
-    await expect(card).toBeHidden();
-    await toggle.click();
-  }
+  // La vue 3D s'ouvre seule : la fiche attend son bouton, dans l'en-tête.
+  await expect(card).toBeHidden();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click();
   await expect(card).toBeVisible();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(card.getByText('Diamètre', { exact: true })).toBeVisible();
@@ -43,5 +43,14 @@ test('la fiche d’identité accompagne la vue 3D et liste les mouvements', asyn
   await expect(card).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(card).toBeHidden();
-  await expect(toggle).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeHidden();
+
+  // Depuis la grille, le bouton de l'en-tête ouvre la vue 3D avec la fiche ; il la referme aussi.
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
+  await toggle.click();
+  await expect(card).toBeVisible();
+  await toggle.click();
+  await expect(card).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeHidden();
+  await expect(toggle).toBeFocused();
 });

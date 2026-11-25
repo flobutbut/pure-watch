@@ -36,7 +36,7 @@ async function closeReachable(page: Page, close: Locator) {
 
 test('chaque panneau se ferme d’un clic dans le vide, pas d’un clic dedans ni d’un glisser', async ({
   page,
-}, info) => {
+}) => {
   await page.goto('/');
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
   const grid = page.getByRole('grid');
@@ -80,8 +80,7 @@ test('chaque panneau se ferme d’un clic dans le vide, pas d’un clic dedans n
   const close3d = page.getByRole('button', { name: 'Fermer', exact: true });
   await expect(close3d).toBeVisible();
   const card = page.getByRole('dialog', { name: 'Votre montre' });
-  if (info.project.name === 'mobile')
-    await page.getByRole('button', { name: 'Fiche d’identité', exact: true }).click();
+  await page.getByRole('button', { name: 'Fiche d’identité', exact: true }).click();
   await expect(card).toBeVisible();
   const watch = (await page.locator('.live-slot').boundingBox())!;
   await page.mouse.move(watch.x + watch.width / 2, watch.y + watch.height / 2);

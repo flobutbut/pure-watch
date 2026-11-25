@@ -69,6 +69,8 @@
   const rowViews = $derived(toRowViews(rows));
   /** Share panel open beside the 3D watch; `opened`: the 3D view was opened for it. */
   let sharing = $state<{ opened: boolean } | null>(null);
+  /** Identity card open beside the 3D watch; `opened`: the 3D view was opened for it. */
+  let card = $state<{ opened: boolean } | null>(null);
   const shareUrl = $derived(sharedLink(config, new URL(location.href)).href);
   const share = $derived(
     sharing
@@ -296,7 +298,32 @@
     const opened = nav.mode === 'grid';
     if (opened) open();
     else if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
+    card = null;
     sharing = { opened };
+  }
+
+  /** The header's card button: opens the 3D view with the identity card beside it. */
+  function openCard() {
+    if (editing) return;
+    if (card) return closeCard(true);
+    const opened = nav.mode === 'grid';
+    if (opened) open();
+    else if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
+    sharing = null;
+    card = { opened };
+  }
+
+  function closeCard(back: boolean) {
+    const opened = card?.opened ?? false;
+    card = null;
+    if (back && opened) close();
+  }
+
+  /** In the 3D view (I key): shows or hides the card, the view stays open. */
+  function toggleCard() {
+    if (card) return closeCard(false);
+    sharing = null;
+    card = { opened: false };
   }
 
   function closeShare(back: boolean) {
@@ -307,6 +334,7 @@
 
   function close() {
     sharing = null;
+    card = null;
     if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
     nav = transition(nav, 'close');
     clearTimeout(modeTimer);
@@ -331,6 +359,8 @@
   <AppChrome
     sharing={sharing !== null}
     onshare={openShare}
+    card={card !== null}
+    oncard={openCard}
     inspecting={nav.mode === 'view3d' || nav.mode === 'opening3d'}
     colorEditing={editing}
     sheetShown={cardShown}
@@ -349,7 +379,10 @@
     oncommand={run}
     onopen={open}
     onclose={close}
-    oncard={(shown) => (cardShown = shown)}
+    card={card !== null}
+    ontogglecard={toggleCard}
+    oncardclose={() => closeCard(true)}
+    onpanel={(shown) => (cardShown = shown)}
     {share}
     onshareclose={closeShare}
     captureBackground={ambience.base}
