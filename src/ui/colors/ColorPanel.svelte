@@ -147,6 +147,12 @@
     }, 100);
   }
   $effect(() => schedulePreview(choice));
+  /** Sends what the panel shows now, before the watch moves on (preview). */
+  export function flush() {
+    clearTimeout(previewTimer);
+    previewTimer = undefined;
+    onpreview(choice);
+  }
   const named = $derived(tint(color, i18n.locale));
 
   onMount(() => {

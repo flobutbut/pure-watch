@@ -83,6 +83,7 @@ test('Espace ouvre l’aperçu avec les réglages de la ligne, ou la vue 3D sans
   await page.keyboard.press('Space');
   await expect(panel).toBeHidden();
   await expect(close3d).toBeHidden();
+  await expect(grid).toHaveAttribute('aria-busy', 'false');
   // Ligne sans réglages (date) : la vue 3D seule, sans fiche d'identité.
   await grid.focus();
   await page.keyboard.press('ArrowDown');

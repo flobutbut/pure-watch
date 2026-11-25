@@ -113,6 +113,8 @@
       ? settingsForRow(rows[nav.activeRow]?.id ?? '', config)
       : null,
   );
+  /** The preview's settings panel, asked for its last change before the watch moves on. */
+  let previewPanel = $state.raw<{ flush: () => void } | undefined>();
   /** Changes with every step in the preview: the panel starts afresh from the new watch. */
   let previewStep = $state(0);
   /** The colour panel open, in the grid or in the preview (its presets depend on it). */
@@ -156,7 +158,10 @@
 
   /** Keeps what the preview's settings panel shows on the watch (the panel saves as it goes). */
   function commitPreview() {
-    if (editing || !previewConfig) return;
+    if (editing) return;
+    // A change made just before (the panel sends its preview at most every 100 ms).
+    previewPanel?.flush();
+    if (!previewConfig) return;
     const before = config;
     const next = previewConfig;
     previewConfig = null;
@@ -184,6 +189,7 @@
 
   /** The preview's panel closed by itself (×, Escape): the 3D view stays, without settings. */
   function closePreviewSettings(next: WatchConfig) {
+    previewPanel?.flush();
     previewConfig = next;
     commitPreview();
     settingsPreview = false;
@@ -528,6 +534,7 @@
     {#key previewStep}
       <div data-preview-panel class="preview-panel">
         <DimensionsPanel
+          bind:this={previewPanel}
           {config}
           defaults={sizeDefaults}
           companion
@@ -541,6 +548,7 @@
     {#key `${target}:${previewStep}`}
       <div data-preview-panel class="preview-panel">
         <ColorPanel
+          bind:this={previewPanel}
           {target}
           {config}
           presets={colorPresets}
