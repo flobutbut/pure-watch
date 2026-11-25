@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { linkPayload } from './link';
 test.setTimeout(90_000);
 const link =
   '/#v1.' +
@@ -225,7 +226,9 @@ test('un lien reçu s’ouvre sur l’aperçu 3D, puis la page reprend son adres
   await expect(close).toBeVisible();
   // The marker only opens the preview once: the address bar is the configuration alone.
   expect(new URL(page.url()).searchParams.has('view')).toBe(false);
-  expect(new URL(page.url()).hash).toBe(link.slice(1));
+  // The v1 link is rewritten in the compact format, for the same watch.
+  expect(new URL(page.url()).hash).toMatch(/^#2[A-Za-z0-9_-]+$/);
+  expect(linkPayload(page.url())).toEqual(linkPayload(new URL(link, page.url()).href));
   await page.reload();
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15000 });
   await expect(page.getByRole('grid')).toBeFocused();

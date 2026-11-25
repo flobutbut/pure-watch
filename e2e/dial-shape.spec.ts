@@ -46,5 +46,6 @@ test('un ancien lien conserve le cadran rond', async ({ page }) => {
     await page.keyboard.press('ArrowUp');
   }
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-shape-round');
-  expect(page.url()).toContain('#v1.e30');
+  // The old default link becomes the compact default link: nothing to carry.
+  expect(new URL(page.url()).hash).toBe('#2');
 });
