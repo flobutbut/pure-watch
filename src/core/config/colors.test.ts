@@ -101,4 +101,24 @@ describe('free colours', () => {
       if (finish.color) expect(targetColor(config, 'seconds')).toBe(finish.color);
     }
   });
+
+  it('edits the minute track independently and retains it in shared links', () => {
+    const catalog = parseCatalog(rawCatalog);
+    const config = defaultConfig();
+    expect(colorChoice(config, 'chapterRing').color).toBe('match');
+    expect(targetColor(config, 'chapterRing')).toBe('#F2F1EC');
+    const light = withColorChoice(config, 'dial', { color: '#FFFFFF', finish: '' });
+    expect(targetColor(light, 'chapterRing')).toBe('#1B1F27');
+    const next = withColorChoice(light, 'chapterRing', { color: '#C92750', finish: 'print' });
+    expect(targetColor(next, 'chapterRing')).toBe('#C92750');
+    expect(next.dial.indices).toBe(light.dial.indices);
+    expect(next.dial.text).toBe(light.dial.text);
+    expect(next.hands).toBe(light.hands);
+    expect(next.dial.color).toBe('#FFFFFF');
+    expect(decodeConfigHash(encodeConfigHash(next), catalog)).toEqual({ config: next, notice: '' });
+    expect(decodeConfigHash('#v1.e30', catalog).config.dial.chapterRingColor).toBe('match');
+    expect(decodeConfigHash('#2', catalog).config.dial.chapterRingColor).toBe('match');
+    const automatic = withColorChoice(next, 'chapterRing', { color: 'match', finish: 'print' });
+    expect(targetColor(automatic, 'chapterRing')).toBe('#1B1F27');
+  });
 });

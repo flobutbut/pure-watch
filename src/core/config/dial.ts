@@ -24,6 +24,13 @@ export function printInk(hex: string): string {
   return luminance > 0.55 ? '#1B1F27' : '#F2F1EC';
 }
 
+/** Couleur de la piste des minutes : l'encre du cadran, sauf teinte choisie. */
+export function chapterRingColor(dial: DialConfig): string {
+  return dial.chapterRingColor === 'match'
+    ? printInk(effectiveDialColor(dial))
+    : dial.chapterRingColor;
+}
+
 /** Couleur des chiffres des heures : l'encre du cadran, sauf teinte choisie. */
 export function numeralColor(dial: DialConfig): string {
   const color = dial.indices.numeralColor;

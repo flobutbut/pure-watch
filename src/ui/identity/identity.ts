@@ -13,7 +13,12 @@ import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
 import { numeralSystem } from '../../core/config/numerals';
-import { effectiveDialColor, hasIntrinsicColor, numeralColor } from '../../core/config/dial';
+import {
+  chapterRingColor,
+  effectiveDialColor,
+  hasIntrinsicColor,
+  numeralColor,
+} from '../../core/config/dial';
 import { getAtPath, matchesValue } from '../../core/config/path';
 import {
   effectiveRehautProfile,
@@ -96,6 +101,14 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
     if (PAINTED_DIALS.has(config.dial.finish)) return [painted(m.dialColor, color)];
     // Sunburst, guilloché, fumé… : the tone comes from a galvanic or PVD process, not a paint.
     return [{ label: m.dialColor, value: tintName(color), swatch: color, reference: m.sample }];
+  }
+  if (row.id === 'chapter-ring' && config.dial.chapterRing !== 'none') {
+    const color = config.dial.chapterRingColor;
+    return [
+      color === 'match'
+        ? { label: m.chapterRingColor, value: m.dialInk, swatch: chapterRingColor(config.dial) }
+        : painted(m.chapterRingColor, color),
+    ];
   }
   if (row.id === 'hands') {
     if (config.hands.finish === 'lacquer')

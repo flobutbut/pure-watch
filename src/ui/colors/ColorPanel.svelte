@@ -382,7 +382,7 @@
       </label>
     </div>
   {/if}
-  {#if target === 'numerals'}
+  {#if target === 'numerals' || target === 'chapterRing'}
     <p class="section-label">{t().colors.color}</p>
     <div class="links" role="group" aria-label={t().colors.pairings}>
       <Button

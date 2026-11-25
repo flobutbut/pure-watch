@@ -112,8 +112,8 @@
     nightPreview ? NIGHT_AMBIENCE : ambienceFor((previewConfig ?? config).dial),
   );
   const colorPresets = $derived([
-    // Chiffres : blanc et noir d'impression, puis les accents de la trotteuse.
-    ...(colorTarget === 'numerals'
+    // Chiffres et minuterie : blanc et noir d'impression, puis les accents de la trotteuse.
+    ...(['numerals', 'chapterRing'].includes(colorTarget ?? '')
       ? [
           { name: t().app.white, color: '#F2F1EC' },
           { name: t().app.black, color: '#1B1F27' },
@@ -124,7 +124,7 @@
       named.rows.find(
         (row) =>
           row.id ===
-          (colorTarget === 'seconds' || colorTarget === 'numerals'
+          (['seconds', 'numerals', 'chapterRing'].includes(colorTarget ?? '')
             ? 'seconds-color'
             : 'dial-color'),
       )?.variants ?? []

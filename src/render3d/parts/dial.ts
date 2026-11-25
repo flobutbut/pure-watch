@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { dialRadiusAt } from '../../core/geometry/dial-shape';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
-import { effectiveDialColor, numeralColor } from '../../core/config/dial';
+import { chapterRingColor, effectiveDialColor, numeralColor } from '../../core/config/dial';
 import { numeralSystem } from '../../core/config/numerals';
 import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
@@ -101,6 +101,7 @@ export function buildDial(
       extent: d.dialExtent,
       radiusAt: d.dialShape === 'round' ? undefined : (angle) => dialRadiusAt(d, angle),
       chapterRing: config.dial.chapterRing,
+      chapterRingInk: chapterRingColor(config.dial),
       ink: inkForDial(effectiveDialColor(config.dial)),
       brand: config.dial.text.brand,
       line2: config.dial.text.line2,

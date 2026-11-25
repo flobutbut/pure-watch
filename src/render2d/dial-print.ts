@@ -11,6 +11,8 @@ export interface DialPrintOptions {
   extent?: number;
   chapterRing: string;
   ink: string;
+  /** Couleur de la piste des minutes (par défaut : l'encre). */
+  chapterRingInk?: string;
   /** Jeu de chiffres (voir numeralHours) et famille typographique. */
   numerals?: string;
   numeralSystem?: 'arabic' | 'roman';
@@ -173,7 +175,7 @@ export function dialPrintSvg(options: DialPrintOptions): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${f(-extent)} ${f(-extent)} ${f(2 * extent)} ${f(2 * extent)}">` +
     (options.fontCss ? `<style>${options.fontCss}</style>` : '') +
-    `<g stroke="${options.ink}" fill="${options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt)}</g>` +
+    `<g stroke="${options.chapterRingInk ?? options.ink}" fill="${options.chapterRingInk ?? options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt)}</g>` +
     `<g fill="${options.ink}">${text.join('')}</g>` +
     `<g fill="${options.numeralInk ?? options.ink}">${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem)}</g>` +
     `</svg>`
