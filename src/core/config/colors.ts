@@ -20,11 +20,14 @@ export type ColorTarget =
   | 'indices'
   | 'powerReserve'
   | 'subdials'
+  | 'date'
   | 'lugs'
   | 'chapterRing';
 export interface ColorChoice {
   details?: WatchDetails;
   complications?: WatchConfig['complications'];
+  /** Date : loupe sur le verre, réglée dans le panneau de la date. */
+  cyclops?: boolean;
   lugJoin?: LugJoin;
   handLayout?: HandLayout;
   bezelLayout?: BezelLayout;
@@ -92,6 +95,8 @@ export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoi
 }
 
 function baseColorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  // La date n'a pas de couleur propre : son panneau règle le guichet et le disque.
+  if (target === 'date') return { color: 'match', finish: '', cyclops: config.crystal.cyclops };
   if (target === 'subdials')
     return { color: config.details?.subdials?.color ?? 'match', finish: '' };
   if (target === 'powerReserve')
@@ -176,6 +181,10 @@ function withBaseColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  if (target === 'date')
+    return choice.cyclops === undefined
+      ? config
+      : { ...config, crystal: { ...config.crystal, cyclops: choice.cyclops } };
   if (target === 'powerReserve' || target === 'subdials') return config;
   if (target === 'chapterRing')
     return { ...config, dial: { ...config.dial, chapterRingColor: choice.color } };
@@ -263,7 +272,7 @@ export function targetColor(config: WatchConfig, target: ColorTarget): string {
     return rehautColor({ ...config, rehaut: { ...config.rehaut, finish: 'metal' } });
   if (target === 'bezel') return config.bezel.color;
   if (target === 'rehaut') return rehautColor(config);
-  if (target === 'dial') return effectiveDialColor(config.dial);
+  if (target === 'dial' || target === 'date') return effectiveDialColor(config.dial);
   if (target === 'numerals') return numeralColor(config.dial);
   if (target === 'indices') return indexColor(config);
   if (target === 'hands' || config.hands.second.color === 'match') return handColor(config);

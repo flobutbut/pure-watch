@@ -28,12 +28,22 @@ export function evaluate(rule: Record<string, unknown>, config: WatchConfig): bo
   return true;
 }
 
+/** Lignes réglées dans le panneau de leur ligne mère, pas dans la grille. */
+export const PANEL_ROWS = [
+  'small-seconds-style',
+  'chronograph-counters',
+  'power-reserve-style',
+  'date-window',
+  'date-disc',
+  'date-loupe',
+] as const;
+
 export function visibleRows(rows: readonly RowDef[], config: WatchConfig): RowDef[] {
   // Palettes and complication styles remain catalog metadata for presets, settings and old links.
   return rows.filter(
     (row) =>
       row.kind !== 'palette' &&
-      !['small-seconds-style', 'chronograph-counters', 'power-reserve-style'].includes(row.id) &&
+      !(PANEL_ROWS as readonly string[]).includes(row.id) &&
       (!row.visibleWhen || evaluate(row.visibleWhen, config)),
   );
 }

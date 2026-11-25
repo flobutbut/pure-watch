@@ -1,4 +1,5 @@
 import type { ColorTarget } from '../../core/config/colors';
+import { dateComplication } from '../../core/config/date';
 import { hasIntrinsicColor } from '../../core/config/dial';
 import type { WatchConfig } from '../../core/config/types';
 
@@ -32,6 +33,11 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
     case 'chronograph':
     case 'chronograph-counters':
       return config.complications.some((c) => c.type === 'chronograph') ? 'subdials' : null;
+    case 'date':
+    case 'date-window':
+    case 'date-disc':
+    case 'date-loupe':
+      return dateComplication(config) ? 'date' : null;
     case 'numerals':
       return config.dial.indices.numerals !== 'none' ? 'numerals' : null;
     case 'indices':

@@ -7,6 +7,7 @@
   import { smallSeconds } from '../../core/config/small-seconds';
   import { powerReserve } from '../../core/config/power-reserve';
   import { chronograph } from '../../core/config/chronograph';
+  import { dateComplication } from '../../core/config/date';
   import SegmentedControl from '../kit/SegmentedControl.svelte';
   import { i18n, t } from '../i18n.svelte';
   let {
@@ -16,29 +17,36 @@
     onchange,
     ondetails,
   }: {
-    target: 'reserve' | 'subdials';
+    target: 'reserve' | 'subdials' | 'date';
     config: WatchConfig;
     settingsRows: RowDef[];
-    onchange: (value: WatchConfig['complications']) => void;
+    /** La configuration modifiée : complications, ou verre pour la loupe de date. */
+    onchange: (value: WatchConfig) => void;
     ondetails: (value: WatchDetails) => void;
   } = $props();
-  const id = $derived(
-    target === 'reserve'
-      ? 'power-reserve-style'
-      : smallSeconds(config)
-        ? null
-        : 'chronograph-counters',
+  const ids = $derived(
+    target === 'date'
+      ? ['date-window', 'date-disc', 'date-loupe']
+      : target === 'reserve'
+        ? ['power-reserve-style']
+        : smallSeconds(config)
+          ? []
+          : ['chronograph-counters'],
   );
-  const row = $derived(settingsRows.find((row) => row.id === id));
-  const styles = $derived(settingsRows.find((row) => row.id === 'small-seconds-style'));
+  const rows = $derived(ids.flatMap((id) => settingsRows.filter((row) => row.id === id)));
+  const styles = $derived(
+    target === 'date' ? undefined : settingsRows.find((row) => row.id === 'small-seconds-style'),
+  );
   const section = $derived(target === 'reserve' ? 'reserve' : 'subdials');
-  const value = $derived(
-    String(
-      (id === 'power-reserve-style'
-        ? powerReserve(config)?.style
-        : chronograph(config)?.counters) ?? getAtPath(config, row?.path ?? ''),
-    ),
-  );
+  /** La valeur portée par la montre, valeurs par défaut comprises. */
+  const EFFECTIVE: Record<string, (config: WatchConfig) => unknown> = {
+    'power-reserve-style': (config) => powerReserve(config)?.style,
+    'chronograph-counters': (config) => chronograph(config)?.counters,
+    'date-window': (config) => dateComplication(config)?.window,
+    'date-disc': (config) => dateComplication(config)?.disc,
+  };
+  const valueOf = (row: RowDef) =>
+    String(EFFECTIVE[row.id]?.(config) ?? getAtPath(config, row.path));
 </script>
 
 {#if styles}
@@ -64,17 +72,17 @@
   </section>
 {/if}
 
-{#if row}
+{#each rows as row (row.id)}
   <section aria-label={row.i18n.name}>
     <p class="section-label">{row.i18n.name}</p>
     <SegmentedControl
       label={row.i18n.name}
-      {value}
+      value={valueOf(row)}
       options={row.variants.map((v) => ({ value: String(v.value), label: v.i18n.name }))}
-      onchange={(value) => onchange(setAtPath(config, row!.path, value).complications)}
+      onchange={(value) => onchange(setAtPath(config, row.path, value))}
     />
   </section>
-{/if}
+{/each}
 
 <style>
   section {

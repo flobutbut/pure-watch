@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import rawCatalog from './data/catalog.json';
   import { parseCatalog } from './core/catalog/load';
-  import { visibleRows } from './core/rules/visibility';
+  import { PANEL_ROWS, visibleRows } from './core/rules/visibility';
   import {
     configUrl,
     encodeConfigHash,
@@ -68,6 +68,9 @@
   let previewConfig = $state.raw<WatchConfig | null>(null);
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
   const rows = $derived(visibleRows(named.rows, config));
+  const settingsRows = $derived(
+    named.rows.filter((row) => (PANEL_ROWS as readonly string[]).includes(row.id)),
+  );
   const rowViews = $derived(toRowViews(rows));
   /** Share panel open beside the 3D watch; `opened`: the 3D view was opened for it. */
   let sharing = $state<{ opened: boolean } | null>(null);
@@ -525,9 +528,7 @@
       {config}
       presets={colorPresets}
       finishes={dialFinishes}
-      settingsRows={named.rows.filter((row) =>
-        ['small-seconds-style', 'chronograph-counters', 'power-reserve-style'].includes(row.id),
-      )}
+      {settingsRows}
       {night}
       onnight={() => (night = !night)}
       onpreview={previewColor}
@@ -563,9 +564,7 @@
           {config}
           presets={colorPresets}
           finishes={dialFinishes}
-          settingsRows={named.rows.filter((row) =>
-            ['small-seconds-style', 'chronograph-counters', 'power-reserve-style'].includes(row.id),
-          )}
+          {settingsRows}
           {night}
           companion
           onnight={() => (night = !night)}
