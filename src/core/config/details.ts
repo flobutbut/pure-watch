@@ -4,6 +4,7 @@ import { pigmentChoice, lumePigment } from './lume';
 import { isDialFinish, type DialFinish } from './dial-finishes';
 import { SUBDIAL_HAND_STYLES } from './subdial-hand';
 import { SUBDIAL_STYLES, type SubdialStyle } from './subdial-style';
+import { RING_DIAMETER_RANGE, RING_RELIEFS, RING_SHAPES, RING_WIDTH_RANGE } from './dial-ring';
 
 const hex = z
   .string()
@@ -114,6 +115,21 @@ export const detailsSchema = z
           .strict(),
       )
       .optional(),
+    // `null` : la ligne « Anneau » sur « Sans anneau » (cleanDetails l'efface ensuite).
+    ring: z
+      .object({
+        shape: z.enum(RING_SHAPES),
+        diameter: factor(RING_DIAMETER_RANGE.min, RING_DIAMETER_RANGE.max).optional(),
+        width: factor(RING_WIDTH_RANGE.min, RING_WIDTH_RANGE.max).optional(),
+        relief: z.enum(RING_RELIEFS).optional(),
+        finish: z.union([z.literal('original'), z.custom<DialFinish>(isDialFinish)]).optional(),
+        color: z.union([hex, z.literal('match')]).optional(),
+        surface: dialSurfaceSchema.omit({ legacyFume: true }).optional(),
+        ink: ink.optional(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     reserve: z
       .object({
         subdialStyle: subdialStyleSchema.optional(),
@@ -140,6 +156,7 @@ export type DialSurface = NonNullable<WatchDetails['dial']>;
 export type RehautPrint = NonNullable<WatchDetails['rehaut']>;
 export type IndexOverride = NonNullable<WatchDetails['indices']>[string];
 export type ReserveAdjustment = NonNullable<WatchDetails['reserve']>;
+export type RingSettings = NonNullable<WatchDetails['ring']>;
 
 export function dialSurface(config: WatchConfig) {
   const s = config.details?.dial;

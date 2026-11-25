@@ -2,6 +2,7 @@ import type { HexColor, WatchConfig } from './types';
 import { chronograph, COUNTER_DISCS } from './chronograph';
 import { getAtPath } from './path';
 import { effectiveDialColor, printInk } from './dial';
+import { ringToneColor } from './dial-ring';
 
 /** Existing panda colours remain the fallback when no custom sub-dial colour is selected. */
 export function subdialBaseColor(config: WatchConfig): string {
@@ -66,4 +67,30 @@ export function subdialInk(config: WatchConfig, reserve = false) {
   return settings?.ink && settings.ink !== 'auto'
     ? settings.ink
     : printInk((reserve ? reserveAppearance(config) : subdialAppearance(config)).color);
+}
+
+/** The ring is its own surface: ton sur ton by default, the dial finish unless chosen. */
+export function ringAppearance(config: WatchConfig) {
+  const ring = config.details?.ring ?? undefined;
+  return subdialAppearance(
+    {
+      ...config,
+      details: {
+        ...config.details,
+        subdials: ring && {
+          finish: ring.finish,
+          color: ring.color,
+          surface: ring.surface,
+        },
+      },
+    },
+    ringToneColor(config),
+    false,
+  );
+}
+
+/** Print on the ring follows its surface until explicitly customised. */
+export function ringInk(config: WatchConfig) {
+  const ink = config.details?.ring?.ink;
+  return ink && ink !== 'auto' ? ink : printInk(ringAppearance(config).color);
 }

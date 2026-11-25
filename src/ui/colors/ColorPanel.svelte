@@ -21,7 +21,11 @@
     subdialAppearance,
     subdialBaseColor,
     reserveAppearance,
+    ringAppearance,
   } from '../../core/config/subdials';
+  import { ringToneColor } from '../../core/config/dial-ring';
+  import type { DialSurface, RingSettings } from '../../core/config/details';
+  import RingSettingsPanel from './RingSettings.svelte';
   import type { WatchDetails } from '../../core/config/details';
   import type { DialFinish } from '../../core/config/dial-finishes';
   import ChoiceCarousel from '../kit/ChoiceCarousel.svelte';
@@ -99,14 +103,40 @@
   const initialComplications = untrack(() => config.complications);
   let complications = $state(initialComplications);
   let cyclops = $state(initial.cyclops);
-  const surfaceTarget = $derived(target === 'subdials' || target === 'powerReserve');
+  /** Sous-cadrans et fond de réserve : des complications, avec leur impression et aiguille. */
+  const miniTarget = $derived(target === 'subdials' || target === 'powerReserve');
+  /** Surfaces à part du fond : finition, couleur et effets propres (l'anneau en est une). */
+  const surfaceTarget = $derived(miniTarget || target === 'ring');
   /** Panneaux qui règlent aussi une complication (sa sous-ligne de catalogue). */
-  const complicationTarget = $derived(surfaceTarget || target === 'date');
-  const surfaceSection = $derived(target === 'powerReserve' ? 'reserve' : 'subdials');
-  const surfaceSettings = $derived(details[surfaceSection]);
-  function patchSurface(patch: NonNullable<WatchDetails['subdials']>) {
-    details = { ...details, [surfaceSection]: { ...details[surfaceSection], ...patch } };
+  const complicationTarget = $derived(miniTarget || target === 'date');
+  const surfaceSection = $derived(
+    target === 'powerReserve' ? 'reserve' : target === 'ring' ? 'ring' : 'subdials',
+  );
+  const surfaceSettings = $derived(details[surfaceSection] ?? undefined);
+  function patchSurface(
+    patch: {
+      finish?: 'original' | DialFinish;
+      surface?: Omit<DialSurface, 'legacyFume'>;
+    } & Partial<Omit<RingSettings, 'finish' | 'surface'>>,
+  ) {
+    details = {
+      ...details,
+      [surfaceSection]: { ...details[surfaceSection], ...patch },
+    } as WatchDetails;
   }
+  const surfaceFinishLabel = $derived(
+    target === 'powerReserve'
+      ? t().colors.reserveFinish
+      : target === 'ring'
+        ? t().colors.ringFinish
+        : t().colors.subdialFinish,
+  );
+  const appearanceOf = (watch: WatchConfig) =>
+    target === 'powerReserve'
+      ? reserveAppearance(watch)
+      : target === 'ring'
+        ? ringAppearance(watch)
+        : subdialAppearance(watch);
   const title = $derived(
     target === 'subdials' && config.complications.some((c) => c.type === 'chronograph')
       ? t().colors.chronograph
@@ -121,12 +151,7 @@
     target === 'date'
       ? false
       : surfaceTarget
-        ? !hasIntrinsicColor(
-            (target === 'powerReserve' ? reserveAppearance : subdialAppearance)({
-              ...config,
-              details,
-            }).config.dial.finish,
-          )
+        ? !hasIntrinsicColor(appearanceOf({ ...config, details }).config.dial.finish)
         : target === 'lugs'
           ? false
           : target === 'bezel'
@@ -153,11 +178,7 @@
     ...(lugJoin ? { lugJoin } : {}),
   });
   const mini = $derived(
-    surfaceTarget
-      ? (target === 'powerReserve' ? reserveAppearance : subdialAppearance)(
-          withColorChoice(config, target, choice),
-        )
-      : null,
+    surfaceTarget ? appearanceOf(withColorChoice(config, target, choice)) : null,
   );
   const miniSurface = $derived(
     surfaceSettings?.surface ??
@@ -253,11 +274,14 @@
         ? [
             {
               value: 'match',
-              label: surfaceTarget
-                ? t().colors.originalColor
-                : target === 'seconds'
-                  ? t().colors.matchHands
-                  : t().colors.dialInk,
+              label:
+                target === 'ring'
+                  ? t().colors.toneOnTone
+                  : surfaceTarget
+                    ? t().colors.originalColor
+                    : target === 'seconds'
+                      ? t().colors.matchHands
+                      : t().colors.dialInk,
             },
             { value: CUSTOM, label: t().colors.custom },
           ]
@@ -282,7 +306,11 @@
     else {
       if (surfaceTarget)
         selectHex(
-          target === 'powerReserve' ? effectiveDialColor(config.dial) : subdialBaseColor(config),
+          target === 'powerReserve'
+            ? effectiveDialColor(config.dial)
+            : target === 'ring'
+              ? ringToneColor(config)
+              : subdialBaseColor(config),
         );
       else if (target !== 'seconds') selectHex(printInk(effectiveDialColor(config.dial)));
       matched = true;
@@ -301,7 +329,9 @@
     label={surfaceTarget
       ? target === 'powerReserve'
         ? t().colors.reserveColor
-        : t().colors.subdialColor
+        : target === 'ring'
+          ? t().colors.ringColor
+          : t().colors.subdialColor
       : target === 'rehaut'
         ? t().colors.rehautFinish
         : colorModes && t().colors.color}
@@ -343,17 +373,22 @@
       ondetails={(value) => (details = value)}
     />
   {/if}
+  {#if target === 'ring'}
+    <RingSettingsPanel config={{ ...config, details }} onchange={(patch) => patchSurface(patch)} />
+  {/if}
   {#if surfaceTarget}
-    <ComplicationSettings
-      {settingsRows}
-      target={target === 'powerReserve' ? 'reserve' : 'subdials'}
-      config={{ ...config, complications, details }}
-      onchange={(value) => (complications = value.complications)}
-      ondetails={(value) => (details = value)}
-    />
+    {#if miniTarget}
+      <ComplicationSettings
+        {settingsRows}
+        target={target === 'powerReserve' ? 'reserve' : 'subdials'}
+        config={{ ...config, complications, details }}
+        onchange={(value) => (complications = value.complications)}
+        ondetails={(value) => (details = value)}
+      />
+    {/if}
     <ChoiceCarousel
-      label={target === 'powerReserve' ? t().colors.reserveFinish : t().colors.subdialFinish}
-      heading={target === 'powerReserve' ? t().colors.reserveFinish : t().colors.subdialFinish}
+      label={surfaceFinishLabel}
+      heading={surfaceFinishLabel}
       previous={PART_SETTINGS[i18n.locale].previous}
       next={PART_SETTINGS[i18n.locale].next}
       value={surfaceSettings?.finish ??
@@ -379,7 +414,9 @@
       target="dial"
       effectsLabel={target === 'powerReserve'
         ? t().colors.reserveEffects
-        : t().colors.subdialEffects}
+        : target === 'ring'
+          ? t().colors.ringEffects
+          : t().colors.subdialEffects}
       config={mini.config}
       {presets}
       oncommit={close}
@@ -532,7 +569,7 @@
     <div class="element-color">{@render elementColor()}</div>
   {/if}
 
-  {#if surfaceTarget}
+  {#if miniTarget}
     <SubdialPrintSettings
       reserve={target === 'powerReserve'}
       config={withColorChoice(config, target, choice)}
@@ -584,6 +621,7 @@
       bezelLayout ||
       lugJoin ||
       complicationTarget ||
+      target === 'ring' ||
       target === 'chapterRing'
         ? t().colors.restoreSettings
         : t().colors.restoreColor}

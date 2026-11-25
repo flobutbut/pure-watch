@@ -608,8 +608,8 @@
                             ? t().grid.numeralsSettings
                             : target === 'indices'
                               ? t().grid.indicesSettings
-                              : target === 'date'
-                                ? t().colors.date
+                              : target === 'date' || target === 'ring'
+                                ? t().colors[target]
                                 : target === 'powerReserve' || target === 'subdials'
                                   ? target === 'subdials' &&
                                     config.complications.some((c) => c.type === 'chronograph')
@@ -620,7 +620,7 @@
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials', 'date'].includes(target)}
+              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials', 'date', 'ring'].includes(target)}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
@@ -635,10 +635,11 @@
                   'powerReserve',
                   'subdials',
                   'date',
+                  'ring',
                 ].includes(target)
                   ? t().grid.settings
                   : t().grid.color}
-                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials' && target !== 'date'}<span
+                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials' && target !== 'date' && target !== 'ring'}<span
                     class="color-value"
                   >
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'

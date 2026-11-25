@@ -5,6 +5,7 @@
 import type { Catalog, RowDef, RowId } from '../catalog/types';
 import { getAtPath, matchesValue, setAtPath } from '../config/path';
 import { resolveLayout } from '../config/complications';
+import { cleanDetails } from '../config/details';
 import { restoreSeconds, withoutSeconds } from '../config/seconds';
 import type { WatchConfig } from '../config/types';
 import type { RowView } from './state';
@@ -63,6 +64,22 @@ export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: num
   if (row.id === 'case-size' && next.case.lugWidthMm !== config.case.lugWidthMm)
     next = { ...next, strap: { ...next.strap, widthMm: next.case.lugWidthMm } };
   if (row.id === 'seconds') next = withoutSeconds(next);
+  if (row.id === 'dial-ring') {
+    const details = { ...next.details };
+    if (details.ring) {
+      // Une forme d'anneau repart de ses proportions ; matière et couleur sont gardées.
+      const ring = { ...details.ring };
+      delete ring.diameter;
+      delete ring.width;
+      next = { ...next, details: { ...details, ring } };
+    } else {
+      // Sans anneau : la section disparaît, la montre redevient celle d'avant.
+      delete details.ring;
+      const cleaned = cleanDetails(details);
+      next = { ...next, details: cleaned };
+      if (!cleaned) delete next.details;
+    }
+  }
   const type = /^complications\.([^.]+)$/.exec(row.path)?.[1];
   if ((type === 'small-seconds' || type === 'chronograph') && variant.value !== null)
     next = restoreSeconds(next);
