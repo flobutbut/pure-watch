@@ -224,6 +224,22 @@ export function identitySections(
     if (!section) sections.push((section = { title, traits: [] }));
     section.traits.push({ label: row.i18n.name, value: rowValue(row, config) });
     section.traits.push(...colorTraits(row, config, locale));
+    // Guichet et disque se règlent dans le panneau de la date : la fiche les montre sous elle.
+    if (row.id === 'date' && dateComplication(config))
+      for (const id of ['date-window', 'date-disc', 'date-loupe']) {
+        const definition = rawCatalog.rows.find((r) => r.id === id)! as RowDef;
+        const selected = definition.variants.find((v) =>
+          matchesValue(EFFECTIVE[id]?.(config) ?? getAtPath(config, definition.path), v.value),
+        );
+        section.traits.push({
+          label: locale === 'en' ? CATALOG_EN[id]!.name : definition.i18n.name,
+          value: selected
+            ? locale === 'en'
+              ? (CATALOG_EN[id]?.variants?.[selected.id] ?? selected.i18n.name)
+              : selected.i18n.name
+            : '—',
+        });
+      }
     const styleId =
       row.id === 'small-seconds' && smallSeconds(config)
         ? 'small-seconds-style'

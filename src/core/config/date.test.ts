@@ -5,6 +5,7 @@ import { movementFit } from '../movement/compatibility';
 import { MOVEMENTS } from '../movement/movements';
 import { applyVariant, variantIndexFromConfig } from '../nav/selection';
 import { visibleRows } from '../rules/visibility';
+import { settingsForRow } from '../../ui/grid/row-settings';
 import { complicationHours } from './complications';
 import { dateComplication } from './date';
 import { defaultConfig } from './defaults';
@@ -56,7 +57,11 @@ describe('date', () => {
     expect(dateComplication(config)).toBeNull();
 
     config = pick(config, 'date', '4h30');
-    expect(visible()).toEqual(expect.arrayContaining(['date-window', 'date-disc', 'date-loupe']));
+    // Guichet, disque et loupe se règlent dans le panneau de la date.
+    expect(visible()).not.toContain('date-window');
+    expect(visible()).not.toContain('date-disc');
+    expect(visible()).not.toContain('date-loupe');
+    expect(settingsForRow('date', config)).toBe('date');
     expect(dateComplication(config)).toEqual({ position: '4h30', window: 'framed', disc: 'white' });
     // Valeurs par défaut = première variante de chaque ligne.
     expect(variantIndexFromConfig(row('date-window'), config)).toBe(0);

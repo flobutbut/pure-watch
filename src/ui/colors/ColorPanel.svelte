@@ -96,7 +96,10 @@
   let details = $state(initial.details ?? {});
   const initialComplications = untrack(() => config.complications);
   let complications = $state(initialComplications);
+  let cyclops = $state(initial.cyclops);
   const surfaceTarget = $derived(target === 'subdials' || target === 'powerReserve');
+  /** Panneaux qui règlent aussi une complication (sa sous-ligne de catalogue). */
+  const complicationTarget = $derived(surfaceTarget || target === 'date');
   const surfaceSection = $derived(target === 'powerReserve' ? 'reserve' : 'subdials');
   const surfaceSettings = $derived(details[surfaceSection]);
   function patchSurface(patch: NonNullable<WatchDetails['subdials']>) {
@@ -113,26 +116,29 @@
       : { size: NUMERAL_SIZE_RANGE, width: null, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    surfaceTarget
-      ? !hasIntrinsicColor(
-          (target === 'powerReserve' ? reserveAppearance : subdialAppearance)({
-            ...config,
-            details,
-          }).config.dial.finish,
-        )
-      : target === 'lugs'
-        ? false
-        : target === 'bezel'
-          ? hasBezelInsert(config)
-          : target === 'indices'
-            ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
-            : target === 'rehaut'
-              ? finish === 'custom'
-              : target !== 'hands' || finish === 'lacquer',
+    target === 'date'
+      ? false
+      : surfaceTarget
+        ? !hasIntrinsicColor(
+            (target === 'powerReserve' ? reserveAppearance : subdialAppearance)({
+              ...config,
+              details,
+            }).config.dial.finish,
+          )
+        : target === 'lugs'
+          ? false
+          : target === 'bezel'
+            ? hasBezelInsert(config)
+            : target === 'indices'
+              ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
+              : target === 'rehaut'
+                ? finish === 'custom'
+                : target !== 'hands' || finish === 'lacquer',
   );
   const choice = $derived<ColorChoice>({
     details,
-    ...(surfaceTarget ? { complications } : {}),
+    ...(complicationTarget ? { complications } : {}),
+    ...(cyclops !== undefined ? { cyclops } : {}),
     color: matched ? 'match' : color,
     finish,
     ...(initial.layout
@@ -177,6 +183,7 @@
     a === b || (a !== 'match' && b !== 'match' && normalizeHex(a) === normalizeHex(b));
   const changed = $derived(
     JSON.stringify(complications) !== JSON.stringify(initialComplications) ||
+      choice.cyclops !== initial.cyclops ||
       choice.finish !== initial.finish ||
       !sameColor(choice.color, initial.color) ||
       choice.numeralSystem !== initial.numeralSystem ||
@@ -227,6 +234,7 @@
     lugJoin = initial.lugJoin;
     details = initial.details ?? {};
     complications = initialComplications;
+    cyclops = initial.cyclops;
   }
   /**
    * Couleur de l'élément, selon le pattern `ColorField` : les modes « suivre une autre couleur »
@@ -316,12 +324,29 @@
   placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
+  {#if target === 'date'}
+    <ComplicationSettings
+      {settingsRows}
+      target="date"
+      config={{
+        ...config,
+        complications,
+        details,
+        crystal: { ...config.crystal, cyclops: cyclops ?? config.crystal.cyclops },
+      }}
+      onchange={(value) => {
+        complications = value.complications;
+        cyclops = value.crystal.cyclops;
+      }}
+      ondetails={(value) => (details = value)}
+    />
+  {/if}
   {#if surfaceTarget}
     <ComplicationSettings
       {settingsRows}
       target={target === 'powerReserve' ? 'reserve' : 'subdials'}
       config={{ ...config, complications, details }}
-      onchange={(value) => (complications = value)}
+      onchange={(value) => (complications = value.complications)}
       ondetails={(value) => (details = value)}
     />
     <ChoiceCarousel
@@ -540,7 +565,7 @@
   {#if free && !colorModes}{@render elementColor()}{/if}
   {#snippet footer()}
     <RestoreButton
-      title={initial.layout || handLayout || bezelLayout || lugJoin || surfaceTarget
+      title={initial.layout || handLayout || bezelLayout || lugJoin || complicationTarget
         ? t().colors.restoreSettings
         : t().colors.restoreColor}
       disabled={!changed}
