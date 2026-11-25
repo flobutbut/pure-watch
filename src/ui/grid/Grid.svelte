@@ -17,6 +17,7 @@
   import { i18n, t } from '../i18n.svelte';
   import { dragSteps, WheelStepper, wheelPixels, type Axis } from './gestures';
   import { commandFromKey } from './keyboard';
+  import { colorForRow as rowColor } from './row-settings';
   import {
     gridMetrics,
     hierarchy,
@@ -43,6 +44,14 @@
     onclose: () => void;
     oncolor: (target: ColorTarget) => void;
     ondimensions: () => void;
+    /** The preview shows a settings panel beside the watch. */
+    settings?: boolean;
+    /** The preview's settings are on (the row may have none to show). */
+    settingsOn?: boolean;
+    /** The active row has settings the preview can show. */
+    settingsAvailable?: boolean;
+    /** Shows or hides the preview's settings (tool button, R key). */
+    ontogglesettings?: () => void;
     onbezel: (angle: number) => void;
     /** The identity card is wanted beside the 3D watch (header button or I key). */
     card?: boolean;
@@ -76,6 +85,10 @@
     onclose,
     oncolor,
     ondimensions,
+    settings = false,
+    settingsOn = false,
+    settingsAvailable = false,
+    ontogglesettings,
     onbezel,
     card = false,
     ontogglecard,
@@ -272,8 +285,9 @@
   });
   const sharing = $derived(open && share !== null);
   const cardShown = $derived(open && !sharing && card);
-  /** One panel at a time beside the watch: the identity card or sharing. */
-  const panelShown = $derived(cardShown || sharing);
+  /** One panel at a time beside the watch: the identity card, sharing or the row's settings. */
+  const settingsShown = $derived(open && settings && !cardShown && !sharing);
+  const panelShown = $derived(cardShown || sharing || settingsShown);
   $effect(() => onpanel?.(panelShown));
   const CAPTURE_PX = 2048;
   const capture = $derived(live ? () => live!.capture(CAPTURE_PX, captureBackground) : null);
@@ -281,7 +295,11 @@
     live?.setBezelControl(open && config.bezel.type === 'rotating' && bezelEditing, onbezel),
   );
 
-  /** Vue 3D (spec §3.3) : flèches = pas de 15°, 1 à 5 = vues prédéfinies, P = pause, Espace / Entrée / Échap = fermer. */
+  /**
+   * Vue 3D : les flèches parcourent lignes et variantes comme dans la grille (la montre suit),
+   * la souris ou le doigt tournent la montre ; 1 à 5 = vues prédéfinies, P = pause,
+   * Espace / Entrée / Échap = fermer. Pendant le réglage de la lunette, ← → la tournent.
+   */
   function inspectKey(event: KeyboardEvent): boolean {
     if (config.bezel.type === 'rotating') {
       if (event.key.toLowerCase() === 'b') {
@@ -294,15 +312,9 @@
         return true;
       }
     }
-    const rotations: Record<string, [number, number]> = {
-      ArrowLeft: [-15, 0],
-      ArrowRight: [15, 0],
-      ArrowUp: [0, 15],
-      ArrowDown: [0, -15],
-    };
-    const rotation = rotations[event.key];
-    if (rotation) {
-      live?.rotate(...rotation);
+    const command = commandFromKey(event);
+    if (command) {
+      oncommand(command);
       return true;
     }
     if (/^[1-5]$/.test(event.key)) {
@@ -311,6 +323,10 @@
     }
     if (event.key === 'p' || event.key === 'P') {
       paused = live?.togglePause() ?? false;
+      return true;
+    }
+    if (event.key === 'r' || event.key === 'R') {
+      ontogglesettings?.();
       return true;
     }
     if (event.key === 'i' || event.key === 'I') {
@@ -340,12 +356,7 @@
       if (inspectKey(event)) event.preventDefault();
       return;
     }
-    if (event.key === ' ') {
-      event.preventDefault();
-      preview();
-      return;
-    }
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       onopen();
       return;
@@ -429,37 +440,7 @@
         ? (t().handFinish[config.hands.finish] ?? '')
         : tint(targetColor(config, target), i18n.locale).name;
 
-  const colorForRow = (id: string): ColorTarget | null =>
-    id === 'chapter-ring' && config.dial.chapterRing !== 'none'
-      ? 'chapterRing'
-      : id === 'lugs' && config.case.lugs !== 'none'
-        ? 'lugs'
-        : id === 'bezel'
-          ? 'bezel'
-          : id === 'dial-finish'
-            ? 'dial'
-            : id === 'hands'
-              ? 'hands'
-              : id === 'seconds' && config.hands.second.style !== 'none'
-                ? 'seconds'
-                : id === 'rehaut'
-                  ? 'rehaut'
-                  : id === 'numerals' && config.dial.indices.numerals !== 'none'
-                    ? 'numerals'
-                    : id === 'indices' && config.dial.indices.style !== 'none'
-                      ? 'indices'
-                      : null;
-
-  /** Space: the watch up close with the active row's settings panel, or the 3D view if it has none. */
-  function preview() {
-    const id = activeRowDef.id;
-    if (id === 'case-size') return ondimensions();
-    const target = colorForRow(id);
-    if (target && !(target === 'dial' && hasIntrinsicColor(config.dial.finish))) {
-      return oncolor(target);
-    }
-    onopen();
-  }
+  const colorForRow = (id: string) => rowColor(id, config);
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -661,6 +642,19 @@
   <!-- Mise au point : la montre reste nette, tout le reste passe dans le flou. -->
   <div class="focus-veil" aria-hidden="true"></div>
 
+  <!-- Preview: the active row's name and variant stay sharp, where the grid shows them (on
+       phones, level with the watch when a panel takes the bottom of the screen). -->
+  <div
+    class="label active preview-label"
+    aria-hidden="true"
+    style:transform="translateY({open ? watchY : bumpY}px)"
+  >
+    <span class="label-name">{activeRowDef.i18n.name}</span>
+    <span class="label-variant">
+      {activeRowDef.id === 'case-size' ? sizeLabel(config) : activeVariant.i18n.name}
+    </span>
+  </div>
+
   {#if open}
     {#if config.bezel.type === 'rotating'}
       <BezelControl
@@ -692,6 +686,21 @@
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           {#if paused}<path d="M8 5l11 7-11 7z" />{:else}<path d="M9 5v14M15 5v14" />{/if}
+        </svg>
+      </button>
+      <button
+        class="tool toggle"
+        aria-label={t().grid.rowSettings}
+        aria-pressed={settingsOn}
+        title={settingsAvailable ? t().grid.rowSettingsTitle : t().grid.noSettings}
+        onclick={() => ontogglesettings?.()}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 8h16M4 16h16" /><circle cx="15" cy="8" r="2.4" /><circle
+            cx="9"
+            cy="16"
+            r="2.4"
+          />
         </svg>
       </button>
       <button
@@ -846,6 +855,19 @@
   }
 
   .grid.open .focus-veil {
+    opacity: 1;
+  }
+
+  /* Shown over the veil only while the preview is open; the watch passes in front of it. */
+  .preview-label {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0;
+    transition:
+      transform var(--dur-row) var(--ease-out),
+      opacity var(--dur-open) var(--ease-open);
+  }
+  .grid.open .preview-label {
     opacity: 1;
   }
 
@@ -1026,6 +1048,19 @@
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     cursor: pointer;
+  }
+
+  .toggle[aria-pressed='true'] {
+    background: var(--ink);
+  }
+  .toggle[aria-pressed='true'] svg {
+    stroke: var(--veil);
+  }
+  .toggle svg circle {
+    fill: color-mix(in srgb, var(--ink) 12%, var(--veil));
+  }
+  .toggle[aria-pressed='true'] svg circle {
+    fill: var(--ink);
   }
 
   .tool svg {

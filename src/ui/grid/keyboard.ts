@@ -23,3 +23,17 @@ export function commandFromKey(event: Pick<KeyboardEvent, 'key'>): NavCommand | 
       return null;
   }
 }
+
+/** Controls that give the arrows a meaning of their own (sliders, choice lists, text). */
+const OWN_ARROWS =
+  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="radio"], [role="tab"], [role="option"], [role="listbox"], [role="menuitem"], [role="spinbutton"]';
+
+/**
+ * In the preview, an arrow pressed beside the 3D view still browses the rows: on a plain
+ * button of the settings panel, or with the focus lost (the panel it was in was replaced).
+ */
+export function browsesFrom(target: EventTarget | null, panel: string): boolean {
+  const element = target as Element | null;
+  if (!element?.closest || element === document.body) return true;
+  return Boolean(element.closest(panel)) && !element.closest(OWN_ARROWS);
+}

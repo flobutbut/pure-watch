@@ -30,6 +30,41 @@ test('Entrée ouvre la vue 3D, Échap la referme', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeHidden();
 });
 
+test('dans la vue 3D, les flèches parcourent lignes et variantes et la vue reste ouverte', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
+  const grid = page.getByRole('grid');
+  const close3d = page.getByRole('button', { name: 'Fermer', exact: true });
+  await grid.focus();
+  await page.keyboard.press('Enter');
+  await expect(close3d).toBeVisible();
+  await expect(grid).toHaveAttribute('aria-busy', 'false');
+  const cell = (await grid.getAttribute('aria-activedescendant'))!;
+  const link = page.url();
+  // ← → : variante suivante, enregistrée dans le lien comme dans la grille.
+  await page.keyboard.press('ArrowRight');
+  await expect(grid).not.toHaveAttribute('aria-activedescendant', cell);
+  await expect(grid).toHaveAttribute('aria-activedescendant', /^cell-hands-/);
+  await expect.poll(() => page.url()).not.toBe(link);
+  // ↑ ↓ : ligne suivante ; son nom et sa variante restent lisibles à gauche, comme dans la grille.
+  const label = page.locator('.preview-label');
+  await expect(label).toContainText('Aiguilles');
+  await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', /^cell-seconds-/);
+  await expect(label).toContainText('Trotteuse');
+  await expect(label).toHaveCSS('opacity', '1');
+  await page.keyboard.press('ArrowUp');
+  await expect(grid).toHaveAttribute('aria-activedescendant', /^cell-hands-/);
+  await expect(close3d).toBeVisible();
+  // Retour à la grille : la sélection faite dans la vue est conservée.
+  const chosen = (await grid.getAttribute('aria-activedescendant'))!;
+  await page.keyboard.press('Escape');
+  await expect(close3d).toBeHidden();
+  await expect(grid).toHaveAttribute('aria-activedescendant', chosen);
+});
+
 test('Espace ouvre l’aperçu avec les réglages de la ligne, ou la vue 3D sans réglages', async ({
   page,
 }) => {
@@ -38,14 +73,16 @@ test('Espace ouvre l’aperçu avec les réglages de la ligne, ou la vue 3D sans
   const grid = page.getByRole('grid');
   const close3d = page.getByRole('button', { name: 'Fermer', exact: true });
   await grid.focus();
-  // Ligne des aiguilles (active au chargement) : la montre en grand et son panneau de réglages.
+  // Ligne des aiguilles (active au chargement) : la vue 3D et son panneau de réglages.
   await page.keyboard.press('Space');
   const panel = page.getByRole('dialog');
   await expect(panel).toBeVisible();
   await expect(panel).toContainText('Aiguilles');
-  await expect(close3d).toBeHidden();
+  await expect(close3d).toBeVisible();
+  await expect(grid).toHaveAttribute('aria-busy', 'false');
   await page.keyboard.press('Space');
   await expect(panel).toBeHidden();
+  await expect(close3d).toBeHidden();
   // Ligne sans réglages (date) : la vue 3D seule, sans fiche d'identité.
   await grid.focus();
   await page.keyboard.press('ArrowDown');

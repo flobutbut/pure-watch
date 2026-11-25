@@ -53,6 +53,7 @@
     <button
       class="share-button card-button"
       bind:this={cardButton}
+      data-takes-over
       onclick={oncard}
       aria-haspopup="dialog"
       aria-pressed={card}
@@ -67,6 +68,7 @@
     <button
       class="share-button"
       bind:this={shareButton}
+      data-takes-over
       onclick={onshare}
       aria-haspopup="dialog"
       aria-expanded={sharing}
@@ -84,9 +86,12 @@
   <footer aria-label={t().chrome.footer} class:under-sheet={sheetShown}>
     <div class="keyboard-hints">
       {#if inspecting}
-        <span><kbd>← ↑ ↓ →</kbd> {t().chrome.rotate}</span>
+        <span><kbd>↑ ↓</kbd> {t().chrome.parts}</span>
+        <span><kbd>← →</kbd> {t().chrome.variants}</span>
+        <span>{t().chrome.dragRotate}</span>
         <span><kbd>1–5</kbd> {t().chrome.views}</span>
         <span><kbd>P</kbd> {t().chrome.pause}</span>
+        <span><kbd>R</kbd> {t().chrome.settingsKey}</span>
         <span><kbd>I</kbd> {t().chrome.card}</span>
         <span><kbd>N</kbd> {t().lume.nightHint}</span>
         <span><kbd>{t().chrome.escKey}</kbd> {t().chrome.back}</span>
@@ -94,7 +99,6 @@
         <span><kbd>↑ ↓</kbd> {t().chrome.parts}</span>
         <span><kbd>← →</kbd> {t().chrome.variants}</span>
         <span><kbd>{t().chrome.spaceKey}</kbd> {t().chrome.preview}</span>
-        <span><kbd>{t().chrome.enterKey}</kbd> {t().chrome.view3d}</span>
       {/if}
     </div>
     <div class="touch-hints">
