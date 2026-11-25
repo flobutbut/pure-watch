@@ -44,8 +44,14 @@
     oncolor: (target: ColorTarget) => void;
     ondimensions: () => void;
     onbezel: (angle: number) => void;
-    /** Signale l'affichage de la fiche d'identité (le pied de page lui laisse la place). */
-    oncard?: (shown: boolean) => void;
+    /** The identity card is wanted beside the 3D watch (header button or I key). */
+    card?: boolean;
+    /** I key in the 3D view: shows or hides the card. */
+    ontogglecard?: () => void;
+    /** The card closed itself (×, click outside, Escape). */
+    oncardclose?: () => void;
+    /** Signale l'affichage d'un panneau à côté de la montre (le pied de page lui laisse la place). */
+    onpanel?: (shown: boolean) => void;
     /** Share panel, shown beside the watch in place of the identity card. */
     share?: { url: string; prompt: string } | null;
     /** `back`: also leave the 3D view if it was opened for sharing. */
@@ -71,7 +77,10 @@
     oncolor,
     ondimensions,
     onbezel,
-    oncard,
+    card = false,
+    ontogglecard,
+    oncardclose,
+    onpanel,
     share = null,
     onshareclose,
     captureBackground,
@@ -257,25 +266,15 @@
   let live = $state.raw<LiveHandle | null>(null);
   let paused = $state(false);
   let bezelEditing = $state(false);
-  /** Choix explicite de l'utilisateur ; par défaut la fiche s'ouvre sur grand écran. */
-  let cardWanted = $state<boolean | null>(null);
   // Bezel setting belongs to one visit of the 3D view: it never outlives it.
   $effect(() => {
     if (!open) bezelEditing = false;
   });
   const sharing = $derived(open && share !== null);
-  const cardShown = $derived(open && !sharing && (cardWanted ?? width >= 760));
+  const cardShown = $derived(open && !sharing && card);
   /** One panel at a time beside the watch: the identity card or sharing. */
   const panelShown = $derived(cardShown || sharing);
-  function toggleCard() {
-    if (sharing) {
-      onshareclose?.(false);
-      cardWanted = true;
-      return;
-    }
-    cardWanted = !cardShown;
-  }
-  $effect(() => oncard?.(panelShown));
+  $effect(() => onpanel?.(panelShown));
   const CAPTURE_PX = 2048;
   const capture = $derived(live ? () => live!.capture(CAPTURE_PX, captureBackground) : null);
   $effect(() =>
@@ -315,7 +314,7 @@
       return true;
     }
     if (event.key === 'i' || event.key === 'I') {
-      toggleCard();
+      ontogglecard?.();
       return true;
     }
     if (event.key === 'n' || event.key === 'N') {
@@ -341,7 +340,12 @@
       if (inspectKey(event)) event.preventDefault();
       return;
     }
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === ' ') {
+      event.preventDefault();
+      preview();
+      return;
+    }
+    if (event.key === 'Enter') {
       event.preventDefault();
       onopen();
       return;
@@ -445,6 +449,17 @@
                     : id === 'indices' && config.dial.indices.style !== 'none'
                       ? 'indices'
                       : null;
+
+  /** Space: the watch up close with the active row's settings panel, or the 3D view if it has none. */
+  function preview() {
+    const id = activeRowDef.id;
+    if (id === 'case-size') return ondimensions();
+    const target = colorForRow(id);
+    if (target && !(target === 'dial' && hasIntrinsicColor(config.dial.finish))) {
+      return oncolor(target);
+    }
+    onopen();
+  }
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -680,17 +695,6 @@
         </svg>
       </button>
       <button
-        class="tool card-toggle"
-        aria-label={t().grid.card}
-        aria-pressed={cardShown}
-        title={t().grid.cardTitle}
-        onclick={toggleCard}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5v.01" />
-        </svg>
-      </button>
-      <button
         class="tool"
         aria-label={t().lume.preview}
         aria-pressed={night}
@@ -718,7 +722,7 @@
         onclose={() => onshareclose?.(true)}
       />
     {:else if cardShown && nav.mode === 'view3d'}
-      <IdentityCard {rows} {config} onclose={() => (cardWanted = false)} />
+      <IdentityCard {rows} {config} onclose={() => oncardclose?.()} />
     {/if}
   {/if}
 
@@ -1022,13 +1026,6 @@
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     cursor: pointer;
-  }
-
-  .card-toggle[aria-pressed='true'] {
-    background: var(--ink);
-  }
-  .card-toggle[aria-pressed='true'] svg {
-    stroke: var(--veil);
   }
 
   .tool svg {

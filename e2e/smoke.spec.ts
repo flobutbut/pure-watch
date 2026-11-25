@@ -30,13 +30,32 @@ test('Entrée ouvre la vue 3D, Échap la referme', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeHidden();
 });
 
-test("Espace ouvre et referme l'aperçu 3D", async ({ page }) => {
+test('Espace ouvre l’aperçu avec les réglages de la ligne, ou la vue 3D sans réglages', async ({
+  page,
+}) => {
   await page.goto('/');
-  await page.getByRole('grid').focus();
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
+  const grid = page.getByRole('grid');
+  const close3d = page.getByRole('button', { name: 'Fermer', exact: true });
+  await grid.focus();
+  // Ligne des aiguilles (active au chargement) : la montre en grand et son panneau de réglages.
   await page.keyboard.press('Space');
-  await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeVisible();
+  const panel = page.getByRole('dialog');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Aiguilles');
+  await expect(close3d).toBeHidden();
   await page.keyboard.press('Space');
-  await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeHidden();
+  await expect(panel).toBeHidden();
+  // Ligne sans réglages (date) : la vue 3D seule, sans fiche d'identité.
+  await grid.focus();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', /^cell-date-/);
+  await page.keyboard.press('Space');
+  await expect(close3d).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.keyboard.press('Space');
+  await expect(close3d).toBeHidden();
 });
 
 test('le pilote coussin reste configurable et inspectable', async ({ page }) => {
