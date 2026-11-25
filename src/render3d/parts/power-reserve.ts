@@ -4,20 +4,23 @@
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { effectiveDialColor } from '../../core/config/dial';
 import {
   RESERVE_HALF_ANGLE,
   reserveAngle,
   reserveGauge,
+  reserveCircle,
   type ReserveStyle,
 } from '../../core/config/power-reserve';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
-import { inkForDial } from '../../render2d/dial-print';
 import { fontDef } from '../../render2d/fonts';
 import { sharpPrint, svgTexture } from '../textures';
 import type { ReserveAdjustment } from '../../core/config/details';
 import { boss, profileGeometry } from './profile';
+import { reserveAppearance, subdialInk } from '../../core/config/subdials';
+import { buildSubdialSurface, subdialFloor } from './subdial';
+import { subdialStyle } from '../../core/config/subdial-style';
+import type { MaterialLibrary } from '../materials';
 
 /** Rouge de la zone « bas » (segments, jauge). */
 const LOW = '#D2352B';
@@ -51,7 +54,7 @@ export function reserveSvg(
   fontCss = '',
   settings: ReserveAdjustment = {},
 ): string {
-  const low = settings.lowColor ?? LOW;
+  const low = settings.lowColor && settings.lowColor !== 'auto' ? settings.lowColor : LOW;
   const parts: string[] = [];
   const text = (x: number, y: number, size: number, label: string, fill = ink) =>
     parts.push(
@@ -140,10 +143,7 @@ export function buildReservePrint(
   if (!gauge) return null;
   const font = fontDef(config.dial.indices.numeralFont);
   const settings = config.details?.reserve;
-  const ink =
-    settings?.ink && settings.ink !== 'auto'
-      ? settings.ink
-      : inkForDial(effectiveDialColor(config.dial));
+  const ink = subdialInk(config, true);
   const { texture, ready } = svgTexture(
     fontCss.then((css) => reserveSvg(gauge.r, gauge.style, ink, font, css, settings)),
     512,
@@ -162,7 +162,7 @@ export function buildReservePrint(
     new THREE.PlaneGeometry(2 * SPAN * gauge.r, 2 * SPAN * gauge.r),
     material,
   );
-  mesh.position.set(gauge.x, gauge.y, 0.012);
+  mesh.position.set(gauge.x, gauge.y, subdialFloor(subdialStyle(config, 'reserve')) + 0.012);
   const print = new THREE.Group();
   print.name = 'reserve-print';
   print.add(mesh);
@@ -202,16 +202,35 @@ export function buildReserveHand(
   config: WatchConfig,
   d: WatchDimensions,
   material: THREE.Material,
+  customHand?: THREE.Mesh,
 ): THREE.Object3D | null {
   const gauge = reserveGauge(config, d.dialSafeRadius);
-  if (!gauge) return null;
-  const hand = stickHand(gauge.r * 0.9, gauge.r * 0.18, d.dialSafeRadius / 20, material);
+  if (!gauge || config.details?.reserve?.handStyle === 'none') return null;
+  const hand =
+    customHand ?? stickHand(gauge.r * 0.9, gauge.r * 0.18, d.dialSafeRadius / 20, material);
   hand.name = 'reserve-blade';
   const pivot = new THREE.Group();
   pivot.name = 'reserve-hand';
-  pivot.position.set(gauge.x, gauge.y, 0.2);
+  pivot.position.set(gauge.x, gauge.y, subdialFloor(subdialStyle(config, 'reserve')) + 0.2);
   // Sens horaire vu de face = rotation négative autour de Z.
   pivot.rotation.z = (-reserveAngle() * Math.PI) / 180;
   pivot.add(hand);
   return pivot;
+}
+
+/** The reserve uses the same disc, azurage and recess builder as the other mini-dials. */
+export function buildReserveSurface(config: WatchConfig, d: WatchDimensions, lib: MaterialLibrary) {
+  const circle = reserveCircle(config, d.dialSafeRadius);
+  if (!circle) return null;
+  const appearance = reserveAppearance(config);
+  const parts = buildSubdialSurface(
+    d,
+    lib,
+    circle,
+    appearance,
+    Boolean(config.details?.reserve?.subdialStyle),
+  );
+  if (!parts.surface.children.length) return null;
+  parts.surface.name = 'reserve-surface';
+  return parts;
 }

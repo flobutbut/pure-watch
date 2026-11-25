@@ -1111,14 +1111,6 @@
           }
         },
         {
-          "id": "fume",
-          "value": "fume",
-          "preview": "dial-finish/fume.svg",
-          "i18n": {
-            "name": "Fumé"
-          }
-        },
-        {
           "id": "iridescent-pearl",
           "value": "iridescent-pearl",
           "preview": "dial-finish/iridescent-pearl.svg",
@@ -1140,6 +1132,62 @@
           "preview": "dial-finish/guilloche.svg",
           "i18n": {
             "name": "Guilloché"
+          }
+        },
+        {
+          "id": "guilloche-woven-3",
+          "value": "guilloche-woven-3",
+          "preview": "dial-finish/guilloche-woven-3.svg",
+          "i18n": {
+            "name": "Guilloché · tissé 3 brins"
+          }
+        },
+        {
+          "id": "guilloche-chevron",
+          "value": "guilloche-chevron",
+          "preview": "dial-finish/guilloche-chevron.svg",
+          "i18n": {
+            "name": "Guilloché · pointe de Hongrie"
+          }
+        },
+        {
+          "id": "guilloche-spiral-diamonds",
+          "value": "guilloche-spiral-diamonds",
+          "preview": "dial-finish/guilloche-spiral-diamonds.svg",
+          "i18n": {
+            "name": "Guilloché · diamants en spirale"
+          }
+        },
+        {
+          "id": "guilloche-honeycomb",
+          "value": "guilloche-honeycomb",
+          "preview": "dial-finish/guilloche-honeycomb.svg",
+          "i18n": {
+            "name": "Guilloché · nid d’abeilles"
+          }
+        },
+        {
+          "id": "guilloche-rice",
+          "value": "guilloche-rice",
+          "preview": "dial-finish/guilloche-rice.svg",
+          "i18n": {
+            "name": "Guilloché · grain de riz"
+          }
+        },
+        {
+          "id": "guilloche-fans",
+          "value": "guilloche-fans",
+          "preview": "dial-finish/guilloche-fans.svg",
+          "i18n": {
+            "name": "Guilloché · éventails"
+          }
+        },
+        {
+          "id": "perlage",
+          "value": "perlage",
+          "preview": "dial-finish/perlage.svg",
+          "i18n": {
+            "name": "Perlage"
           }
         },
         {
@@ -1804,6 +1852,7 @@
       "id": "seconds",
       "group": "hands",
       "kind": "enum",
+      "visibleWhen": { "path": "complications.small-seconds", "equals": null },
       "path": "hands.second",
       "previewContext": "dark-disc",
       "looping": true,

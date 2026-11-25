@@ -38,7 +38,16 @@ const LAYER_DEPENDENCIES: Record<
     'bezel',
     'details',
   ],
-  seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications', 'bezel'],
+  seconds: [
+    'hands',
+    'case',
+    'dial.shape',
+    'rehaut.profile',
+    'dial.size',
+    'complications',
+    'bezel',
+    'details',
+  ],
   crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications', 'bezel'],
 };
 

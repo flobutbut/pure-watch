@@ -8,8 +8,8 @@
  */
 import { getAtPath } from './path';
 import type { WatchConfig } from './types';
-
-export type SubdialStyle = 'flat' | 'azure' | 'sunken' | 'rail';
+import { subdialStyle, type SubdialStyle } from './subdial-style';
+export type { SubdialStyle } from './subdial-style';
 
 export interface SmallSeconds {
   position: string;
@@ -28,13 +28,11 @@ export const SMALL_SECONDS_POSITIONS: Readonly<Record<string, readonly [number, 
 /** Rayon du sous-cadran en fraction du rayon du cadran (§8.3). */
 export const SUBDIAL_RADIUS = 0.28;
 
-const STYLES: readonly SubdialStyle[] = ['flat', 'azure', 'sunken', 'rail'];
-
 export function smallSeconds(config: WatchConfig): SmallSeconds | null {
   const raw = getAtPath(config, 'complications.small-seconds') as Record<string, unknown> | null;
   if (!raw || typeof raw['position'] !== 'string' || !(raw['position'] in SMALL_SECONDS_POSITIONS))
     return null;
-  const style = STYLES.find((s) => s === raw['style']) ?? 'flat';
+  const style = subdialStyle(config);
   return { position: raw['position'], style };
 }
 

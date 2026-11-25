@@ -71,6 +71,40 @@ it('creates genuinely different fields and retains physical pattern placement', 
     expect(() => dialPatternData('linen', span!, size!)).toThrow(RangeError);
 });
 
+it('weaves bundles of three distinct strands and mirrors the mitred chevrons', () => {
+  const woven = (across: number) => {
+    const u = 0.5 * 1.8,
+      v = across * 1.8;
+    return dialPatternHeight('guilloche-woven-3', (u - v) / Math.SQRT2, (u + v) / Math.SQRT2);
+  };
+  for (const crest of [1 / 6, 1 / 2, 5 / 6]) expect(woven(crest)).toBeGreaterThan(0.9);
+  for (const gap of [1 / 3, 2 / 3]) expect(woven(gap)).toBeLessThan(0.5);
+  for (const y of [-2.3, -0.6, 0.3, 1.8]) {
+    expect(dialPatternHeight('guilloche-chevron', 1.4 - 0.4, y)).toBeCloseTo(
+      dialPatternHeight('guilloche-chevron', 1.4 + 0.4, y),
+      10,
+    );
+  }
+  expect(dialPatternHeight('guilloche-chevron', 1.4, 0.3)).toBeCloseTo(0.08);
+});
+
+it('cuts closed hexagonal cells and elongated rice grains on staggered rows', () => {
+  const hexCentre = dialPatternHeight('guilloche-honeycomb', 0, 0);
+  expect(hexCentre).toBeCloseTo(
+    dialPatternHeight('guilloche-honeycomb', Math.sqrt(3) * 0.65, 0),
+    10,
+  );
+  expect(hexCentre).toBeGreaterThan(
+    dialPatternHeight('guilloche-honeycomb', (Math.sqrt(3) * 0.65) / 2, 0),
+  );
+  expect(dialPatternHeight('guilloche-rice', 0, 0)).toBeGreaterThan(0.8);
+  expect(dialPatternHeight('guilloche-rice', 0.6, 0)).toBe(0.08);
+  expect(dialPatternHeight('guilloche-rice', 0.6, 0.95)).toBeCloseTo(
+    dialPatternHeight('guilloche-rice', 0, 0),
+    10,
+  );
+});
+
 it.each(DIAL_PATTERN_FINISHES)(
   '%s: colourable material on all shapes, maps shared by colours and fitted to size',
   (finish) => {
@@ -113,7 +147,28 @@ it.each(DIAL_PATTERN_FINISHES)(
   },
 );
 
-it.each(DIAL_PATTERN_FINISHES)(
+it('forms pointed spiral facets with a closed angular seam and a smooth centre', () => {
+  const sample = (radius: number, angle: number) =>
+    dialPatternHeight(
+      'guilloche-spiral-diamonds',
+      radius * Math.cos(angle),
+      radius * Math.sin(angle),
+    );
+  const period = (Math.PI * 2) / 48;
+  const radius = 4.2;
+  const apexAngle = period * (0.5 - 0.5 * radius);
+  expect(sample(radius, apexAngle)).toBeCloseTo(1, 10);
+  expect(sample(radius, apexAngle + period / 4)).toBeCloseTo(0.5, 10);
+  expect(sample(radius, apexAngle - period / 4)).toBeCloseTo(0.5, 10);
+  expect(sample(0, 0)).toBe(0.5);
+  for (const r of [2.4, 6.3, 11.2]) {
+    expect(sample(r, 0.27)).toBeCloseTo(sample(r, 0.27 + period), 10);
+    expect(sample(r, Math.PI - 1e-8)).toBeCloseTo(sample(r, -Math.PI + 1e-8), 5);
+  }
+});
+
+// Azurage is offered directly in the mini-dial finish chooser.
+it.each(DIAL_PATTERN_FINISHES.filter((finish) => finish !== 'azure'))(
   '%s: catalog, old wire identifiers, custom colour and ambience remain consistent',
   (finish) => {
     const catalog = parseCatalog(rawCatalog);
@@ -131,7 +186,5 @@ it.each(DIAL_PATTERN_FINISHES)(
       expect(ambience.layers).not.toContain('undefined');
       expect(ambience.drift).toBe(false);
     }
-    const old = `#v1.${btoa(JSON.stringify({ w: 9, x: '#123ABC' })).replace(/=+$/, '')}`;
-    expect(decodeConfigHash(old, catalog).config.dial.finish).toBe('fume');
   },
 );

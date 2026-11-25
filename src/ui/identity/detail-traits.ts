@@ -1,3 +1,6 @@
+import { smallSeconds } from '../../core/config/small-seconds';
+import { chronograph } from '../../core/config/chronograph';
+import { powerReserve } from '../../core/config/power-reserve';
 import type { WatchConfig } from '../../core/config/types';
 import { dialSurface, indexAt } from '../../core/config/details';
 import { indexColor } from '../../core/config/colors';
@@ -6,6 +9,7 @@ import { isDialPatternFinish } from '../../render3d/dial-patterns';
 import { DETAIL_SETTINGS } from '../colors/detail-settings';
 import type { Locale } from '../../core/i18n/locale';
 import type { Trait } from './identity';
+import { subdialAppearance, reserveAppearance } from '../../core/config/subdials';
 
 /** Shared by the identity card and the AI-generation brief. */
 export function detailTraits(row: string, config: WatchConfig, locale: Locale): Trait[] {
@@ -22,6 +26,22 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
         ...(value === 'auto' ? {} : { swatch: value }),
       });
   };
+  if (
+    ((row === 'small-seconds' && smallSeconds(config)) ||
+      (row === 'chronograph' && chronograph(config))) &&
+    d.subdials
+  ) {
+    const mini = subdialAppearance(config);
+    color(locale === 'fr' ? 'Couleur des sous-cadrans' : 'Sub-dial colour', mini.color);
+    color(m.miniInk, d.subdials?.ink);
+    if (mini.customFinish) traits.push(...detailTraits('dial-finish', mini.config, locale));
+  }
+  if (row === 'power-reserve' && powerReserve(config) && d.reserve) {
+    const mini = reserveAppearance(config);
+    if (mini.customColor)
+      color(locale === 'fr' ? 'Couleur du fond de réserve' : 'Reserve surface colour', mini.color);
+    if (mini.customFinish) traits.push(...detailTraits('dial-finish', mini.config, locale));
+  }
   if (row === 'dial-finish' && d.dial && !hasIntrinsicColor(config.dial.finish)) {
     const surface = dialSurface(config);
     if (d.dial.fume !== undefined || surface.fume > 0)
@@ -58,7 +78,7 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
       });
     }
   }
-  if (row === 'power-reserve' && d.reserve) {
+  if (row === 'power-reserve' && powerReserve(config) && d.reserve) {
     if (d.reserve.size !== undefined)
       traits.push({ label: m.size, value: percent(d.reserve.size) });
     if (d.reserve.offsetX !== undefined)
@@ -66,7 +86,6 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
     if (d.reserve.offsetY !== undefined)
       traits.push({ label: m.y, value: percent(d.reserve.offsetY) });
     color(m.reserveInk, d.reserve.ink);
-    color(m.hand, d.reserve.handColor);
     color(m.low, d.reserve.lowColor);
     if (d.reserve.label !== undefined)
       traits.push({

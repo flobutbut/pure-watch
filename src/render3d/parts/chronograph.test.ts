@@ -24,7 +24,9 @@ function chrono(layout: string, extra: Record<string, string> = {}) {
 
 function lib() {
   const library = new MaterialLibrary();
-  vi.spyOn(library, 'dial').mockReturnValue(library.polishedSteel());
+  vi.spyOn(library, 'dial').mockImplementation(
+    (config) => new THREE.MeshPhysicalMaterial({ color: config.dial.color }),
+  );
   return library;
 }
 

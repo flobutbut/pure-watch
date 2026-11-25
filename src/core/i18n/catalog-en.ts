@@ -27,6 +27,34 @@ const AT = {
   '12h': 'At 12 o’clock',
 };
 
+export const DIAL_FINISH_NAMES = {
+  matte: 'Matte',
+  sunburst: 'Sunburst',
+  grained: 'Grained',
+  lacquer: 'Lacquered',
+  'iridescent-pearl': 'Mother-of-pearl',
+  'iridescent-oil': 'Oil slick',
+  guilloche: 'Guilloché',
+  'guilloche-woven-3': 'Guilloché · three-strand weave',
+  'guilloche-chevron': 'Guilloché · chevron',
+  'guilloche-spiral-diamonds': 'Guilloché · spiral diamonds',
+  'guilloche-honeycomb': 'Guilloché · honeycomb',
+  'guilloche-rice': 'Guilloché · rice grain',
+  'guilloche-fans': 'Guilloché · fans',
+  perlage: 'Perlage',
+  'clous-de-paris': 'Clous de Paris',
+  linen: 'Linen',
+  concentric: 'Concentric',
+  'vertical-brushed': 'Vertical brushed',
+  hammered: 'Hammered',
+  leather: 'Leather effect',
+  'circular-brushed': 'Circular brushed',
+  tapisserie: 'Tapisserie',
+  waves: 'Waves',
+  scales: 'Scales',
+  topographic: 'Topographic',
+};
+
 export const CATALOG_EN: Record<string, RowNames> = {
   'case-shape': { name: 'Case shape', variants: SHAPES },
   'case-profile': {
@@ -148,30 +176,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
     name: 'Dial opening',
     variants: { compact: 'Compact', balanced: 'Balanced', open: 'Open' },
   },
-  'dial-finish': {
-    name: 'Dial finish',
-    variants: {
-      matte: 'Matte',
-      sunburst: 'Sunburst',
-      grained: 'Grained',
-      lacquer: 'Lacquered',
-      fume: 'Fumé',
-      'iridescent-pearl': 'Mother-of-pearl',
-      'iridescent-oil': 'Oil slick',
-      guilloche: 'Guilloché',
-      'clous-de-paris': 'Clous de Paris',
-      linen: 'Linen',
-      concentric: 'Concentric',
-      'vertical-brushed': 'Vertical brushed',
-      hammered: 'Hammered',
-      leather: 'Leather effect',
-      'circular-brushed': 'Circular brushed',
-      tapisserie: 'Tapisserie',
-      waves: 'Waves',
-      scales: 'Scales',
-      topographic: 'Topographic',
-    },
-  },
+  'dial-finish': { name: 'Dial finish', variants: DIAL_FINISH_NAMES },
   'dial-color': {
     name: 'Dial color',
     variants: {

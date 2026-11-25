@@ -111,10 +111,18 @@ describe('sous-cadran de la petite seconde', () => {
   });
 
   it('azuré : un disque à sillons au-dessus du cadran', () => {
-    const parts = build(withSeconds('9h', 'azure'));
+    const config = withSeconds('9h', 'azure');
+    const library = lib();
+    const parts = buildDial(config, watchDimensions(config), library, {
+      print: true,
+      printSize: 1,
+    });
     const disc = parts.dial.getObjectByName('subdial')!.children[0] as THREE.Mesh;
     expect(disc.position.z).toBeGreaterThan(0);
-    expect((disc.material as THREE.MeshStandardMaterial).bumpMap).toBeTruthy();
+    expect(library.dial).toHaveBeenCalledWith(
+      expect.objectContaining({ dial: expect.objectContaining({ finish: 'azure' }) }),
+      expect.any(Number),
+    );
     expect(azureSvg(5).match(/<circle/g)!.length).toBeGreaterThan(60);
   });
 

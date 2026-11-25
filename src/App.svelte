@@ -134,6 +134,12 @@
   const ambience = $derived(
     nightPreview ? NIGHT_AMBIENCE : ambienceFor((previewConfig ?? config).dial),
   );
+  const dialFinishes = $derived(
+    (named.rows.find((row) => row.id === 'dial-finish')?.variants ?? []).map((variant) => ({
+      value: String(variant.value),
+      label: variant.i18n.name,
+    })),
+  );
   const colorPresets = $derived([
     // Chiffres et minuterie : blanc et noir d'impression, puis les accents de la trotteuse.
     ...(['numerals', 'chapterRing'].includes(panelTarget ?? '')
@@ -518,6 +524,10 @@
       target={colorTarget}
       {config}
       presets={colorPresets}
+      finishes={dialFinishes}
+      settingsRows={named.rows.filter((row) =>
+        ['small-seconds-style', 'chronograph-counters', 'power-reserve-style'].includes(row.id),
+      )}
       {night}
       onnight={() => (night = !night)}
       onpreview={previewColor}
@@ -552,6 +562,10 @@
           {target}
           {config}
           presets={colorPresets}
+          finishes={dialFinishes}
+          settingsRows={named.rows.filter((row) =>
+            ['small-seconds-style', 'chronograph-counters', 'power-reserve-style'].includes(row.id),
+          )}
           {night}
           companion
           onnight={() => (night = !night)}

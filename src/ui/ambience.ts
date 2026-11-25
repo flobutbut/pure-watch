@@ -132,6 +132,13 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
 
   switch (dial.finish) {
     case 'guilloche':
+    case 'guilloche-woven-3':
+    case 'guilloche-chevron':
+    case 'guilloche-spiral-diamonds':
+    case 'guilloche-honeycomb':
+    case 'guilloche-rice':
+    case 'guilloche-fans':
+    case 'perlage':
     case 'clous-de-paris':
     case 'linen':
     case 'concentric':
@@ -146,6 +153,13 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
       const line = rgba(tone === 'dark' ? '#ffffff' : '#000000', 0.025);
       const patterns: Record<string, string> = {
         guilloche: `repeating-radial-gradient(ellipse at 50% 46%, transparent 0px 8px, ${line} 9px 10px, transparent 11px 14px)`,
+        'guilloche-woven-3': `repeating-linear-gradient(45deg, ${line} 0px 1px, transparent 1px 4px, ${line} 4px 5px, transparent 5px 8px, ${line} 8px 9px, transparent 9px 16px), repeating-linear-gradient(-45deg, ${line} 0px 1px, transparent 1px 16px)`,
+        'guilloche-chevron': `repeating-linear-gradient(45deg, ${line} 0px 1px, transparent 1px 12px), repeating-linear-gradient(-45deg, ${line} 0px 1px, transparent 1px 12px)`,
+        'guilloche-spiral-diamonds': `repeating-conic-gradient(from 0deg at 50% 46%, ${line} 0deg 0.6deg, transparent 0.6deg 7.5deg), repeating-radial-gradient(circle at 50% 46%, ${line} 0px 1px, transparent 1px 10px)`,
+        'guilloche-honeycomb': `repeating-linear-gradient(60deg, ${line} 0px 1px, transparent 1px 18px), repeating-linear-gradient(-60deg, ${line} 0px 1px, transparent 1px 18px), repeating-linear-gradient(0deg, ${line} 0px 1px, transparent 1px 18px)`,
+        'guilloche-rice': `repeating-linear-gradient(30deg, ${line} 0px 2px, transparent 2px 8px), repeating-linear-gradient(-30deg, ${line} 0px 1px, transparent 1px 14px)`,
+        'guilloche-fans': `repeating-radial-gradient(ellipse at 50% 100%, ${line} 0px 1px, transparent 1px 10px)`,
+        perlage: `repeating-radial-gradient(circle at 45% 50%, ${line} 0px 1px, transparent 1px 4px)`,
         'clous-de-paris': `repeating-linear-gradient(45deg, ${line} 0px 1px, transparent 1px 10px), repeating-linear-gradient(-45deg, ${line} 0px 1px, transparent 1px 10px)`,
         linen: `repeating-linear-gradient(0deg, ${line} 0px 1px, transparent 1px 5px), repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 7px)`,
         concentric: `repeating-radial-gradient(circle at 50% 46%, transparent 0px 14px, ${line} 15px 16px)`,

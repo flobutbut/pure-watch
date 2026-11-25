@@ -2,9 +2,9 @@
   import type { WatchConfig } from '../../core/config/types';
   import type { WatchDetails } from '../../core/config/details';
   import { dialSurface } from '../../core/config/details';
-  import { printInk, effectiveDialColor } from '../../core/config/dial';
+  import { printInk } from '../../core/config/dial';
   import { rehautColor } from '../../core/config/rehaut';
-  import { handColor, normalizeHex } from '../../core/config/colors';
+  import { normalizeHex } from '../../core/config/colors';
   import type { HexColor } from '../../core/config/types';
   import { isDialPatternFinish } from '../../render3d/dial-patterns';
   import { i18n, t } from '../i18n.svelte';
@@ -14,6 +14,7 @@
   import SegmentedControl from '../kit/SegmentedControl.svelte';
   let {
     target,
+    effectsLabel,
     config,
     presets,
     oncommit,
@@ -21,6 +22,7 @@
     onchange,
   }: {
     target: 'dial' | 'rehaut' | 'powerReserve';
+    effectsLabel?: string;
     config: WatchConfig;
     presets: { name: string; color: string }[];
     oncommit: () => void;
@@ -62,9 +64,15 @@
 
 <section
   class="detail-settings"
-  aria-label={target === 'dial' ? m.effects : target === 'rehaut' ? m.print : m.reserve}
+  aria-label={target === 'dial'
+    ? (effectsLabel ?? m.effects)
+    : target === 'rehaut'
+      ? m.print
+      : m.reserve}
 >
-  <h3>{target === 'dial' ? m.effects : target === 'rehaut' ? m.print : m.reserve}</h3>
+  <h3>
+    {target === 'dial' ? (effectsLabel ?? m.effects) : target === 'rehaut' ? m.print : m.reserve}
+  </h3>
   {#if target === 'dial'}
     <DetailRange
       label={m.fume}
@@ -162,32 +170,6 @@
       max={0.2}
       onchange={(offsetY) => patch('reserve', { offsetY })}
     />
-    {@render autoColor(
-      m.reserveInk,
-      reserve.ink ?? 'auto',
-      printInk(effectiveDialColor(config.dial)),
-      (ink) => patch('reserve', { ink }),
-    )}
-    {@render autoColor(m.hand, reserve.handColor ?? 'auto', handColor(config), (handColor) =>
-      patch('reserve', { handColor }),
-    )}
-    <ColorField
-      {oncommit}
-      {presets}
-      label={m.low}
-      value={reserve.lowColor ?? '#D2352B'}
-      onchange={(lowColor) => patch('reserve', { lowColor })}
-    />
-    <p>{m.lowHint}</p>
-    <label>
-      {m.label}<input
-        type="text"
-        aria-label={m.label}
-        maxlength="24"
-        value={reserve.label ?? 'RÉSERVE'}
-        oninput={(e) => patch('reserve', { label: e.currentTarget.value })}
-      />
-    </label>
   {/if}
 </section>
 
@@ -204,22 +186,6 @@
     font-size: var(--text-m);
     margin: 0;
     font-weight: 600;
-  }
-  label {
-    display: grid;
-    gap: 8px;
-    font-size: var(--text-s);
-  }
-  input[type='text'] {
-    width: 100%;
-    min-width: 0;
-    padding: 9px 10px;
-    box-sizing: border-box;
-    border: 1px solid var(--control-line);
-    border-radius: 6px;
-    background: var(--surface, transparent);
-    color: var(--ink);
-    font: inherit;
   }
   p {
     margin: 0;

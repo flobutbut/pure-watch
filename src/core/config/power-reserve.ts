@@ -9,6 +9,7 @@
  */
 import { getAtPath } from './path';
 import type { WatchConfig } from './types';
+import { subdialStyle } from './subdial-style';
 
 export type ReserveStyle = 'arc' | 'segments' | 'fuel';
 
@@ -66,4 +67,17 @@ export function reserveGauge(config: WatchConfig, radius: number) {
 /** Angle de l'aiguille en degrés, sens horaire depuis 12 h (−50° vide, +50° plein). */
 export function reserveAngle(level = RESERVE_LEVEL): number {
   return -RESERVE_HALF_ANGLE + 2 * RESERVE_HALF_ANGLE * level;
+}
+
+/** Circular support of the reserve, centred around its fan rather than its hand pivot. */
+export function reserveCircle(config: WatchConfig, radius: number) {
+  const gauge = reserveGauge(config, radius);
+  return gauge
+    ? {
+        x: gauge.x,
+        y: gauge.y + gauge.r * 0.45,
+        r: gauge.r * 1.08,
+        style: subdialStyle(config, 'reserve'),
+      }
+    : null;
 }

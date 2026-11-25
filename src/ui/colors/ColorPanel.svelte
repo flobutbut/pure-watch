@@ -16,7 +16,17 @@
     type ColorChoice,
     type ColorTarget,
   } from '../../core/config/colors';
-  import { effectiveDialColor, printInk } from '../../core/config/dial';
+  import { effectiveDialColor, printInk, hasIntrinsicColor } from '../../core/config/dial';
+  import {
+    subdialAppearance,
+    subdialBaseColor,
+    reserveAppearance,
+  } from '../../core/config/subdials';
+  import type { WatchDetails } from '../../core/config/details';
+  import type { DialFinish } from '../../core/config/dial-finishes';
+  import ChoiceCarousel from '../kit/ChoiceCarousel.svelte';
+  import FinishPreview from './FinishPreview.svelte';
+  import { PART_SETTINGS } from './part-settings';
   import type { NumeralSystem } from '../../core/config/numerals';
   import { REHAUT_FINISHES } from '../../core/config/rehaut';
   import type { WatchConfig } from '../../core/config/types';
@@ -26,6 +36,10 @@
   import Sheet from '../sheet/Sheet.svelte';
   import LumeControls from './LumeControls.svelte';
   import HandSettings from './HandSettings.svelte';
+  import type { RowDef } from '../../core/catalog/types';
+  import ComplicationSettings from './ComplicationSettings.svelte';
+  import SubdialHandSettings from './SubdialHandSettings.svelte';
+  import SubdialPrintSettings from './SubdialPrintSettings.svelte';
   import BezelSettings from './BezelSettings.svelte';
   import LugSettings from './LugSettings.svelte';
   import DetailSettings from './DetailSettings.svelte';
@@ -38,6 +52,8 @@
     target: ColorTarget;
     config: WatchConfig;
     presets: { name: string; color: string }[];
+    finishes: { value: string; label: string }[];
+    settingsRows: RowDef[];
     onpreview: (choice: ColorChoice) => void;
     /** Every way out keeps the colour shown on the watch: there is no separate save step. */
     onclose: (choice: ColorChoice) => void;
@@ -50,6 +66,8 @@
     target,
     config,
     presets,
+    finishes,
+    settingsRows,
     onpreview,
     onclose,
     night = false,
@@ -76,25 +94,45 @@
   let bezelLayout = $state(initial.bezelLayout);
   let lugJoin = $state(initial.lugJoin);
   let details = $state(initial.details ?? {});
-  const title = $derived(t().colors[target]);
+  const initialComplications = untrack(() => config.complications);
+  let complications = $state(initialComplications);
+  const surfaceTarget = $derived(target === 'subdials' || target === 'powerReserve');
+  const surfaceSection = $derived(target === 'powerReserve' ? 'reserve' : 'subdials');
+  const surfaceSettings = $derived(details[surfaceSection]);
+  function patchSurface(patch: NonNullable<WatchDetails['subdials']>) {
+    details = { ...details, [surfaceSection]: { ...details[surfaceSection], ...patch } };
+  }
+  const title = $derived(
+    target === 'subdials' && config.complications.some((c) => c.type === 'chronograph')
+      ? t().colors.chronograph
+      : t().colors[target],
+  );
   const ranges = $derived(
     target === 'indices'
       ? { size: INDEX_LENGTH_RANGE, width: INDEX_WIDTH_RANGE, radius: INDEX_RADIUS_RANGE }
       : { size: NUMERAL_SIZE_RANGE, width: null, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    target === 'lugs' || target === 'powerReserve'
-      ? false
-      : target === 'bezel'
-        ? hasBezelInsert(config)
-        : target === 'indices'
-          ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
-          : target === 'rehaut'
-            ? finish === 'custom'
-            : target !== 'hands' || finish === 'lacquer',
+    surfaceTarget
+      ? !hasIntrinsicColor(
+          (target === 'powerReserve' ? reserveAppearance : subdialAppearance)({
+            ...config,
+            details,
+          }).config.dial.finish,
+        )
+      : target === 'lugs'
+        ? false
+        : target === 'bezel'
+          ? hasBezelInsert(config)
+          : target === 'indices'
+            ? (finish === 'printed' && !lume?.kind) || finish === 'applied-lacquer'
+            : target === 'rehaut'
+              ? finish === 'custom'
+              : target !== 'hands' || finish === 'lacquer',
   );
   const choice = $derived<ColorChoice>({
     details,
+    ...(surfaceTarget ? { complications } : {}),
     color: matched ? 'match' : color,
     finish,
     ...(initial.layout
@@ -106,6 +144,24 @@
     ...(bezelLayout ? { bezelLayout } : {}),
     ...(lugJoin ? { lugJoin } : {}),
   });
+  const mini = $derived(
+    surfaceTarget
+      ? (target === 'powerReserve' ? reserveAppearance : subdialAppearance)(
+          withColorChoice(config, target, choice),
+        )
+      : null,
+  );
+  const miniSurface = $derived(
+    surfaceSettings?.surface ??
+      Object.fromEntries(
+        Object.entries(mini?.config.details?.dial ?? {}).filter(([key]) => key !== 'legacyFume'),
+      ),
+  );
+  const finishOptions = $derived([
+    { value: 'original', label: t().colors.originalFinish },
+    { value: 'azure', label: t().colors.azureFinish },
+    ...finishes,
+  ]);
   const sameLayout = (a: ColorChoice['layout'], b: ColorChoice['layout']) =>
     Math.abs((a?.size ?? 1) - (b?.size ?? 1)) < 0.005 &&
     Math.abs((a?.width ?? 1) - (b?.width ?? 1)) < 0.005 &&
@@ -120,7 +176,8 @@
   const sameColor = (a: ColorChoice['color'], b: ColorChoice['color']) =>
     a === b || (a !== 'match' && b !== 'match' && normalizeHex(a) === normalizeHex(b));
   const changed = $derived(
-    choice.finish !== initial.finish ||
+    JSON.stringify(complications) !== JSON.stringify(initialComplications) ||
+      choice.finish !== initial.finish ||
       !sameColor(choice.color, initial.color) ||
       choice.numeralSystem !== initial.numeralSystem ||
       JSON.stringify(choice.lume) !== JSON.stringify(initial.lume) ||
@@ -169,6 +226,7 @@
     bezelLayout = initial.bezelLayout;
     lugJoin = initial.lugJoin;
     details = initial.details ?? {};
+    complications = initialComplications;
   }
   /**
    * Couleur de l'élément, selon le pattern `ColorField` : les modes « suivre une autre couleur »
@@ -176,7 +234,7 @@
    * laisse la couleur libre.
    */
   const linkable = $derived(
-    target === 'seconds' || target === 'numerals' || target === 'chapterRing',
+    target === 'seconds' || target === 'numerals' || target === 'chapterRing' || surfaceTarget,
   );
   const colorModes = $derived(
     target === 'rehaut'
@@ -185,7 +243,11 @@
         ? [
             {
               value: 'match',
-              label: target === 'seconds' ? t().colors.matchHands : t().colors.dialInk,
+              label: surfaceTarget
+                ? t().colors.originalColor
+                : target === 'seconds'
+                  ? t().colors.matchHands
+                  : t().colors.dialInk,
             },
             { value: CUSTOM, label: t().colors.custom },
           ]
@@ -208,7 +270,11 @@
     if (target === 'rehaut') finish = mode as typeof finish;
     else if (mode === CUSTOM) matched = false;
     else {
-      if (target !== 'seconds') selectHex(printInk(effectiveDialColor(config.dial)));
+      if (surfaceTarget)
+        selectHex(
+          target === 'powerReserve' ? effectiveDialColor(config.dial) : subdialBaseColor(config),
+        );
+      else if (target !== 'seconds') selectHex(printInk(effectiveDialColor(config.dial)));
       matched = true;
     }
   }
@@ -222,7 +288,13 @@
 
 {#snippet elementColor()}
   <ColorField
-    label={target === 'rehaut' ? t().colors.rehautFinish : colorModes && t().colors.color}
+    label={surfaceTarget
+      ? target === 'powerReserve'
+        ? t().colors.reserveColor
+        : t().colors.subdialColor
+      : target === 'rehaut'
+        ? t().colors.rehautFinish
+        : colorModes && t().colors.color}
     value={color}
     {presets}
     modes={colorModes}
@@ -244,7 +316,51 @@
   placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
-  {#if target === 'dial' || target === 'powerReserve'}
+  {#if surfaceTarget}
+    <ComplicationSettings
+      {settingsRows}
+      target={target === 'powerReserve' ? 'reserve' : 'subdials'}
+      config={{ ...config, complications, details }}
+      onchange={(value) => (complications = value)}
+      ondetails={(value) => (details = value)}
+    />
+    <ChoiceCarousel
+      label={target === 'powerReserve' ? t().colors.reserveFinish : t().colors.subdialFinish}
+      heading={target === 'powerReserve' ? t().colors.reserveFinish : t().colors.subdialFinish}
+      previous={PART_SETTINGS[i18n.locale].previous}
+      next={PART_SETTINGS[i18n.locale].next}
+      value={surfaceSettings?.finish ??
+        (mini?.config.dial.finish === 'azure' ? 'azure' : 'original')}
+      options={finishOptions}
+      onchange={(finish) => patchSurface({ finish: finish as 'original' | DialFinish })}
+    >
+      {#snippet preview(finish: string)}
+        <FinishPreview
+          finish={finish === 'original' ? config.dial.finish : finish}
+          color={mini?.color ?? config.dial.color}
+        />
+      {/snippet}
+    </ChoiceCarousel>
+    <div class="surface-color">
+      {#if free}{@render elementColor()}{:else}<p class="section-label">
+          {t().grid.naturalTitle}
+        </p>{/if}
+    </div>
+  {/if}
+  {#if surfaceTarget && mini && !hasIntrinsicColor(mini.config.dial.finish)}
+    <DetailSettings
+      target="dial"
+      effectsLabel={target === 'powerReserve'
+        ? t().colors.reserveEffects
+        : t().colors.subdialEffects}
+      config={mini.config}
+      {presets}
+      oncommit={close}
+      value={{ ...details, dial: miniSurface }}
+      onchange={(value) => patchSurface({ surface: value.dial })}
+    />
+  {/if}
+  {#if target === 'dial'}
     <DetailSettings
       {target}
       {config}
@@ -377,6 +493,35 @@
     <div class="element-color">{@render elementColor()}</div>
   {/if}
 
+  {#if surfaceTarget}
+    <SubdialPrintSettings
+      reserve={target === 'powerReserve'}
+      config={withColorChoice(config, target, choice)}
+      {presets}
+      value={details}
+      onchange={(value) => (details = value)}
+      oncommit={close}
+    />
+    <SubdialHandSettings
+      reserve={target === 'powerReserve'}
+      {config}
+      {presets}
+      value={details}
+      onchange={(value) => (details = value)}
+      oncommit={close}
+    />
+    {#if target === 'powerReserve'}
+      <DetailSettings
+        {target}
+        config={withColorChoice(config, target, choice)}
+        {presets}
+        oncommit={close}
+        value={details}
+        onchange={(value) => (details = value)}
+      />
+    {/if}
+  {/if}
+
   {#if lume}
     <div class:hand-lume={target === 'hands'}>
       <LumeControls value={lume} onchange={(value) => (lume = value)} {night} {onnight} />
@@ -395,7 +540,7 @@
   {#if free && !colorModes}{@render elementColor()}{/if}
   {#snippet footer()}
     <RestoreButton
-      title={initial.layout || handLayout || bezelLayout || lugJoin
+      title={initial.layout || handLayout || bezelLayout || lugJoin || surfaceTarget
         ? t().colors.restoreSettings
         : t().colors.restoreColor}
       disabled={!changed}
@@ -426,6 +571,9 @@
   .element-color,
   .script {
     margin: 0 0 22px;
+  }
+  .surface-color {
+    margin-top: 20px;
   }
   .element-color:last-child {
     margin-bottom: 0;

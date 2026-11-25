@@ -325,19 +325,27 @@ export class MaterialLibrary {
   private readonly dialPatterns = new Map<string, ReturnType<typeof dialPatternTextures>>();
 
   /** Cadran, selon finition et couleur (spec §5.5, §9.4). */
-  dial(config: WatchConfig): THREE.MeshPhysicalMaterial {
+  dial(config: WatchConfig, extentMm?: number): THREE.MeshPhysicalMaterial {
     const finish = config.dial.finish;
     const color = effectiveDialColor(config.dial);
     const refined = this.refined;
     const shape = effectiveDialShape(config.dial.shape);
     const span = isDialPatternFinish(finish)
-      ? Number((2 * watchDimensions(config).dialExtent).toFixed(3))
+      ? Number((2 * (extentMm ?? watchDimensions(config).dialExtent)).toFixed(3))
       : 0;
     const surface = dialSurface(config);
+    const legacyFume =
+      finish === 'fume' || (finish === 'sunburst' && config.details?.dial?.legacyFume === true);
     return this.cached(
       `dial:${finish}:${color}:${refined}:${shape}:${span}:${JSON.stringify(config.details?.dial)}`,
       () => {
-        const material = this.dialMaterial(finish, color, refined, shape, span / surface.grainSize);
+        const material = this.dialMaterial(
+          legacyFume ? 'fume' : finish,
+          color,
+          refined,
+          shape,
+          span / surface.grainSize,
+        );
         if (config.details?.dial && !hasIntrinsicColor(finish)) {
           if (material.normalMap) {
             material.normalScale.multiplyScalar(surface.grainDepth);
@@ -351,9 +359,9 @@ export class MaterialLibrary {
             }
             material.roughness = surface.grainRoughness;
           }
-          if (surface.fume > 0 || finish === 'fume') {
+          if (surface.fume > 0 || legacyFume) {
             const center = new THREE.Color(color);
-            if (finish === 'fume') center.offsetHSL(0, 0, 0.08);
+            if (legacyFume) center.offsetHSL(0, 0, 0.08);
             const edge =
               surface.edgeColor === 'auto'
                 ? new THREE.Color(color).multiplyScalar(0.18)

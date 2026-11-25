@@ -1,0 +1,38 @@
+export const SUBDIAL_HAND_LABELS = {
+  fr: {
+    title: 'Aiguille des sous-cadrans',
+    design: 'Dessin de l’aiguille',
+    color: 'Couleur de l’aiguille',
+    styles: {
+      thin: 'Fine',
+      counterweight: 'Avec contrepoids',
+      lollipop: 'Sucette',
+      arrow: 'Flèche',
+      triangle: 'Triangle',
+      baton: 'Bâton',
+      diamond: 'Losange',
+      teardrop: 'Goutte',
+      'ring-tail': 'Contrepoids ajouré',
+      lightning: 'Éclair',
+      none: 'Sans aiguille',
+    },
+  },
+  en: {
+    title: 'Sub-dial hand',
+    design: 'Hand design',
+    color: 'Hand colour',
+    styles: {
+      thin: 'Thin',
+      counterweight: 'Counterweight',
+      lollipop: 'Lollipop',
+      arrow: 'Arrow',
+      triangle: 'Triangle',
+      baton: 'Baton',
+      diamond: 'Diamond',
+      teardrop: 'Teardrop',
+      'ring-tail': 'Open counterweight',
+      lightning: 'Lightning',
+      none: 'No hand',
+    },
+  },
+};

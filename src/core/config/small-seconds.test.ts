@@ -35,7 +35,8 @@ describe('petite seconde', () => {
 
     config = pick(config, 'small-seconds', '9h');
     expect(smallSeconds(config)).toEqual({ position: '9h', style: 'flat' });
-    expect(visible()).toContain('small-seconds-style');
+    // Its style is edited inside the complication panel, rather than on a grid row.
+    expect(visible()).not.toContain('small-seconds-style');
     expect(variantIndexFromConfig(row('small-seconds-style'), config)).toBe(0);
     expect(complicationHours(config)).toEqual([9]);
 

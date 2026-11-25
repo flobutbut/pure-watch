@@ -13,6 +13,8 @@ import { HAND_STYLES } from './hands';
 import { BEZEL_SHAPES, BEZEL_FINISHES } from './bezel';
 import { LUG_JOINS } from './lugs';
 import { detailsSchema, cleanDetails } from './details';
+import { normalizeDialFinish } from './dial';
+import { DIAL_FINISH_IDS } from './dial-finishes';
 import { V1_PREFIX, V2_PREFIX, decodeLinkPayload, encodeLinkPayload } from './link-codec';
 
 // Wire defaults and identifiers are immutable for v1; link format 2 reuses them as they are.
@@ -185,28 +187,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     wood: 6,
     straw: 7,
   }),
-  w: field('dial.finish', id, {
-    matte: 1,
-    sunburst: 2,
-    grained: 3,
-    guilloche: 4,
-    enamel: 5,
-    'iridescent-pearl': 6,
-    'iridescent-oil': 7,
-    lacquer: 8,
-    fume: 9,
-    'clous-de-paris': 10,
-    linen: 11,
-    concentric: 12,
-    'vertical-brushed': 13,
-    hammered: 14,
-    leather: 15,
-    'circular-brushed': 16,
-    tapisserie: 17,
-    waves: 18,
-    scales: 19,
-    topographic: 20,
-  }),
+  w: field('dial.finish', id, DIAL_FINISH_IDS),
   x: field('dial.color', hex),
   y: field('dial.pattern', text.nullable()),
   z: field('dial.chapterRing', id, { none: 1, railroad: 2, dots: 3, ticks: 4, 'five-minute': 5 }),
@@ -369,7 +350,7 @@ const LEGACY_V1: Readonly<Record<string, { paths: readonly string[]; schema: z.Z
 
 /** Small default-free payload; colors, Unicode text and unexposed options are retained. */
 export function encodeConfigHash(config: WatchConfig): string {
-  config = normalizeNumerals(normalizeLume(config));
+  config = normalizeDialFinish(normalizeNumerals(normalizeLume(config)));
   config = { ...config, details: cleanDetails(config.details) };
   const payload: Record<string, unknown> = {};
   for (const [key, descriptor] of Object.entries(FIELDS_V1)) {
@@ -459,7 +440,7 @@ export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
       (part) => Boolean(part.lume) && !lumePigment(part.lume),
     );
     return {
-      config: withoutSeconds(normalizeNumerals(normalizeLume(config))),
+      config: withoutSeconds(normalizeDialFinish(normalizeNumerals(normalizeLume(config)))),
       notice: adjusted ? ADJUSTED : '',
     };
   } catch {
