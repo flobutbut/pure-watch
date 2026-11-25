@@ -3,6 +3,7 @@ import { expect, it } from 'vitest';
 import rawCatalog from '../../data/catalog.json';
 import { defaultConfig } from '../../core/config/defaults';
 import { decodeConfigHash, encodeConfigHash } from '../../core/config/url';
+import { decodeLinkPayload } from '../../core/config/link-codec';
 import { parseCatalog } from '../../core/catalog/load';
 import { CASE_SHAPES } from '../../core/geometry/case-shape';
 import { proportionsForDiameter, watchDimensions } from '../../core/geometry/dimensions';
@@ -58,7 +59,7 @@ it('exposes every built geometry in the catalog and preserves previous wire iden
     config.hands.color = '#1C50B9';
     config.hands.second.color = 'match';
     const encoded = encodeConfigHash(config);
-    expect(JSON.parse(atob(encoded.slice(4))).I).toBe(index + 7);
+    expect(decodeLinkPayload(encoded)!.I).toBe(index + 7);
     expect(decodeConfigHash(encoded, catalog)).toEqual({ config, notice: '' });
   }
 });

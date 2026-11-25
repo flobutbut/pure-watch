@@ -50,7 +50,7 @@ it('reduces the circular tonneau aperture automatically and retains the referenc
 });
 it('shares aperture size without changing any old V1 identifier or the default link', () => {
   const catalog = parseCatalog(rawCatalog);
-  expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
+  expect(encodeConfigHash(defaultConfig())).toBe('#2');
   expect(decodeConfigHash('#v1.e30', catalog).config.dial.size).toBe('open');
   for (const size of DIAL_SIZES) {
     const c = defaultConfig();

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { linkPayload } from './link';
 
 test.setTimeout(60_000);
 test('le grain reste utilisable sur coussin et rond, avec des teintes sombres et claires', async ({
@@ -33,7 +34,7 @@ test('le grain reste utilisable sur coussin et rond, avec des teintes sombres et
       path: `documentation/grained-dial/${name}-${info.project.name}.png`,
       animations: 'disabled',
     });
-    const payload = JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
+    const payload = linkPayload(page.url());
     expect(payload.w).toBe(3);
     expect(payload.x).toBe(color);
     await grid.focus();

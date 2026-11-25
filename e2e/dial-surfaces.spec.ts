@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { linkPayload } from './link';
 
 test.setTimeout(60_000);
 for (const [finish, id] of [
@@ -35,7 +36,7 @@ for (const [finish, id] of [
         path: `documentation/dial-surfaces/${finish}-${tone}-${info.project.name}.png`,
         animations: 'disabled',
       });
-      const payload = JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
+      const payload = linkPayload(page.url());
       expect(payload).toMatchObject({ w: id, x: color });
       await grid.focus();
       await page.keyboard.press('Escape');

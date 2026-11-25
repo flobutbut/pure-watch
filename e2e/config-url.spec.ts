@@ -11,7 +11,8 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
   await page.goto('/?pilot=black');
   const grid = page.getByRole('grid');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-baton');
-  await expect(page).toHaveURL(/#v1\./);
+  // Compact link: no dot, nothing a messaging app would cut off.
+  await expect(page).toHaveURL(/#2[A-Za-z0-9_-]+$/);
   expect(new URL(page.url()).searchParams.has('pilot')).toBe(false);
   await grid.focus();
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
@@ -124,7 +125,7 @@ test('le comparateur ouvre la configuration sélectionnée, pas seulement le pil
 }) => {
   await page.goto('/review.html?pilot=black&scope=hands&hands=leaf');
   const open = page.getByRole('link', { name: 'Ouvrir le pilote dans le configurateur' });
-  await expect(open).toHaveAttribute('href', /#v1\./);
+  await expect(open).toHaveAttribute('href', /#2[A-Za-z0-9_-]+$/);
   const initial = await open.getAttribute('href');
   await page.locator('#hand-set').selectOption('breguet');
   await expect(open).not.toHaveAttribute('href', initial!);

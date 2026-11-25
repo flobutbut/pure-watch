@@ -47,7 +47,7 @@ describe('dial contours', () => {
     expect(d.dialSafeRadius).toBe(d.dialRadius);
     expect(d.dialExtent).toBe(d.dialRadius);
     expect(d.dialScale).toBe(1);
-    expect(encodeConfigHash(config)).toBe('#v1.e30');
+    expect(encodeConfigHash(config)).toBe('#2');
     expect(decodeConfigHash('#v1.e30', catalog).config.dial.shape).toBe('round');
   });
 

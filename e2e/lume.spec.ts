@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
+import { linkPayload } from './link';
 import { hexField } from './hex';
 
 test.setTimeout(60_000);
 const link = (payload: object) =>
   `/#v1.${Buffer.from(JSON.stringify(payload)).toString('base64url')}`;
-const payload = (page: Page) =>
-  JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
+const payload = (page: Page) => linkPayload(page.url());
 const handsPanel = (page: Page) =>
   page.getByRole('button', { name: 'Paramètres des aiguilles', exact: true });
 const indicesPanel = (page: Page) =>

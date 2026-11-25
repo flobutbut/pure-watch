@@ -74,7 +74,7 @@ describe('matières et luminescence indépendantes', () => {
   );
   it('garde les liens existants sans inserts et les anciens noms de lume lisibles', () => {
     const original = decodeConfigHash('#v1.e30', catalog).config;
-    expect(encodeConfigHash(original)).toBe('#v1.e30');
+    expect(encodeConfigHash(original)).toBe('#2');
     expect(hasLume(original.hands)).toBe(false);
     expect(hasLume(original.dial.indices)).toBe(false);
     original.dial.indices.lume = 'c3';

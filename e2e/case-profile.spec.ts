@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { linkPayload } from './link';
 test.setTimeout(90_000);
 test('les profils se sélectionnent, se partagent et restent indépendants de la forme et du cadran', async ({
   page,
@@ -21,9 +22,7 @@ test('les profils se sélectionnent, se partagent et restent indépendants de la
     await expect(grid).toHaveAttribute('aria-activedescendant', `cell-case-profile-${profile}`);
     await expect
       .poll(() => {
-        const payload = JSON.parse(
-          Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString(),
-        );
+        const payload = linkPayload(page.url());
         return payload;
       })
       .toEqual({ ...initial, ...(i === 1 ? {} : { ah: i + 1 }) });

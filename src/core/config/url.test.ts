@@ -3,6 +3,7 @@ import rawCatalog from '../../data/catalog.json';
 import { parseCatalog } from '../catalog/load';
 import { applyVariant } from '../nav/selection';
 import { defaultConfig } from './defaults';
+import { decodeLinkPayload } from './link-codec';
 import { blackTonneauPilot, cushionPilot } from './pilot';
 import {
   configUrl,
@@ -44,11 +45,13 @@ describe('versioned watch links', () => {
       expect(decodeConfigHash(hash({ n: token }), catalog).config.bezel.type).toBe(type);
     }
   });
-  it('has a fixed v1 default and keeps typical configurations below 200 characters', () => {
-    expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
+  it('has a fixed default and keeps typical configurations below 80 characters', () => {
+    expect(encodeConfigHash(defaultConfig())).toBe('#2');
     for (const config of [blackTonneauPilot(), cushionPilot()]) {
       const encoded = encodeConfigHash(config);
-      expect(encoded.length).toBeLessThanOrEqual(200);
+      expect(encoded.length).toBeLessThanOrEqual(80);
+      // Letters, digits, - and _ only: messaging apps keep the whole link clickable.
+      expect(encoded).toMatch(/^#2[A-Za-z0-9_-]*$/);
       expect(decodeConfigHash(encoded, catalog)).toEqual({ config, notice: '' });
     }
   });
@@ -180,8 +183,7 @@ describe('versioned watch links', () => {
     const legacy = decodeConfigHash(hash({ am: 1.3 }), catalog);
     expect(legacy.notice).toBe('');
     expect(legacy.config.dial.indices).toMatchObject({ indexLength: 1.3, indexWidth: 1.3 });
-    const encoded = encodeConfigHash(legacy.config).slice(4).replaceAll('-', '+');
-    const payload: unknown = JSON.parse(atob(encoded.replaceAll('_', '/')));
+    const payload = decodeLinkPayload(encodeConfigHash(legacy.config));
     expect(payload).toMatchObject({ bc: 1.3, bd: 1.3 });
     expect(payload).not.toHaveProperty('am');
   });

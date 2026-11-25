@@ -90,7 +90,7 @@ describe('free colours', () => {
   it('all materials and custom colours survive links, older links stay steel', () => {
     const catalog = parseCatalog(rawCatalog);
     expect(decodeConfigHash('#v1.e30', catalog).config.hands.color).toBe('#E8EBF0');
-    expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
+    expect(encodeConfigHash(defaultConfig())).toBe('#2');
     for (const finish of HAND_FINISHES) {
       const config = withColorChoice(defaultConfig(), 'hands', {
         color: '#A17FC3',

@@ -3,7 +3,7 @@
 L’adresse du configurateur décrit désormais la montre affichée :
 
 ```text
-https://votre-site/#v1.…
+https://votre-site/#2AAMFCAYGCQESAxYCGQQaCB0CHgkiASUDJmDywjAvAg
 ```
 
 Chaque choix met le fragment à jour, sans recharger la page. Copier l’adresse suffit pour retrouver la montre après actualisation ou dans un autre onglet/navigateur. Aucune configuration n’est stockée côté serveur ni dans le stockage local du navigateur.
@@ -14,12 +14,13 @@ Les anciens liens `?pilot=black` et `?pilot=cushion` fonctionnent toujours ; ils
 
 ## Format et compatibilité
 
-- Version `v1`, JSON compact encodé en base64url, sans les valeurs par défaut.
-- Identifiants de champs et d’options attribués dans `src/core/config/url.ts`, indépendamment de l’ordre du catalogue. Ne jamais réattribuer un identifiant v1.
+- Format `2` (fragment `#2…`), écrit depuis novembre 2026 : les champs sans leurs valeurs par défaut, sérialisés en octets compacts puis en base64url. Une couleur tient en 3 octets, un choix d’option en 1. Le lien ne contient que des lettres, des chiffres, `-` et `_` : pas de point que les messageries couperaient, et il est environ trois fois plus court que la v1 (44 caractères au lieu de 128 pour le tonneau noir). Le codec est dans `src/core/config/link-codec.ts`.
+- Les liens `#v1.…` (JSON encodé en base64url) restent lus et donnent la même montre.
+- Les deux formats partagent les identifiants de champs et d’options attribués dans `src/core/config/url.ts`, indépendamment de l’ordre du catalogue. Ne jamais réattribuer un identifiant ni changer la façon dont le format 2 range une valeur : un test fige un lien déjà partagé.
 - Valeurs par défaut v1 figées dans `src/core/config/url-v1-defaults.json`, indépendamment des futurs changements du modèle de départ.
 - Couleurs libres, textes Unicode, options masquées, bracelet, mouvement et données de complications conservés. Les champs inconnus ne deviennent jamais des chemins dans l’objet de configuration.
 - Valeurs vérifiées à l’ouverture. Les valeurs invalides/inconnues prennent leur défaut ; un message discret signale l’ajustement. Un lien mal formé ou de version non prise en charge affiche la montre par défaut et un message.
-- Fragments limités à 16 384 caractères à la lecture. Les liens des configurations pilotes typiques tiennent sous 200 caractères ; des textes et données personnalisés allongent naturellement le lien.
+- Fragments limités à 16 384 caractères à la lecture. Les liens des configurations pilotes typiques tiennent sous 80 caractères ; des textes et données personnalisés allongent naturellement le lien.
 
 Les réglages de diagnostic du moteur (`model=legacy`, par exemple) restent séparés de la configuration et sont conservés si présents dans l’adresse.
 

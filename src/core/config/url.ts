@@ -12,9 +12,11 @@ import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
 import { HAND_STYLES } from './hands';
 import { BEZEL_SHAPES, BEZEL_FINISHES } from './bezel';
 import { LUG_JOINS } from './lugs';
+import { V1_PREFIX, V2_PREFIX, decodeLinkPayload, encodeLinkPayload } from './link-codec';
 
-// Wire defaults and identifiers are immutable for v1. Changing application defaults
-// or reordering the catalog must never reinterpret an already shared link.
+// Wire defaults and identifiers are immutable for v1; link format 2 reuses them as they are.
+// Changing application defaults or reordering the catalog must never reinterpret an already
+// shared link.
 // Older v1 links predate dial.shape. Their implicit shape remains round; the frozen
 // JSON and all existing wire identifiers stay unchanged.
 const V1_DEFAULTS = {
@@ -360,14 +362,6 @@ const LEGACY_V1: Readonly<Record<string, { paths: readonly string[]; schema: z.Z
   },
 };
 
-function base64url(text: string): string {
-  const bytes = new TextEncoder().encode(text);
-  return btoa(String.fromCharCode(...bytes))
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replace(/=+$/, '');
-}
-
 /** Small default-free payload; colors, Unicode text and unexposed options are retained. */
 export function encodeConfigHash(config: WatchConfig): string {
   config = normalizeNumerals(normalizeLume(config));
@@ -383,7 +377,7 @@ export function encodeConfigHash(config: WatchConfig): string {
         ? descriptor.ids[value]
         : value;
   }
-  return `#v1.${base64url(JSON.stringify(payload))}`;
+  return encodeLinkPayload(payload);
 }
 
 /** What went wrong with a link; the interface words it in the visitor's language. */
@@ -413,13 +407,10 @@ function catalogContains(catalog: Catalog, path: string, value: string): boolean
 export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
   const fallback = (notice: LinkNotice): ConfigLink => ({ config: defaultConfig(), notice });
   if (!hash || hash === '#') return fallback('');
-  if (!hash.startsWith('#v1.')) return fallback('unsupported');
-  if (hash.length > MAX_HASH_LENGTH || !/^#v1\.[A-Za-z0-9_-]+$/.test(hash))
-    return fallback(INVALID);
+  if (!hash.startsWith(V1_PREFIX) && !hash.startsWith(V2_PREFIX)) return fallback('unsupported');
+  if (hash.length > MAX_HASH_LENGTH) return fallback(INVALID);
   try {
-    const encoded = hash.slice(4).replaceAll('-', '+').replaceAll('_', '/');
-    const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
-    const payload: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const payload = decodeLinkPayload(hash);
     if (!isPlainObject(payload)) return fallback(INVALID);
     let config = structuredClone(V1_DEFAULTS);
     let adjusted = false;
