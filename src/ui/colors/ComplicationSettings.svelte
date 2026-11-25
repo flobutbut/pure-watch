@@ -79,7 +79,15 @@
       label={row.i18n.name}
       value={valueOf(row)}
       options={row.variants.map((v) => ({ value: String(v.value), label: v.i18n.name }))}
-      onchange={(value) => onchange(setAtPath(config, row.path, value))}
+      onchange={(value) =>
+        // La commande rend du texte : on écrit la valeur de la variante (booléen de la loupe).
+        onchange(
+          setAtPath(
+            config,
+            row.path,
+            row.variants.find((v) => String(v.value) === value)?.value ?? value,
+          ),
+        )}
     />
   </section>
 {/each}
