@@ -397,6 +397,9 @@
 
   /** Densité de l'écran : les montres et cellules sont calées sur ses pixels (netteté). */
   const dpr = globalThis.devicePixelRatio ?? 1;
+  /** Share of the height a settings sheet takes on phones, and the air left above it. */
+  const PHONE_SHEET_SHARE = 0.66;
+  const PHONE_SHEET_GAP = 12;
   const openSize = $derived(Math.round(Math.min(width, height) * 0.82 * dpr) / dpr);
   const liveScale = $derived(open ? 1 : metrics.watch / Math.max(1, openSize));
   const colorWatchSize = $derived(
@@ -423,7 +426,9 @@
   const watchX = $derived(sidePanel && width >= 760 ? (editing ? -175 : -182) : 0);
   const watchY = $derived(
     editing && width < 760
-      ? -height * 0.3
+      ? // Settings are a bottom sheet on phones (Sheet.svelte, --sheet-max: 66dvh): the watch
+        // rests just above its top edge instead of touching it.
+        height * (1 - PHONE_SHEET_SHARE) - PHONE_SHEET_GAP - colorWatchSize / 2 - height / 2
       : panelShown && width < 760
         ? (cardBand.top + cardBand.bottom) / 2 - height / 2
         : dragY + bumpY,
