@@ -608,23 +608,34 @@
                             ? t().grid.numeralsSettings
                             : target === 'indices'
                               ? t().grid.indicesSettings
-                              : target === 'powerReserve'
-                                ? t().colors.powerReserve
+                              : target === 'powerReserve' || target === 'subdials'
+                                ? target === 'subdials' &&
+                                  config.complications.some((c) => c.type === 'chronograph')
+                                  ? t().colors.chronograph
+                                  : t().colors[target]
                                 : t().grid.secondsColor}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve'].includes(target)}
+              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials'].includes(target)}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
               <span>
-                {['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve'].includes(target)
+                {[
+                  'numerals',
+                  'indices',
+                  'hands',
+                  'bezel',
+                  'lugs',
+                  'powerReserve',
+                  'subdials',
+                ].includes(target)
                   ? t().grid.settings
                   : t().grid.color}
-                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve'}<span
+                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials'}<span
                     class="color-value"
                   >
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'

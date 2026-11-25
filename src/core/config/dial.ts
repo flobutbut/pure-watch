@@ -3,7 +3,24 @@
  * (nacre, film d'huile) : la ligne Couleur ne s'y applique pas et disparaît de la grille.
  * La couleur choisie reste mémorisée pour le retour à une finition colorable.
  */
-import type { DialConfig } from './types';
+import type { DialConfig, WatchConfig } from './types';
+
+/** Retired finish: old links become a sunburst dial with an independent fumé effect. */
+export function normalizeDialFinish(config: WatchConfig): WatchConfig {
+  if (config.dial.finish !== 'fume') return config;
+  return {
+    ...config,
+    dial: { ...config.dial, finish: 'sunburst' },
+    details: {
+      ...config.details,
+      dial: {
+        ...config.details?.dial,
+        fume: config.details?.dial?.fume ?? 1,
+        legacyFume: true,
+      },
+    },
+  };
+}
 
 export const INTRINSIC_DIAL_COLORS: Readonly<Record<string, string>> = {
   'iridescent-pearl': '#E9E4DC',

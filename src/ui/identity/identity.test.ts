@@ -145,7 +145,7 @@ describe('fiche d’identité', () => {
       .find((s) => s.title === 'Complications')!
       .traits.map((t) => `${t.label} : ${t.value}`);
     expect(traits).toContain('Petite seconde : À 6 h');
-    expect(traits).toContain('Sous-cadran : Plat');
+    expect(traits).toContain('Relief du sous-cadran : Plat');
   });
 
   it('montre la réserve de marche avec son échelle par défaut', () => {

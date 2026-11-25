@@ -29,8 +29,11 @@ export function evaluate(rule: Record<string, unknown>, config: WatchConfig): bo
 }
 
 export function visibleRows(rows: readonly RowDef[], config: WatchConfig): RowDef[] {
-  // Palette entries remain catalog metadata (presets and existing links), not grid rows.
+  // Palettes and complication styles remain catalog metadata for presets, settings and old links.
   return rows.filter(
-    (row) => row.kind !== 'palette' && (!row.visibleWhen || evaluate(row.visibleWhen, config)),
+    (row) =>
+      row.kind !== 'palette' &&
+      !['small-seconds-style', 'chronograph-counters', 'power-reserve-style'].includes(row.id) &&
+      (!row.visibleWhen || evaluate(row.visibleWhen, config)),
   );
 }

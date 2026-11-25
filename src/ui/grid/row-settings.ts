@@ -16,13 +16,22 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
     case 'hands':
       return 'hands';
     case 'seconds':
-      return config.hands.second.style !== 'none' ? 'seconds' : null;
+      return config.hands.second.style !== 'none' &&
+        !config.complications.some((c) => c.type === 'small-seconds')
+        ? 'seconds'
+        : null;
     case 'rehaut':
     case 'rehaut-scale':
       return 'rehaut';
     case 'power-reserve':
     case 'power-reserve-style':
       return config.complications.some((c) => c.type === 'power-reserve') ? 'powerReserve' : null;
+    case 'small-seconds':
+    case 'small-seconds-style':
+      return config.complications.some((c) => c.type === 'small-seconds') ? 'subdials' : null;
+    case 'chronograph':
+    case 'chronograph-counters':
+      return config.complications.some((c) => c.type === 'chronograph') ? 'subdials' : null;
     case 'numerals':
       return config.dial.indices.numerals !== 'none' ? 'numerals' : null;
     case 'indices':
@@ -40,5 +49,6 @@ export function settingsForRow(id: string, config: WatchConfig): ColorTarget | '
   if (id === 'case-size') return 'dimensions';
   const target = colorForRow(id, config);
   if (target === 'dial' && hasIntrinsicColor(config.dial.finish)) return null;
+
   return target;
 }

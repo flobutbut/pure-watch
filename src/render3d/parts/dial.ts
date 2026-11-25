@@ -15,7 +15,10 @@ import { latheZ } from '../lathe';
 import { profileGeometry, type Sample } from './profile';
 import { buildDate, dateWindowRect, roundedRect } from './date';
 import { buildCounters, buildSubdial, circleOutline, subdialOf } from './subdial';
-import { buildReservePrint } from './power-reserve';
+import { subdialStyle } from '../../core/config/subdial-style';
+import { reserveCircle } from '../../core/config/power-reserve';
+import { chronoCounters } from '../../core/config/chronograph';
+import { buildReservePrint, buildReserveSurface } from './power-reserve';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 import { hasLume } from '../../core/config/lume';
@@ -50,10 +53,15 @@ export function buildDial(
   const R = d.dialSafeRadius;
   const windowRect = dateWindowRect(config, d);
   const subdial = subdialOf(config, d);
+  const reserveCircleShape = reserveCircle(config, d.dialSafeRadius);
+  const counterHoles =
+    subdialStyle(config) === 'sunken' ? chronoCounters(config, d.dialSafeRadius) : [];
   // Ouvertures du cadran : guichet de date, cuvette d'un sous-cadran en creux.
   const holes = [
     ...(windowRect ? [roundedRect(windowRect)] : []),
     ...(subdial?.style === 'sunken' ? [circleOutline(subdial)] : []),
+    ...counterHoles.map((circle) => circleOutline(circle)),
+    ...(reserveCircleShape?.style === 'sunken' ? [circleOutline(reserveCircleShape)] : []),
   ];
   // Police de style éventuelle : chargée à la demande puis embarquée dans les SVG.
   const fontCss = fontFaceCss(config.dial.indices.numeralFont);
@@ -61,6 +69,8 @@ export function buildDial(
   const dial = new THREE.Group();
   dial.name = 'dial';
   dial.add(new THREE.Mesh(dialSurface(d, holes), lib.dial(config)));
+  const reserveSurface = buildReserveSurface(config, d, lib);
+  if (reserveSurface) dial.add(reserveSurface.surface);
 
   const print = new THREE.Group();
   print.name = 'print';
@@ -75,14 +85,24 @@ export function buildDial(
     indices.add(date.frame);
   }
   const seconds = buildSubdial(config, d, lib, { fontCss, print: options.print });
-  const counters = buildCounters(config, d, { fontCss, print: options.print });
+  const counters = buildCounters(config, d, lib, { fontCss, print: options.print });
   for (const parts of [seconds, counters]) {
     if (!parts) continue;
     dial.add(parts.surface);
     print.add(parts.print);
   }
-  const owned = [...(date?.owned ?? []), ...(seconds?.owned ?? []), ...(counters?.owned ?? [])];
-  const dateReady = Promise.all([date?.ready, seconds?.ready, counters?.ready]).then(() => {});
+  const owned = [
+    ...(date?.owned ?? []),
+    ...(seconds?.owned ?? []),
+    ...(counters?.owned ?? []),
+    ...(reserveSurface?.owned ?? []),
+  ];
+  const dateReady = Promise.all([
+    date?.ready,
+    seconds?.ready,
+    counters?.ready,
+    reserveSurface?.ready,
+  ]).then(() => {});
   const loupe = date?.loupe ?? new THREE.Group();
   if (!options.print) {
     return { dial, print, indices, loupe, ready: dateReady, owned };

@@ -30,7 +30,9 @@ const fr = {
   noLume: 'Sans luminescence',
   hidden:
     'Un chiffre ou une complication occupe cette heure. Le réglage sera visible avec un jeu de chiffres ou une disposition qui libère cet emplacement.',
-  reserve: 'Réglages de la réserve de marche',
+  reserve: 'Disposition de la réserve',
+  miniPrint: 'Graduations',
+  miniInk: 'Couleur des graduations',
   size: 'Taille de la réserve',
   x: 'Déplacement horizontal',
   y: 'Déplacement vertical',
@@ -94,7 +96,9 @@ export const DETAIL_SETTINGS: Record<'fr' | 'en', typeof fr> = {
     noLume: 'No luminescence',
     hidden:
       'A numeral or complication occupies this hour. These settings become visible when a numeral set or layout frees that position.',
-    reserve: 'Power reserve settings',
+    reserve: 'Power reserve layout',
+    miniPrint: 'Markings',
+    miniInk: 'Markings colour',
     size: 'Reserve size',
     x: 'Horizontal offset',
     y: 'Vertical offset',

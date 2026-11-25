@@ -43,9 +43,8 @@ describe('chronographe', () => {
     // Petite seconde et position de couronne n'ont plus de sens : leurs lignes disparaissent.
     expect(visible(config)).not.toContain('small-seconds');
     expect(visible(config)).not.toContain('crown-position');
-    expect(visible(config)).toEqual(
-      expect.arrayContaining(['chronograph-counters', 'chronograph-pushers']),
-    );
+    expect(visible(config)).not.toContain('chronograph-counters');
+    expect(visible(config)).toContain('chronograph-pushers');
     expect(variantIndexFromConfig(row('chronograph-counters'), config)).toBe(0);
     config = pick(pick(config, 'chronograph-counters', 'black'), 'chronograph-pushers', 'pump');
     config = pick(config, 'chronograph', 'vertical');

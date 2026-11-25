@@ -1,4 +1,6 @@
 /** Contenu de la fiche d'identité : la configuration lue comme une fiche technique. */
+import rawCatalog from '../../data/catalog.json';
+import { CATALOG_EN } from '../../core/i18n/catalog-en';
 import type { RowDef } from '../../core/catalog/types';
 import { ralName, tint } from '../../core/color/names';
 import { bezelScale, hasBezelInsert, bezelLayout, bezelShape } from '../../core/config/bezel';
@@ -13,6 +15,10 @@ import { dateComplication } from '../../core/config/date';
 import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
+import { subdialHand } from '../../core/config/subdial-hand';
+import { subdialAppearance, reserveAppearance } from '../../core/config/subdials';
+import { subdialStyle } from '../../core/config/subdial-style';
+import { SUBDIAL_HAND_LABELS } from '../colors/subdial-hand-labels';
 import { numeralSystem } from '../../core/config/numerals';
 import {
   chapterRingColor,
@@ -218,6 +224,80 @@ export function identitySections(
     if (!section) sections.push((section = { title, traits: [] }));
     section.traits.push({ label: row.i18n.name, value: rowValue(row, config) });
     section.traits.push(...colorTraits(row, config, locale));
+    const styleId =
+      row.id === 'small-seconds' && smallSeconds(config)
+        ? 'small-seconds-style'
+        : row.id === 'chronograph' && chronograph(config)
+          ? 'chronograph-counters'
+          : row.id === 'power-reserve' && powerReserve(config)
+            ? 'power-reserve-style'
+            : null;
+    if (styleId) {
+      const definition = rawCatalog.rows.find((r) => r.id === styleId)!;
+      const selected = definition.variants.find((v) => v.value === EFFECTIVE[styleId]!(config));
+      section.traits.push({
+        label:
+          styleId === 'small-seconds-style'
+            ? m.colors.subdialRelief
+            : locale === 'en'
+              ? CATALOG_EN[styleId]!.name
+              : definition.i18n.name,
+        value: selected
+          ? locale === 'en'
+            ? (CATALOG_EN[styleId]?.variants?.[selected.id] ?? selected.i18n.name)
+            : selected.i18n.name
+          : '—',
+      });
+    }
+    if (styleId && styleId !== 'small-seconds-style') {
+      const definition = rawCatalog.rows.find((r) => r.id === 'small-seconds-style')!;
+      const style = subdialStyle(config, row.id === 'power-reserve' ? 'reserve' : 'subdials');
+      const selected = definition.variants.find((v) => v.value === style)!;
+      section.traits.push({
+        label: m.colors.subdialRelief,
+        value:
+          locale === 'fr'
+            ? selected.i18n.name
+            : CATALOG_EN['small-seconds-style']!.variants![selected.id]!,
+      });
+    }
+    if (styleId) {
+      const hand = subdialHand(config, row.id === 'power-reserve');
+      const labels = SUBDIAL_HAND_LABELS[locale];
+      section.traits.push({
+        label:
+          row.id === 'power-reserve'
+            ? locale === 'fr'
+              ? 'Aiguille de réserve'
+              : 'Power reserve hand'
+            : labels.title,
+        value: labels.styles[hand.style] ?? hand.style,
+      });
+      if (hand.style !== 'none')
+        section.traits.push({
+          label:
+            row.id === 'power-reserve'
+              ? locale === 'fr'
+                ? 'Couleur de l’aiguille de réserve'
+                : 'Reserve hand colour'
+              : labels.color,
+          value: hand.color === 'match' ? m.colors.matchHands : hand.color,
+          swatch: hand.color === 'match' ? handColor(config) : hand.color,
+          metal: hand.color === 'match' && config.hands.finish !== 'lacquer',
+        });
+    }
+    const mini = row.id === 'power-reserve' ? reserveAppearance(config) : subdialAppearance(config);
+    if (styleId && mini.customFinish) {
+      const finish = mini.config.dial.finish;
+      section.traits.push({
+        label: row.id === 'power-reserve' ? m.colors.reserveFinish : m.colors.subdialFinish,
+        value:
+          finish === 'azure'
+            ? m.colors.azureFinish
+            : (rows.find((r) => r.id === 'dial-finish')?.variants.find((v) => v.value === finish)
+                ?.i18n.name ?? finish),
+      });
+    }
     section.traits.push(...detailTraits(row.id, config, locale));
     if (row.id === 'lugs' && config.case.lugs !== 'none')
       section.traits.push({

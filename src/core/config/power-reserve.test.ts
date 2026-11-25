@@ -37,7 +37,8 @@ describe('réserve de marche', () => {
     expect(visible()).not.toContain('power-reserve-style');
     config = pick(config, 'power-reserve', '9h');
     expect(powerReserve(config)).toEqual({ position: '9h', style: 'arc' });
-    expect(visible()).toContain('power-reserve-style');
+    // Its style is edited inside the complication panel, rather than on a grid row.
+    expect(visible()).not.toContain('power-reserve-style');
     expect(variantIndexFromConfig(row('power-reserve-style'), config)).toBe(0);
     expect(complicationHours(config)).toEqual([9]);
     config = pick(config, 'power-reserve-style', 'fuel');

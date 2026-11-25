@@ -1,11 +1,33 @@
 import * as THREE from 'three';
 import { afterEach, expect, it, vi } from 'vitest';
 import { defaultConfig } from '../core/config/defaults';
+import { normalizeDialFinish } from '../core/config/dial';
 import { CASE_SHAPES } from '../core/geometry/case-shape';
 import { MaterialLibrary } from './materials';
 import * as textures from './textures';
 
 afterEach(() => vi.restoreAllMocks());
+
+it('preserves the exact fumé highlight and metallic response when migrating old finishes', () => {
+  vi.spyOn(textures, 'radialOcclusionTexture').mockReturnValue(new THREE.CanvasTexture());
+  vi.spyOn(textures, 'radialAnisotropyTexture').mockReturnValue(new THREE.CanvasTexture());
+  const gradient = vi
+    .spyOn(textures, 'radialGradientTexture')
+    .mockImplementation(() => new THREE.CanvasTexture());
+  const config = defaultConfig();
+  config.dial.finish = 'fume';
+  config.dial.color = '#365B70';
+  const lib = new MaterialLibrary();
+  const old = lib.dial(config);
+  const originalGradient = gradient.mock.calls.at(-1);
+  const next = lib.dial(normalizeDialFinish(config));
+  expect(gradient.mock.calls.at(-1)).toEqual(originalGradient);
+  expect(next.color.getHexString()).toBe(old.color.getHexString());
+  expect(next.metalness).toBe(old.metalness);
+  expect(next.roughness).toBe(old.roughness);
+  expect(next.anisotropy).toBe(old.anisotropy);
+  lib.dispose();
+});
 
 it('changing the case does not silently change the grain of the same round dial', () => {
   vi.spyOn(textures, 'grainTextures').mockImplementation(() => ({

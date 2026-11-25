@@ -17,6 +17,9 @@ import { subdialCircle } from '../../core/config/small-seconds';
 import type { MaterialLibrary } from '../materials';
 import { subdialFloor } from './subdial';
 import { buildReserveHand, stickHand } from './power-reserve';
+import { reserveGauge } from '../../core/config/power-reserve';
+import { subdialStyle } from '../../core/config/subdial-style';
+import { subdialHand } from '../../core/config/subdial-hand';
 import { chronoCounters } from '../../core/config/chronograph';
 import { beveledProfile, piercedBreguet, piercedProfile } from './hand-detail';
 import { beveledBaton, boss, disc, extruded, profileGeometry, type Sample } from './profile';
@@ -430,11 +433,12 @@ export function buildHands(
   const minute = new THREE.Mesh(minuteParts.blade, materials);
 
   const secThick = 0.12;
-  const secondDesign = SECONDS[config.hands.second.style] ?? SECONDS['counterweight']!;
-  // Petite seconde : même forme et même couleur, à l'échelle du sous-cadran.
   const subdial = subdialCircle(config, d.dialSafeRadius);
+  const miniHand = subdialHand(config);
+  const secondsChoice = subdial ? miniHand : config.hands.second;
+  const secondDesign = SECONDS[secondsChoice.style] ?? SECONDS['counterweight']!;
   const secondParts =
-    config.hands.second.style === 'none'
+    secondsChoice.style === 'none'
       ? []
       : subdial
         ? [
@@ -447,7 +451,7 @@ export function buildHands(
           ];
   const secondGeometry = secondParts.length ? mergeGeometries(secondParts) : null;
   for (const g of secondParts) g.dispose();
-  const color = config.hands.second.color;
+  const color = secondsChoice.color;
   const second = secondGeometry
     ? new THREE.Mesh(secondGeometry, color === 'match' ? steel : lib.lacquer(color))
     : null;
@@ -489,11 +493,16 @@ export function buildHands(
   const group = new THREE.Group();
   group.name = 'hands';
   group.add(pivots.hour, pivots.minute, cap);
-  const reserveColor = config.details?.reserve?.handColor;
+  const reserveChoice = subdialHand(config, true);
+  const reserveMaterial = reserveChoice.color === 'match' ? steel : lib.matte(reserveChoice.color);
+  const gauge = reserveGauge(config, d.dialSafeRadius);
   const reserve = buildReserveHand(
     config,
     d,
-    reserveColor && reserveColor !== 'auto' ? lib.matte(reserveColor) : steel,
+    reserveMaterial,
+    gauge && config.details?.reserve?.handStyle && reserveChoice.style !== 'none'
+      ? indicatorHand(reserveChoice.style, gauge.r * 0.9, gauge.r * 0.18, k, reserveMaterial)
+      : undefined,
   );
   if (reserve) group.add(reserve);
   const seconds = new THREE.Group();
@@ -505,11 +514,19 @@ export function buildHands(
   const counters = chronoCounters(config, d.dialSafeRadius);
   let running: THREE.Group | null = null;
   for (const c of counters) {
-    const hand = stickHand(c.r * 0.86, c.r * 0.22, k * 0.8, steel);
+    if (miniHand.style === 'none') continue;
+    const material = miniHand.color === 'match' ? steel : lib.lacquer(miniHand.color);
+    let hand: THREE.Mesh;
+    if (!config.details?.subdials?.hand?.style) {
+      // Preserve the historical counter blade until its design is explicitly changed.
+      hand = stickHand(c.r * 0.86, c.r * 0.22, k * 0.8, material);
+    } else {
+      hand = indicatorHand(miniHand.style, c.r * 0.86, c.r * 0.22, k * 0.5, material);
+    }
     hand.name = `${c.kind}-counter-blade`;
     const pivot = new THREE.Group();
     pivot.name = `${c.kind}-counter`;
-    pivot.position.set(c.x, c.y, 0.2);
+    pivot.position.set(c.x, c.y, subdialFloor(subdialStyle(config)) + 0.2);
     pivot.add(hand);
     if (c.kind === 'seconds') {
       running = pivot;
@@ -525,10 +542,26 @@ export function buildHands(
       // Sens horaire vu de face (caméra sur +Z) = rotation négative autour de Z.
       pivots.hour.rotation.z = -angles.hour * DEG;
       pivots.minute.rotation.z = -angles.minute * DEG;
-      if (running) running.rotation.z = -angles.second * DEG;
-      else pivots.second.rotation.z = -angles.second * DEG;
+      if (counters.length) {
+        if (running) running.rotation.z = -angles.second * DEG;
+      } else pivots.second.rotation.z = -angles.second * DEG;
     },
   };
+}
+
+/** Same selectable designs for chronograph and reserve indicators. */
+function indicatorHand(
+  style: string,
+  length: number,
+  tail: number,
+  k: number,
+  material: THREE.Material,
+) {
+  const parts = (SECONDS[style] ?? SECONDS['baton']!)(length, tail, k, 0.12);
+  parts.push(boss(0.42 * k, 0.17));
+  const mesh = new THREE.Mesh(mergeGeometries(parts)!, material);
+  for (const part of parts) part.dispose();
+  return mesh;
 }
 
 export const HAND_SETS = Object.keys(DESIGNS);

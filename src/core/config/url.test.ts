@@ -3,7 +3,8 @@ import rawCatalog from '../../data/catalog.json';
 import { parseCatalog } from '../catalog/load';
 import { applyVariant } from '../nav/selection';
 import { defaultConfig } from './defaults';
-import { decodeLinkPayload } from './link-codec';
+import { decodeLinkPayload, encodeLinkPayload } from './link-codec';
+import { normalizeDialFinish } from './dial';
 import { colorChoice, targetColor, withColorChoice, type ColorTarget } from './colors';
 import { getAtPath, setAtPath } from './path';
 import type { WatchConfig } from './types';
@@ -22,6 +23,30 @@ const hash = (payload: unknown) =>
   `#v1.${btoa(JSON.stringify(payload)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')}`;
 
 describe('versioned watch links', () => {
+  it('retires the fumé choice while preserving v1 and v2 links and their independent effects', () => {
+    expect(
+      catalog.rows.find((r) => r.id === 'dial-finish')!.variants.some((v) => v.value === 'fume'),
+    ).toBe(false);
+    for (const w of [9, 'fume'])
+      for (const link of [hash({ w, x: '#123ABC' }), encodeLinkPayload({ w, x: '#123ABC' })]) {
+        const loaded = decodeConfigHash(link, catalog);
+        expect(loaded.notice).toBe('');
+        expect(loaded.config.dial).toMatchObject({ finish: 'sunburst', color: '#123ABC' });
+        expect(loaded.config.details?.dial).toEqual({ fume: 1, legacyFume: true });
+        expect(decodeConfigHash(encodeConfigHash(loaded.config), catalog)).toEqual(loaded);
+        expect(decodeLinkPayload(encodeConfigHash(loaded.config))!.w).toBe(2);
+      }
+    const config = defaultConfig();
+    config.dial.finish = 'fume';
+    config.details = { dial: { fume: 0.35, edgeColor: '#172C3B' }, rehaut: { ink: '#F2F0EA' } };
+    const migrated = normalizeDialFinish(config);
+    expect(migrated.details).toEqual({
+      dial: { fume: 0.35, edgeColor: '#172C3B', legacyFume: true },
+      rehaut: { ink: '#F2F0EA' },
+    });
+    expect(config.dial.finish).toBe('fume');
+    expect(normalizeDialFinish(migrated)).toBe(migrated);
+  });
   it('retains the ring position, scale and insert colour without changing old links', () => {
     expect(decodeConfigHash('#v1.e30', catalog).config.bezel.angleDeg).toBe(0);
     const config = defaultConfig();
