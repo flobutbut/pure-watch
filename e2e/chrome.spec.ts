@@ -48,11 +48,14 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   );
   await dialog.getByRole('button', { name: 'Copier le lien', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-copied-link', shared(before));
-  await expect(dialog.getByRole('status')).toHaveText('Lien de la configuration copié');
+  // The first status follows the link; the second belongs to the AI prompt section.
+  await expect(dialog.getByRole('status').first()).toHaveText('Lien de la configuration copié');
   expect(page.url()).toBe(before);
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
   await expect(share).toBeFocused();
+  // The grid ignores keys until the 3D view has finished closing.
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
   await page.getByRole('grid').press('ArrowRight');
   const changed = page.url();
   expect(changed).not.toBe(before);
@@ -61,6 +64,7 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   await expect(page.locator('html')).toHaveAttribute('data-copied-link', shared(changed));
   await dialog.getByRole('button', { name: 'Fermer le partage', exact: true }).click();
   await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
   await page.getByRole('grid').press('Enter');
   const close = page.getByRole('button', { name: 'Fermer', exact: true });
   await expect(close).toBeVisible();
@@ -162,7 +166,7 @@ test('un presse-papiers refusé affiche un lien sélectionné et Échap conserve
   const length = shared(current).length;
   expect(selection).toEqual({ start: 0, end: length, length });
   await page.getByRole('button', { name: 'Copier le lien', exact: true }).click();
-  await expect(dialog.getByRole('status')).toHaveText(/Le lien est sélectionné/);
+  await expect(dialog.getByRole('status').first()).toHaveText(/Le lien est sélectionné/);
   await input.press('Escape');
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeVisible();
@@ -203,6 +207,8 @@ test('le partage natif reste accessible depuis la modale et une annulation ne co
   const sent = JSON.parse((await page.locator('html').getAttribute('data-native-share'))!);
   expect(sent).toMatchObject({ url: shared(page.url()), title: 'Épure · Ma montre' });
   await expect(dialog).not.toBeVisible();
+  // Sharing is ignored until the 3D view has finished closing.
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
   await page.evaluate(() => {
     document.documentElement.dataset.cancelShare = 'yes';
   });

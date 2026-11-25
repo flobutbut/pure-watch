@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { hexField } from './hex';
 
 test('la grille démarre sur la ligne Aiguilles et répond aux flèches', async ({ page }) => {
   await page.goto('/');
@@ -69,10 +70,13 @@ test('le tonneau noir conserve ses options et sa navigation', async ({ page }) =
   await grid.focus();
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-lollipop');
+  // The seconds colour is a swatch on the cell, not a row: the date row comes next.
   await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-date-none');
+  await page.keyboard.press('ArrowUp');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-lollipop');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#F2C230');
+  await expect(await hexField(page)).toHaveValue('#F2C230');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await grid.focus();
   await page.keyboard.press('Enter');

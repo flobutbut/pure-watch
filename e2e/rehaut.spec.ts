@@ -60,7 +60,7 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
   expect(payload(page).ad).toBe(2);
   await trigger.click();
   await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveValue('#C85432');
+  await expect(await hexField(page)).toHaveValue('#C85432');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowDown');

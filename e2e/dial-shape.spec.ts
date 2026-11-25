@@ -19,6 +19,9 @@ test('la forme précède la finition, suit les choix et se restaure par URL', as
   }
   const shared = page.url();
   expect(JSON.parse(Buffer.from(shared.split('#v1.')[1]!, 'base64url').toString()).aa).toBe(6);
+  // The dial size row sits between the shape and the finish.
+  await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-size-open');
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-finish-grained');
   expect(page.url()).toBe(shared);
