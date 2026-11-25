@@ -28,6 +28,7 @@ describe('catalogue', () => {
       'dial-size',
       'dial-finish',
       'dial-color',
+      'dial-ring',
       'chapter-ring',
       'numerals',
       'numeral-font',

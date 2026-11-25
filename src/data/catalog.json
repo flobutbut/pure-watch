@@ -1387,6 +1387,58 @@
       }
     },
     {
+      "id": "dial-ring",
+      "group": "face",
+      "kind": "enum",
+      "path": "details.ring",
+      "previewContext": "dial-sample",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Anneau"
+      },
+      "variants": [
+        {
+          "id": "none",
+          "value": null,
+          "preview": "dial-ring/none.svg",
+          "i18n": {
+            "name": "Sans anneau"
+          }
+        },
+        {
+          "id": "hours",
+          "value": {
+            "shape": "hours"
+          },
+          "preview": "dial-ring/hours.svg",
+          "i18n": {
+            "name": "Anneau des heures"
+          }
+        },
+        {
+          "id": "outer",
+          "value": {
+            "shape": "outer"
+          },
+          "preview": "dial-ring/outer.svg",
+          "i18n": {
+            "name": "Anneau extérieur"
+          }
+        },
+        {
+          "id": "center",
+          "value": {
+            "shape": "center"
+          },
+          "preview": "dial-ring/center.svg",
+          "i18n": {
+            "name": "Disque central"
+          }
+        }
+      ]
+    },
+    {
       "id": "chapter-ring",
       "group": "face",
       "kind": "enum",

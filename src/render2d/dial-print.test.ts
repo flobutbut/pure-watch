@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dialPrintSvg } from './dial-print';
+import { dialPrintSvg, NUMERAL_REACH } from './dial-print';
+import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
 import { FONTS } from './fonts';
 
 const base = { dialRadius: 10, chapterRing: 'none', ink: '#000000', numerals: 'cardinal' };
@@ -104,9 +105,22 @@ describe('taille et position des chiffres', () => {
     expect(size).toBeLessThan(10 * 0.14 * 1.75);
   });
 
-  it('arrête un grand chiffre poussé au bord avant la minuterie', () => {
-    const { y, size } = twelve(dialPrintSvg({ ...base, numeralSize: 1.75, numeralRadius: 1.1 }));
+  it('arrête un grand chiffre avant la minuterie jusqu’à 100 %', () => {
+    const { y, size } = twelve(dialPrintSvg({ ...base, numeralSize: 1.75, numeralRadius: 1 }));
     expect(-y + size * 0.4).toBeLessThanOrEqual(9 + 1e-3);
+  });
+
+  it('pousse les chiffres jusqu’au bord, comme les index, au maximum du curseur', () => {
+    for (const numeralSize of [0.7, 1, 1.75]) {
+      const at = (numeralRadius: number) =>
+        twelve(dialPrintSvg({ ...base, numeralSize, numeralRadius }));
+      const max = at(NUMERAL_RADIUS_RANGE.max);
+      // Le bord extérieur du chiffre touche la limite des index (0,995 R).
+      expect(-max.y + max.size * 0.4).toBeCloseTo(10 * NUMERAL_REACH);
+      // Entre 100 % et le maximum, la position avance régulièrement.
+      const half = at((1 + NUMERAL_RADIUS_RANGE.max) / 2);
+      expect(-half.y).toBeCloseTo((-at(1).y - max.y) / 2);
+    }
   });
 });
 

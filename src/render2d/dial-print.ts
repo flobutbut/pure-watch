@@ -36,6 +36,7 @@ export interface DialPrintOptions {
 }
 
 import { fontDef } from './fonts';
+import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
 
 const f = (n: number) => n.toFixed(3);
 
@@ -124,6 +125,9 @@ export function numeralHours(set: string | undefined): number[] {
   }
 }
 
+/** Portée maximale des chiffres, en fraction du rayon : la même que celle des index. */
+export const NUMERAL_REACH = 0.995;
+
 function numeralsMarkup(
   R: number,
   set: string | undefined,
@@ -139,7 +143,8 @@ function numeralsMarkup(
   const font = fontDef(fontId);
   const roman = set === 'roman' || system === 'roman';
   const few = numeralHours(set).length <= 4;
-  const fraction = (few ? 0.74 : 0.77) * radiusFactor;
+  const reference = few ? 0.74 : 0.77;
+  const fraction = reference * radiusFactor;
   // Rapprochés du centre, douze chiffres voisins se toucheraient : la taille est bornée par
   // l'écart entre deux heures (« 10 » ≈ 1,25 cadratin, « VIII » ≈ 2,2).
   const neighbours = 2 * R * fraction * Math.sin(Math.PI / (few ? 4 : 12));
@@ -151,8 +156,16 @@ function numeralsMarkup(
     .map((h) => {
       const a = (h / 12) * 2 * Math.PI;
       const edge = radiusAt ? radiusAt(Math.PI / 2 - a) : R;
-      // Un grand chiffre poussé vers le bord s'arrête avant la minuterie (≈ 0,9 R).
-      const radius = Math.min(edge * fraction, edge * 0.9 - size * 0.4);
+      // Jusqu'à 100 %, un grand chiffre s'arrête avant la minuterie (≈ 0,9 R).
+      const standard = Math.min(edge * reference, edge * 0.9 - size * 0.4);
+      // Au-delà, comme les index, il glisse vers le bord : au maximum du curseur, son bord
+      // extérieur touche la limite des index, quelles que soient sa taille et sa police.
+      const limit = Math.max(standard, edge * NUMERAL_REACH - size * 0.4);
+      const reach = (radiusFactor - 1) / (NUMERAL_RADIUS_RANGE.max - 1);
+      const radius =
+        radiusFactor <= 1
+          ? Math.min(edge * fraction, standard)
+          : standard + (limit - standard) * Math.min(1, reach);
       const label = roman ? ROMAN[h]! : String(h === 0 ? 12 : h);
       return `<text x="${f(radius * Math.sin(a))}" y="${f(-radius * Math.cos(a))}" font-size="${f(size)}" font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" text-anchor="middle" dominant-baseline="central">${label}</text>`;
     })

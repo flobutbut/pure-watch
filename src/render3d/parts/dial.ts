@@ -25,6 +25,9 @@ import { hasLume } from '../../core/config/lume';
 import { INDEX_RADIUS_RANGE } from '../../core/config/colors';
 import { indexAt } from '../../core/config/details';
 import { indexPlate } from './inserts';
+import { buildDialRing } from './dial-ring';
+import { ringLift } from '../../core/config/dial-ring';
+import { ringInk } from '../../core/config/subdials';
 
 export interface DialParts {
   dial: THREE.Group;
@@ -65,6 +68,27 @@ export function buildDial(
   ];
   // Police de style éventuelle : chargée à la demande puis embarquée dans les SVG.
   const fontCss = fontFaceCss(config.dial.indices.numeralFont);
+  /** Impression du cadran, aux encres données (celles du fond, ou celles de l'anneau). */
+  const printMarkup = (inks: { ink: string; chapterRingInk: string; numeralInk: string }) =>
+    fontCss.then((fontCss) =>
+      dialPrintSvg({
+        fontCss,
+        dialRadius: R,
+        extent: d.dialExtent,
+        radiusAt: d.dialShape === 'round' ? undefined : (angle) => dialRadiusAt(d, angle),
+        chapterRing: config.dial.chapterRing,
+        chapterRingDotSize: config.details?.chapterRing?.dotSize,
+        brand: config.dial.text.brand,
+        line2: config.dial.text.line2,
+        numerals: config.dial.indices.numerals,
+        numeralSystem: numeralSystem(config.dial.indices),
+        numeralFont: config.dial.indices.numeralFont,
+        numeralSize: config.dial.indices.numeralSize,
+        numeralRadius: config.dial.indices.numeralRadius,
+        omitHours: complicationHours(config),
+        ...inks,
+      }),
+    );
 
   const dial = new THREE.Group();
   dial.name = 'dial';
@@ -91,13 +115,41 @@ export function buildDial(
     dial.add(parts.surface);
     print.add(parts.print);
   }
+  // Anneau : le guichet et les sous-cadrans le traversent ; il imprime à sa propre encre.
+  const ringInkColor = ringInk(config);
+  const ring = buildDialRing(config, d, lib, {
+    cutouts: [
+      ...(windowRect ? [roundedRect(windowRect)] : []),
+      ...(subdial ? [circleOutline(subdial)] : []),
+      ...chronoCounters(config, d.dialSafeRadius).map((circle) => circleOutline(circle)),
+      ...(reserveCircleShape ? [circleOutline(reserveCircleShape)] : []),
+    ],
+    markup: options.print
+      ? printMarkup({
+          ink: ringInkColor,
+          chapterRingInk:
+            config.dial.chapterRingColor === 'match' ? ringInkColor : config.dial.chapterRingColor,
+          numeralInk:
+            config.dial.indices.numeralColor === 'match'
+              ? ringInkColor
+              : config.dial.indices.numeralColor,
+        })
+      : null,
+    printSize: options.printSize,
+  });
+  if (ring) {
+    dial.add(ring.surface);
+    print.add(ring.print);
+  }
   const owned = [
+    ...(ring?.owned ?? []),
     ...(date?.owned ?? []),
     ...(seconds?.owned ?? []),
     ...(counters?.owned ?? []),
     ...(reserveSurface?.owned ?? []),
   ];
   const dateReady = Promise.all([
+    ring?.ready,
     date?.ready,
     seconds?.ready,
     counters?.ready,
@@ -115,27 +167,11 @@ export function buildDial(
 
   // Impression : texture transparente posée juste au-dessus du disque, pour que la
   // matière du cadran (iridescence, soleillé) reste visible dessous.
-  const markup = fontCss.then((fontCss) =>
-    dialPrintSvg({
-      fontCss,
-      dialRadius: R,
-      extent: d.dialExtent,
-      radiusAt: d.dialShape === 'round' ? undefined : (angle) => dialRadiusAt(d, angle),
-      chapterRing: config.dial.chapterRing,
-      chapterRingInk: chapterRingColor(config.dial),
-      chapterRingDotSize: config.details?.chapterRing?.dotSize,
-      ink: inkForDial(effectiveDialColor(config.dial)),
-      brand: config.dial.text.brand,
-      line2: config.dial.text.line2,
-      numerals: config.dial.indices.numerals,
-      numeralSystem: numeralSystem(config.dial.indices),
-      numeralFont: config.dial.indices.numeralFont,
-      numeralInk: numeralColor(config.dial),
-      numeralSize: config.dial.indices.numeralSize,
-      numeralRadius: config.dial.indices.numeralRadius,
-      omitHours: complicationHours(config),
-    }),
-  );
+  const markup = printMarkup({
+    ink: inkForDial(effectiveDialColor(config.dial)),
+    chapterRingInk: chapterRingColor(config.dial),
+    numeralInk: numeralColor(config.dial),
+  });
   const { texture, ready } = svgTexture(markup, options.printSize);
   // Découpe alpha plutôt que transparence : la passe de transmission du cristal ne voit
   // que les objets opaques ; une impression « transparente » disparaîtrait sous le verre.
@@ -147,6 +183,7 @@ export function buildDial(
       metalness: 0,
       polygonOffset: true,
       polygonOffsetFactor: -1,
+      ...(ring?.printMask ? { alphaMap: ring.printMask } : {}),
     }),
   );
   const printMesh = new THREE.Mesh(dialSurface(d, holes), printMaterial);
@@ -407,7 +444,8 @@ export function buildIndices(
         if (!source) continue;
         const g = source.clone();
         if (twelve && design.big) g.scale(design.big, design.big, 1);
-        g.translate(dx, radius, 0);
+        // Sur un anneau en relief, l'index repose sur sa surface.
+        g.translate(dx, radius, ringLift(config, d.dialSafeRadius, radius));
         g.rotateZ(-angle);
         destination.push(g.index ? g.toNonIndexed() : g);
         if (g.index) g.dispose();

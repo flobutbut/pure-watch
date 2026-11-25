@@ -7,7 +7,7 @@ import { handAdjustment, type HandLayout } from './hands';
 import { bezelLayout, type BezelLayout } from './bezel';
 import { lugJoin, type LugJoin } from './lugs';
 import { cleanDetails, type WatchDetails } from './details';
-import { subdialAppearance, reserveAppearance } from './subdials';
+import { subdialAppearance, reserveAppearance, ringAppearance } from './subdials';
 
 /** Pièces réglées dans le panneau latéral. */
 export type ColorTarget =
@@ -21,6 +21,7 @@ export type ColorTarget =
   | 'powerReserve'
   | 'subdials'
   | 'date'
+  | 'ring'
   | 'lugs'
   | 'chapterRing';
 export interface ColorChoice {
@@ -101,6 +102,7 @@ function baseColorChoice(config: WatchConfig, target: ColorTarget): ColorChoice 
     return { color: config.details?.subdials?.color ?? 'match', finish: '' };
   if (target === 'powerReserve')
     return { color: config.details?.reserve?.color ?? 'match', finish: '' };
+  if (target === 'ring') return { color: config.details?.ring?.color ?? 'match', finish: '' };
   if (target === 'chapterRing') return { color: config.dial.chapterRingColor, finish: 'print' };
   if (target === 'lugs')
     return { color: targetColor(config, target) as HexColor, finish: '', lugJoin: lugJoin(config) };
@@ -156,8 +158,8 @@ export function withColorChoice(
     target,
     choice,
   );
-  if (target === 'subdials' || target === 'powerReserve') {
-    const section = target === 'subdials' ? 'subdials' : 'reserve';
+  if (target === 'subdials' || target === 'powerReserve' || target === 'ring') {
+    const section = target === 'subdials' ? 'subdials' : target === 'ring' ? 'ring' : 'reserve';
     const details = cleanDetails(choice.details ?? config.details);
     if (choice.color === 'match' && !details?.[section]?.color)
       return details
@@ -185,7 +187,7 @@ function withBaseColorChoice(
     return choice.cyclops === undefined
       ? config
       : { ...config, crystal: { ...config.crystal, cyclops: choice.cyclops } };
-  if (target === 'powerReserve' || target === 'subdials') return config;
+  if (target === 'powerReserve' || target === 'subdials' || target === 'ring') return config;
   if (target === 'chapterRing')
     return { ...config, dial: { ...config.dial, chapterRingColor: choice.color } };
   if (target === 'lugs')
@@ -267,6 +269,7 @@ export function targetColor(config: WatchConfig, target: ColorTarget): string {
     return subdialAppearance(config).color;
   }
   if (target === 'powerReserve') return reserveAppearance(config).color;
+  if (target === 'ring') return ringAppearance(config).color;
   if (target === 'chapterRing') return chapterRingColor(config.dial);
   if (target === 'lugs')
     return rehautColor({ ...config, rehaut: { ...config.rehaut, finish: 'metal' } });

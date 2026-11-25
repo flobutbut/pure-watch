@@ -193,6 +193,10 @@ export const CATALOG_EN: Record<string, RowNames> = {
       slate: 'Slate gray',
     },
   },
+  'dial-ring': {
+    name: 'Ring',
+    variants: { none: 'No ring', hours: 'Hour ring', outer: 'Outer ring', center: 'Centre disc' },
+  },
   'chapter-ring': {
     name: 'Minute track',
     variants: {

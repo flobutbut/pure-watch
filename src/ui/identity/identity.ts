@@ -16,7 +16,8 @@ import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import { smallSeconds } from '../../core/config/small-seconds';
 import { subdialHand } from '../../core/config/subdial-hand';
-import { subdialAppearance, reserveAppearance } from '../../core/config/subdials';
+import { subdialAppearance, reserveAppearance, ringAppearance } from '../../core/config/subdials';
+import { dialRing } from '../../core/config/dial-ring';
 import { subdialStyle } from '../../core/config/subdial-style';
 import { SUBDIAL_HAND_LABELS } from '../colors/subdial-hand-labels';
 import { numeralSystem } from '../../core/config/numerals';
@@ -190,8 +191,45 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
   }
   if (row.id === 'bezel' && hasBezelInsert(config))
     return [painted(m.bezelColor, config.bezel.color)];
+  const ring = row.id === 'dial-ring' ? dialRing(config) : null;
+  if (ring) {
+    const c = all.colors;
+    const appearance = ringAppearance(config);
+    const finish = config.details?.ring?.finish;
+    const finishName =
+      finish === 'azure'
+        ? c.azureFinish
+        : finish && finish !== 'original'
+          ? (DIAL_FINISH_NAMES[locale](finish) ?? finish)
+          : null;
+    return [
+      { label: c.ringRelief, value: ring.relief === 'raised' ? c.ringRaised : c.ringFlat },
+      { label: c.ringDiameter, value: c.ringOfDial(Math.round(ring.diameter * 100)) },
+      {
+        label: c.ringWidth,
+        value: c.ringOfRadius(Math.round(Math.min(ring.width, ring.diameter) * 100)),
+      },
+      ...(finishName ? [{ label: c.ringFinish, value: finishName }] : []),
+      ...(hasIntrinsicColor(appearance.config.dial.finish)
+        ? []
+        : [painted(c.ringColor, appearance.color)]),
+    ];
+  }
   return [];
 }
+
+/** Nom d'une finition de cadran, dans la langue de la fiche. */
+const DIAL_FINISH_NAMES: Record<Locale, (finish: string) => string | undefined> = {
+  fr: (finish) =>
+    rawCatalog.rows.find((r) => r.id === 'dial-finish')?.variants.find((v) => v.value === finish)
+      ?.i18n.name,
+  en: (finish) => {
+    const variant = rawCatalog.rows
+      .find((r) => r.id === 'dial-finish')
+      ?.variants.find((v) => v.value === finish);
+    return variant ? CATALOG_EN['dial-finish']?.variants?.[variant.id] : undefined;
+  },
+};
 
 /** Cotes d'abord, puis chaque pièce dans l'ordre de la grille. */
 export function identitySections(

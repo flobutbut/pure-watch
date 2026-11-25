@@ -227,6 +227,8 @@ const PREVIEWS: Record<string, PreviewSpec> = {
   'dial-finish': { layers: ['dial'], frame: dialFrame },
   'dial-color': { layers: ['dial'], frame: dialFrame },
   // Impression et index : montrés sur le cadran choisi, tels qu'ils seront (R6).
+  // Anneau : sa place se lit avec l'impression et les index qu'il porte.
+  'dial-ring': { layers: ['dial', 'print', 'indices'], frame: dialFrame },
   'chapter-ring': { layers: ['dial', 'print'], frame: dialFrame },
   indices: { layers: ['dial', 'indices'], frame: dialFrame },
   numerals: { layers: ['dial', 'print', 'indices'], frame: dialFrame },
