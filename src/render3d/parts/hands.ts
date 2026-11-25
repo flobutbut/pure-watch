@@ -489,7 +489,12 @@ export function buildHands(
   const group = new THREE.Group();
   group.name = 'hands';
   group.add(pivots.hour, pivots.minute, cap);
-  const reserve = buildReserveHand(config, d, steel);
+  const reserveColor = config.details?.reserve?.handColor;
+  const reserve = buildReserveHand(
+    config,
+    d,
+    reserveColor && reserveColor !== 'auto' ? lib.matte(reserveColor) : steel,
+  );
   if (reserve) group.add(reserve);
   const seconds = new THREE.Group();
   seconds.name = 'seconds';

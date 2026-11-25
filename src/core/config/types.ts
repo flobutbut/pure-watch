@@ -6,6 +6,8 @@
  * pour que le catalogue puisse en ajouter sans modifier le code (critère du jalon 1).
  */
 
+import type { WatchDetails } from './details';
+
 type Open<T extends string> = T | (string & {});
 
 export type HexColor = `#${string}`;
@@ -222,6 +224,7 @@ export interface ViewConfig {
 }
 
 export interface WatchConfig {
+  details?: WatchDetails;
   schema: 1;
   style: string | null;
   movement: string;

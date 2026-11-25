@@ -762,32 +762,45 @@
       "previewContext": "case-sample",
       "looping": true,
       "priority": "P1",
-      "i18n": { "name": "Graduation de lunette" },
-      "visibleWhen": { "path": "bezel.type", "equals": "fixed-scale" },
+      "i18n": {
+        "name": "Graduation de lunette"
+      },
+      "visibleWhen": {
+        "path": "bezel.type",
+        "equals": "fixed-scale"
+      },
       "variants": [
         {
           "id": "tachymeter",
           "value": "tachymeter",
           "preview": "bezel-scale/tachymeter.svg",
-          "i18n": { "name": "Tachymètre" }
+          "i18n": {
+            "name": "Tachymètre"
+          }
         },
         {
           "id": "dive-60",
           "value": "dive-60",
           "preview": "bezel-scale/dive-60.svg",
-          "i18n": { "name": "60 minutes" }
+          "i18n": {
+            "name": "60 minutes"
+          }
         },
         {
           "id": "12h",
           "value": "12h",
           "preview": "bezel-scale/12h.svg",
-          "i18n": { "name": "12 heures" }
+          "i18n": {
+            "name": "12 heures"
+          }
         },
         {
           "id": "24h",
           "value": "24h",
           "preview": "bezel-scale/24h.svg",
-          "i18n": { "name": "24 heures" }
+          "i18n": {
+            "name": "24 heures"
+          }
         }
       ]
     },
@@ -1173,31 +1186,49 @@
           "id": "leather",
           "value": "leather",
           "preview": "dial-finish/leather.svg",
-          "i18n": { "name": "Effet cuir" }
+          "i18n": {
+            "name": "Effet cuir"
+          }
         },
         {
           "id": "circular-brushed",
           "value": "circular-brushed",
           "preview": "dial-finish/circular-brushed.svg",
-          "i18n": { "name": "Brossé circulaire" }
+          "i18n": {
+            "name": "Brossé circulaire"
+          }
         },
         {
           "id": "tapisserie",
           "value": "tapisserie",
           "preview": "dial-finish/tapisserie.svg",
-          "i18n": { "name": "Tapisserie" }
+          "i18n": {
+            "name": "Tapisserie"
+          }
         },
         {
           "id": "waves",
           "value": "waves",
           "preview": "dial-finish/waves.svg",
-          "i18n": { "name": "Vagues" }
+          "i18n": {
+            "name": "Vagues"
+          }
         },
         {
           "id": "scales",
           "value": "scales",
           "preview": "dial-finish/scales.svg",
-          "i18n": { "name": "Écailles" }
+          "i18n": {
+            "name": "Écailles"
+          }
+        },
+        {
+          "id": "topographic",
+          "value": "topographic",
+          "preview": "dial-finish/topographic.svg",
+          "i18n": {
+            "name": "Topographique"
+          }
         }
       ]
     },

@@ -11,10 +11,18 @@ export function rehautPrintExtent(d: WatchDimensions): number {
 
 export function rehautPrintSvg(config: WatchConfig, d: WatchDimensions): string {
   const scale = effectiveRehautScale(config);
+  const settings = config.details?.rehaut;
+  const autoInk = inkForDial(rehautColor(config));
+  const ink = settings?.ink && settings.ink !== 'auto' ? settings.ink : autoInk;
+  const accent = settings?.accent && settings.accent !== 'auto' ? settings.accent : ink;
+  const isAccent = (minute: number) =>
+    settings?.accentAt === 'quarters'
+      ? Math.abs(minute / 15 - Math.round(minute / 15)) < 0.00001
+      : settings?.accentAt === 'zero' && Math.abs(minute % 60) < 0.00001;
   const extent = rehautPrintExtent(d);
   const width = d.openingRadius - d.dialRadius;
   const minWidth = width * d.dialScale * contourExtents(d.dialShape).min;
-  const stroke = minWidth * 0.055;
+  const stroke = minWidth * 0.055 * (settings?.lineWidth ?? 1);
   const f = (n: number) => n.toFixed(4);
   const point = (minute: number, fraction: number) => {
     const a = (minute / 60) * Math.PI * 2;
@@ -24,13 +32,13 @@ export function rehautPrintSvg(config: WatchConfig, d: WatchDimensions): string 
   const line = (minute: number, major: boolean) => {
     const [x1, y1] = point(minute, 0.09);
     const [x2, y2] = point(minute, major ? 0.36 : 0.24);
-    return `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke-width="${f(stroke * (major ? 1.5 : 1))}"/>`;
+    return `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke-width="${f(stroke * (major ? 1.5 : 1))}"${isAccent(minute) ? ` stroke="${accent}"` : ''}/>`;
   };
   const label = (minute: number, value: number, small = false) => {
     const [x, y] = point(minute, 0.67);
     const angle = minute * 6;
     const rotate = angle > 90 && angle < 270 ? angle + 180 : angle;
-    return `<text x="${f(x)}" y="${f(y)}" font-size="${f(minWidth * (small ? 0.35 : 0.43))}" transform="rotate(${f(rotate)} ${f(x)} ${f(y)})">${value}</text>`;
+    return `<text x="${f(x)}" y="${f(y)}" font-size="${f(minWidth * (small ? 0.35 : 0.43) * (settings?.labelSize ?? 1))}" transform="rotate(${f(rotate)} ${f(x)} ${f(y)})"${isAccent(minute) ? ` fill="${accent}"` : ''}>${value}</text>`;
   };
   const marks: string[] = [];
   if (scale === 'minutes' || scale === 'five-minute') {
@@ -49,6 +57,5 @@ export function rehautPrintSvg(config: WatchConfig, d: WatchDimensions): string 
       marks.push(line(minute, true), label(minute, value, true));
     }
   }
-  const ink = inkForDial(rehautColor(config));
   return `<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="${-extent} ${-extent} ${extent * 2} ${extent * 2}"><g stroke="${ink}" fill="${ink}" stroke-linecap="round"><g fill="none">${marks.filter((m) => m.startsWith('<line')).join('')}</g><g stroke="none" font-family="Arial, sans-serif" font-weight="500" text-anchor="middle" dominant-baseline="central">${marks.filter((m) => m.startsWith('<text')).join('')}</g></g></svg>`;
 }

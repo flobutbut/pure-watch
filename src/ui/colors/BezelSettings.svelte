@@ -10,6 +10,7 @@
   import { formatNumber } from '../../core/i18n/locale';
   import { i18n } from '../i18n.svelte';
   import { PART_SETTINGS } from './part-settings';
+  import ChoiceGroup from '../kit/ChoiceGroup.svelte';
   let {
     value,
     config,
@@ -22,16 +23,12 @@
 
 <div class="bezel-settings">
   {#if !hasBezelInsert(config)}
-    <label>
-      {m.bezelShape}
-      <select
-        aria-label={m.bezelShape}
-        value={value.shape}
-        onchange={(e) => onchange({ ...value, shape: e.currentTarget.value })}
-      >
-        {#each BEZEL_SHAPES as shape (shape)}<option value={shape}>{m.shapes[shape]}</option>{/each}
-      </select>
-    </label>
+    <ChoiceGroup
+      label={m.bezelShape}
+      value={value.shape}
+      options={BEZEL_SHAPES.map((shape) => ({ value: shape, label: m.shapes[shape] ?? shape }))}
+      onchange={(shape) => onchange({ ...value, shape })}
+    />
   {:else}<p>{m.circular}</p>{/if}
   <label>
     {m.bezelWidth}<output>{mm(d.bezelWidth)}</output>
@@ -58,18 +55,15 @@
     />
   </label>
   {#if !['ceramic', 'carbon'].includes(config.case.material)}
-    <label>
-      {m.bezelFinish}
-      <select
-        aria-label={m.bezelFinish}
-        value={value.finish}
-        onchange={(e) => onchange({ ...value, finish: e.currentTarget.value })}
-      >
-        {#each BEZEL_FINISHES as finish (finish)}<option value={finish}>
-            {m.finishes[finish]}
-          </option>{/each}
-      </select>
-    </label>
+    <ChoiceGroup
+      label={m.bezelFinish}
+      value={value.finish}
+      options={BEZEL_FINISHES.map((finish) => ({
+        value: finish,
+        label: m.finishes[finish] ?? finish,
+      }))}
+      onchange={(finish) => onchange({ ...value, finish })}
+    />
   {/if}
   <p>{m.fit}</p>
 </div>
@@ -86,20 +80,10 @@
     gap: 9px;
     font-size: var(--text-m);
   }
-  select,
   input {
     grid-column: 1/-1;
     width: 100%;
     box-sizing: border-box;
-  }
-  select {
-    padding: 9px;
-    border: 1px solid var(--control-line);
-    border-radius: var(--radius-s);
-    background: var(--control);
-    color: var(--ink);
-    font: inherit;
-    min-height: 40px;
   }
   input {
     accent-color: var(--ink);

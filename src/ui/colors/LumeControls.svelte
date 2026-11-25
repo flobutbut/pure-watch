@@ -7,6 +7,7 @@
     type LumeChoice,
   } from '../../core/config/lume';
   import Button from '../kit/Button.svelte';
+  import SegmentedControl from '../kit/SegmentedControl.svelte';
   import { t } from '../i18n.svelte';
 
   let {
@@ -25,13 +26,16 @@
 
 <section aria-label={t().lume.title}>
   <p class="section-label">{t().lume.title}</p>
-  <div class="choices" role="group" aria-label={t().lume.treatment}>
-    <Button aria-pressed={!value.kind} onclick={() => onchange({ ...value, kind: null })}>
-      {t().lume.none}
-    </Button>
-    <Button aria-pressed={Boolean(value.kind)} onclick={() => onchange(enableLume(value))}>
-      {t().lume.insert}
-    </Button>
+  <div class="treatment">
+    <SegmentedControl
+      label={t().lume.treatment}
+      value={value.kind ? 'insert' : 'none'}
+      options={[
+        { value: 'none', label: t().lume.none },
+        { value: 'insert', label: t().lume.insert },
+      ]}
+      onchange={(mode) => onchange(mode === 'none' ? { ...value, kind: null } : enableLume(value))}
+    />
   </div>
   {#if value.kind}
     <div class="choices presets" role="group" aria-label={t().lume.pigments}>
@@ -66,6 +70,9 @@
 <style>
   section {
     margin: 0 0 22px;
+  }
+  .treatment {
+    margin-bottom: 12px;
   }
   .choices {
     display: flex;

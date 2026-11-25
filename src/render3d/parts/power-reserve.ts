@@ -16,6 +16,7 @@ import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { inkForDial } from '../../render2d/dial-print';
 import { fontDef } from '../../render2d/fonts';
 import { sharpPrint, svgTexture } from '../textures';
+import type { ReserveAdjustment } from '../../core/config/details';
 import { boss, profileGeometry } from './profile';
 
 /** Rouge de la zone « bas » (segments, jauge). */
@@ -48,7 +49,9 @@ export function reserveSvg(
   ink: string,
   font: { family: string; weight: string | number; style?: string },
   fontCss = '',
+  settings: ReserveAdjustment = {},
 ): string {
+  const low = settings.lowColor ?? LOW;
   const parts: string[] = [];
   const text = (x: number, y: number, size: number, label: string, fill = ink) =>
     parts.push(
@@ -74,7 +77,16 @@ export function reserveSvg(
       const [x, y] = at(r * 0.64, angleOf(h / 40));
       text(x, y, r * 0.13, String(h));
     }
-    text(0, r * 0.2, r * 0.1, 'RÉSERVE');
+    const label = settings.label ?? 'RÉSERVE';
+    text(
+      0,
+      r * 0.2,
+      r * 0.1,
+      label.replace(
+        /[&<>"']/g,
+        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[c]!,
+      ),
+    );
   } else if (style === 'segments') {
     // Cinq pavés, le premier en rouge ; « bas » et « haut » aux extrémités.
     for (let i = 0; i < 5; i++) {
@@ -85,7 +97,7 @@ export function reserveSvg(
       const [x2, y2] = at(r * 0.8, a1);
       const [x3, y3] = at(r * 0.8, a0);
       parts.push(
-        `<path d="M${f(x0)} ${f(y0)}A${f(r)} ${f(r)} 0 0 1 ${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}A${f(r * 0.8)} ${f(r * 0.8)} 0 0 0 ${f(x3)} ${f(y3)}Z" fill="${i === 0 ? LOW : ink}" stroke="none"/>`,
+        `<path d="M${f(x0)} ${f(y0)}A${f(r)} ${f(r)} 0 0 1 ${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}A${f(r * 0.8)} ${f(r * 0.8)} 0 0 0 ${f(x3)} ${f(y3)}Z" fill="${i === 0 ? low : ink}" stroke="none"/>`,
       );
     }
     const [lx, ly] = at(r * 0.9, angleOf(0));
@@ -95,12 +107,12 @@ export function reserveSvg(
   } else {
     // Jauge de carburant : zone rouge à vide, quarts graduées.
     line(r, 0, 1, r * 0.025);
-    line(r * 0.97, 0, 0.18, r * 0.07, LOW);
+    line(r * 0.97, 0, 0.18, r * 0.07, low);
     for (const level of [0, 0.25, 0.5, 0.75, 1])
       tick(level === 0.5 || level % 1 === 0 ? r * 0.78 : r * 0.86, r, level, r * 0.035);
     const [ex, ey] = at(r * 0.62, angleOf(0));
     const [fx, fy] = at(r * 0.62, angleOf(1));
-    text(ex, ey, r * 0.2, 'E', LOW);
+    text(ex, ey, r * 0.2, 'E', low);
     text(fx, fy, r * 0.2, 'F');
   }
 
@@ -127,9 +139,13 @@ export function buildReservePrint(
   const gauge = reserveGauge(config, d.dialSafeRadius);
   if (!gauge) return null;
   const font = fontDef(config.dial.indices.numeralFont);
-  const ink = inkForDial(effectiveDialColor(config.dial));
+  const settings = config.details?.reserve;
+  const ink =
+    settings?.ink && settings.ink !== 'auto'
+      ? settings.ink
+      : inkForDial(effectiveDialColor(config.dial));
   const { texture, ready } = svgTexture(
-    fontCss.then((css) => reserveSvg(gauge.r, gauge.style, ink, font, css)),
+    fontCss.then((css) => reserveSvg(gauge.r, gauge.style, ink, font, css, settings)),
     512,
   );
   const material = sharpPrint(

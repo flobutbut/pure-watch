@@ -49,9 +49,18 @@ export function reserveGauge(config: WatchConfig, radius: number) {
   const reserve = powerReserve(config);
   if (!reserve) return null;
   const [x, y] = POWER_RESERVE_POSITIONS[reserve.position]!;
-  const r = RESERVE_RADIUS * radius;
+  const settings = config.details?.reserve;
+  const r = RESERVE_RADIUS * radius * (settings?.size ?? 1);
+  let cx = x + (settings?.offsetX ?? 0);
+  let cy = y + (settings?.offsetY ?? 0);
+  const distance = Math.hypot(cx, cy);
+  const limit = 0.98 - (r / radius) * 0.9;
+  if (distance > limit) {
+    cx *= limit / distance;
+    cy *= limit / distance;
+  }
   // Pivot sous le centre : l'éventail, qui monte vers 12 h, est centré sur la position.
-  return { x: x * radius, y: y * radius - r * 0.45, r, style: reserve.style };
+  return { x: cx * radius, y: cy * radius - r * 0.45, r, style: reserve.style };
 }
 
 /** Angle de l'aiguille en degrés, sens horaire depuis 12 h (−50° vide, +50° plein). */

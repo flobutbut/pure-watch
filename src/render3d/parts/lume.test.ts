@@ -11,6 +11,27 @@ const dispose = (object: THREE.Object3D) =>
     if (o instanceof THREE.Mesh) o.geometry.dispose();
   });
 describe('inserts lumineux construits en géométrie', () => {
+  it('renders one customized index with its own shape and pigment without changing the others', () => {
+    const config = defaultConfig();
+    config.dial.indices.lume = 'c3';
+    config.details = {
+      indices: {
+        '12': { style: 'triangles', indexLength: 1.3, lume: 'bgw9' },
+        '3': { style: 'none' },
+      },
+    };
+    const lib = new MaterialLibrary(true, true);
+    const group = buildIndices(config, watchDimensions(config), lib);
+    const twelve = group.getObjectByName('index-12h')!;
+    const blue = twelve.getObjectByName('indices-lume') as THREE.Mesh;
+    expect((blue.material as THREE.MeshStandardMaterial).emissive.getHexString()).toBe('65caff');
+    expect(group.getObjectByName('index-3h')!.children).toHaveLength(0);
+    const ordinary = group.children.find((c) => c.name === 'indices')!;
+    const green = ordinary.getObjectByName('indices-lume') as THREE.Mesh;
+    expect((green.material as THREE.MeshStandardMaterial).emissive.getHexString()).toBe('78ffc1');
+    dispose(group);
+    lib.dispose();
+  });
   it('le rendu suit le pigment malgré un RGB incohérent, avec une intensité indicative propre à la référence', () => {
     const config = defaultConfig();
     Object.assign(config.hands, { lume: 'bgw9', lumeColor: '#FF0000', lumeEmission: '#FF0000' });

@@ -22,7 +22,7 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
   await page.keyboard.press('ArrowRight');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-arrow');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
-  await page.getByRole('button', { name: 'Assortie aux aiguilles' }).click();
+  await page.getByRole('radio', { name: 'Assortie aux aiguilles' }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   const shared = page.url();
   await page.reload();
@@ -31,8 +31,8 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-seconds-arrow');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Assortie aux aiguilles' })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Assortie aux aiguilles' })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();

@@ -97,30 +97,36 @@ test('la lunette garde ses paramètres indépendants et masque la forme pendant 
     page.getByRole('button', { name: 'Paramètres de la lunette', exact: true }).click();
   await open();
   await page
-    .getByRole('combobox', { name: 'Forme de la lunette', exact: true })
-    .selectOption('round');
+    .getByRole('group', { name: 'Forme de la lunette', exact: true })
+    .getByRole('button', { name: 'Ronde', exact: true })
+    .click();
   await page.getByRole('slider', { name: 'Largeur de la lunette', exact: true }).press('End');
   await page.getByRole('slider', { name: 'Hauteur de la lunette', exact: true }).press('End');
   await page
-    .getByRole('combobox', { name: 'Finition de la lunette', exact: true })
-    .selectOption('polished');
+    .getByRole('group', { name: 'Finition de la lunette', exact: true })
+    .getByRole('button', { name: 'Polie', exact: true })
+    .click();
   expect(page.url()).toBe(saved);
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
   await expect(
-    page.getByRole('combobox', { name: 'Forme de la lunette', exact: true }),
-  ).toHaveValue('case');
+    page
+      .getByRole('group', { name: 'Forme de la lunette', exact: true })
+      .getByRole('button', { name: 'Suivre le boîtier', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   await expect(
     page.getByRole('slider', { name: 'Largeur de la lunette', exact: true }),
   ).toHaveValue('1');
   await page
-    .getByRole('combobox', { name: 'Forme de la lunette', exact: true })
-    .selectOption('round');
+    .getByRole('group', { name: 'Forme de la lunette', exact: true })
+    .getByRole('button', { name: 'Ronde', exact: true })
+    .click();
   await page
     .getByRole('slider', { name: 'Largeur de la lunette', exact: true })
     .press('ArrowRight');
   await page
-    .getByRole('combobox', { name: 'Finition de la lunette', exact: true })
-    .selectOption('polished');
+    .getByRole('group', { name: 'Finition de la lunette', exact: true })
+    .getByRole('button', { name: 'Polie', exact: true })
+    .click();
   await page.screenshot({
     path: `documentation/part-adjustments/bezel-panel-${info.project.name}.png`,
   });
@@ -133,16 +139,18 @@ test('la lunette garde ses paramètres indépendants et masque la forme pendant 
   await bezelRow(page);
   await page.keyboard.press('End');
   await open();
-  await expect(
-    page.getByRole('combobox', { name: 'Forme de la lunette', exact: true }),
-  ).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Forme de la lunette', exact: true })).toHaveCount(
+    0,
+  );
   await closePanel(page);
   await page.getByRole('grid').focus();
   await page.keyboard.press('Home');
   await open();
   await expect(
-    page.getByRole('combobox', { name: 'Forme de la lunette', exact: true }),
-  ).toHaveValue('round');
+    page
+      .getByRole('group', { name: 'Forme de la lunette', exact: true })
+      .getByRole('button', { name: 'Ronde', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   await closePanel(page);
   expect(errors).toEqual([]);
 });

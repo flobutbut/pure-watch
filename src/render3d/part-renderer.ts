@@ -22,13 +22,22 @@ const LAYER_DEPENDENCIES: Record<
   readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size')[]
 > = {
   case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
-  rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut', 'bezel'],
+  rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut', 'bezel', 'details'],
   lugs: ['case', 'crystal', 'bezel'],
   crown: ['crown', 'case', 'crystal', 'complications', 'bezel'],
-  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel'],
-  print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel'],
-  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel'],
-  hands: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications', 'bezel'],
+  dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel', 'details'],
+  print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel', 'details'],
+  indices: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel', 'details'],
+  hands: [
+    'hands',
+    'case',
+    'dial.shape',
+    'rehaut.profile',
+    'dial.size',
+    'complications',
+    'bezel',
+    'details',
+  ],
   seconds: ['hands', 'case', 'dial.shape', 'rehaut.profile', 'dial.size', 'complications', 'bezel'],
   crystal: ['crystal', 'case', 'dial.shape', 'dial.size', 'complications', 'bezel'],
 };

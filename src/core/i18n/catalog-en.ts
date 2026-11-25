@@ -169,6 +169,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
       tapisserie: 'Tapisserie',
       waves: 'Waves',
       scales: 'Scales',
+      topographic: 'Topographic',
     },
   },
   'dial-color': {

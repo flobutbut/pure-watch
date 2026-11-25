@@ -6,6 +6,7 @@ import type { HexColor, WatchConfig } from './types';
 import { handAdjustment, type HandLayout } from './hands';
 import { bezelLayout, type BezelLayout } from './bezel';
 import { lugJoin, type LugJoin } from './lugs';
+import { cleanDetails, type WatchDetails } from './details';
 
 /** Pièces réglées dans le panneau latéral. */
 export type ColorTarget =
@@ -16,9 +17,11 @@ export type ColorTarget =
   | 'bezel'
   | 'numerals'
   | 'indices'
+  | 'powerReserve'
   | 'lugs'
   | 'chapterRing';
 export interface ColorChoice {
+  details?: WatchDetails;
   lugJoin?: LugJoin;
   handLayout?: HandLayout;
   bezelLayout?: BezelLayout;
@@ -79,6 +82,14 @@ export function handColor(config: WatchConfig): HexColor {
 }
 
 export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  return {
+    ...baseColorChoice(config, target),
+    ...(config.details ? { details: config.details } : {}),
+  };
+}
+
+function baseColorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  if (target === 'powerReserve') return { color: 'match', finish: '' };
   if (target === 'chapterRing') return { color: config.dial.chapterRingColor, finish: 'print' };
   if (target === 'lugs')
     return { color: targetColor(config, target) as HexColor, finish: '', lugJoin: lugJoin(config) };
@@ -129,6 +140,19 @@ export function withColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  const next = withBaseColorChoice(config, target, choice);
+  if (!choice.details) return next;
+  const details = cleanDetails(choice.details);
+  if (!details && !config.details) return next;
+  return { ...next, details };
+}
+
+function withBaseColorChoice(
+  config: WatchConfig,
+  target: ColorTarget,
+  choice: ColorChoice,
+): WatchConfig {
+  if (target === 'powerReserve') return config;
   if (target === 'chapterRing')
     return { ...config, dial: { ...config.dial, chapterRingColor: choice.color } };
   if (target === 'lugs')
@@ -206,6 +230,7 @@ export function withColorChoice(
 }
 
 export function targetColor(config: WatchConfig, target: ColorTarget): string {
+  if (target === 'powerReserve') return config.dial.color;
   if (target === 'chapterRing') return chapterRingColor(config.dial);
   if (target === 'lugs')
     return rehautColor({ ...config, rehaut: { ...config.rehaut, finish: 'metal' } });

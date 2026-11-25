@@ -18,11 +18,15 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
     case 'seconds':
       return config.hands.second.style !== 'none' ? 'seconds' : null;
     case 'rehaut':
+    case 'rehaut-scale':
       return 'rehaut';
+    case 'power-reserve':
+    case 'power-reserve-style':
+      return config.complications.some((c) => c.type === 'power-reserve') ? 'powerReserve' : null;
     case 'numerals':
       return config.dial.indices.numerals !== 'none' ? 'numerals' : null;
     case 'indices':
-      return config.dial.indices.style !== 'none' ? 'indices' : null;
+      return 'indices';
     default:
       return null;
   }
