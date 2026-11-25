@@ -5,6 +5,16 @@ import { FONTS } from './fonts';
 const base = { dialRadius: 10, chapterRing: 'none', ink: '#000000', numerals: 'cardinal' };
 const labels = (svg: string) => [...svg.matchAll(/<text[^>]*>([^<]+)<\/text>/g)].map((m) => m[1]);
 
+it.each(['railroad', 'ticks', 'dots', 'five-minute'])(
+  'colore la piste %s sans changer les chiffres ni les textes',
+  (chapterRing) => {
+    const svg = dialPrintSvg({ ...base, chapterRing, chapterRingInk: '#C92750', brand: 'ÉPURE' });
+    expect(svg).toContain('<g stroke="#C92750" fill="#C92750"');
+    expect(svg).toMatch(/<g fill="#000000"><text[^>]*>ÉPURE</);
+    expect(svg).toMatch(/<g fill="#000000"><text[^>]*>12</);
+  },
+);
+
 describe('écriture romaine indépendante de la disposition', () => {
   it.each([
     ['none', []],

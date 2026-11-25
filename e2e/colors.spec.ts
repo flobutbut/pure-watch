@@ -14,6 +14,47 @@ async function dialRow(page: Page) {
   await expect(grid).toHaveAttribute('aria-activedescendant', /cell-dial-finish-/);
 }
 
+test('la piste des minutes possède sa palette et conserve sa couleur après rechargement', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
+  await dialRow(page);
+  await page.keyboard.press('ArrowDown');
+  const trigger = page.getByRole('button', {
+    name: 'Couleur de la piste des minutes',
+    exact: true,
+  });
+  await trigger.click();
+  const original = page.url();
+  await (await hexField(page)).fill('#C92750');
+  await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
+  await expect(await hexField(page)).toHaveValue('#F2F1EC');
+  await (await hexField(page)).fill('#C92750');
+  expect(page.url()).toBe(original);
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
+  expect(payload(page).be).toBe('#C92750');
+  expect(payload(page).x).toBeUndefined();
+  expect(payload(page).al).toBeUndefined();
+  await expect(trigger).toHaveAttribute('data-color', '#C92750');
+  await page.reload();
+  await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
+  await dialRow(page);
+  await page.keyboard.press('ArrowDown');
+  await expect(trigger).toHaveAttribute('data-color', '#C92750');
+  await page.keyboard.press('ArrowRight');
+  await expect(trigger).toHaveAttribute('data-color', '#C92750');
+  await trigger.click();
+  await expect(await hexField(page)).toHaveValue('#C92750');
+  await page.getByRole('button', { name: 'Encre du cadran', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
+  expect(payload(page).be).toBeUndefined();
+  await expect(trigger).toHaveAttribute('data-color', '#F2F1EC');
+  await page.getByRole('grid').focus();
+  await page.keyboard.press('Home');
+  await expect(trigger).toHaveCount(0);
+});
+
 test('le cadran se prévisualise, s’annule et se partage avec une teinte libre', async ({
   page,
 }, info) => {

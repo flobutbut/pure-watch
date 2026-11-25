@@ -34,6 +34,7 @@ const V1_DEFAULTS = {
     ...frozenDefaults.dial,
     shape: 'round',
     size: 'open',
+    chapterRingColor: 'match',
     indices: {
       ...frozenDefaults.dial.indices,
       color: '#E8EBF0',
@@ -349,6 +350,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   ba: field('case.lugJoin', z.enum(LUG_JOINS), { detached: 1, flush: 2, blended: 3 }),
   bc: field('dial.indices.indexLength', z.number().finite().min(0.5).max(2)),
   bd: field('dial.indices.indexWidth', z.number().finite().min(0.5).max(2)),
+  be: field('dial.chapterRingColor', z.union([hex, z.literal('match')])),
 };
 
 /**

@@ -426,23 +426,25 @@
         : tint(targetColor(config, target), i18n.locale).name;
 
   const colorForRow = (id: string): ColorTarget | null =>
-    id === 'lugs' && config.case.lugs !== 'none'
-      ? 'lugs'
-      : id === 'bezel'
-        ? 'bezel'
-        : id === 'dial-finish'
-          ? 'dial'
-          : id === 'hands'
-            ? 'hands'
-            : id === 'seconds' && config.hands.second.style !== 'none'
-              ? 'seconds'
-              : id === 'rehaut'
-                ? 'rehaut'
-                : id === 'numerals' && config.dial.indices.numerals !== 'none'
-                  ? 'numerals'
-                  : id === 'indices' && config.dial.indices.style !== 'none'
-                    ? 'indices'
-                    : null;
+    id === 'chapter-ring' && config.dial.chapterRing !== 'none'
+      ? 'chapterRing'
+      : id === 'lugs' && config.case.lugs !== 'none'
+        ? 'lugs'
+        : id === 'bezel'
+          ? 'bezel'
+          : id === 'dial-finish'
+            ? 'dial'
+            : id === 'hands'
+              ? 'hands'
+              : id === 'seconds' && config.hands.second.style !== 'none'
+                ? 'seconds'
+                : id === 'rehaut'
+                  ? 'rehaut'
+                  : id === 'numerals' && config.dial.indices.numerals !== 'none'
+                    ? 'numerals'
+                    : id === 'indices' && config.dial.indices.style !== 'none'
+                      ? 'indices'
+                      : null;
 
   const pixelRatio = Math.min(globalThis.devicePixelRatio ?? 1, 2);
   const activeRowDef = $derived(rows[nav.activeRow]!);
@@ -589,21 +591,23 @@
               class="color-button"
               type="button"
               tabindex={dRow === 0 ? 0 : -1}
-              aria-label={target === 'dial'
-                ? t().grid.dialColor
-                : target === 'lugs'
-                  ? t().grid.lugsSettings
-                  : target === 'bezel'
-                    ? t().grid.bezelColor
-                    : target === 'hands'
-                      ? t().grid.handsColor
-                      : target === 'rehaut'
-                        ? t().grid.rehautColor
-                        : target === 'numerals'
-                          ? t().grid.numeralsSettings
-                          : target === 'indices'
-                            ? t().grid.indicesSettings
-                            : t().grid.secondsColor}
+              aria-label={target === 'chapterRing'
+                ? t().grid.chapterRingColor
+                : target === 'dial'
+                  ? t().grid.dialColor
+                  : target === 'lugs'
+                    ? t().grid.lugsSettings
+                    : target === 'bezel'
+                      ? t().grid.bezelColor
+                      : target === 'hands'
+                        ? t().grid.handsColor
+                        : target === 'rehaut'
+                          ? t().grid.rehautColor
+                          : target === 'numerals'
+                            ? t().grid.numeralsSettings
+                            : target === 'indices'
+                              ? t().grid.indicesSettings
+                              : t().grid.secondsColor}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
@@ -626,7 +630,8 @@
                         : t().grid.dialMatch
                       : target === 'seconds' && config.hands.second.color === 'match'
                         ? t().grid.handsMatch
-                        : target === 'numerals' && config.dial.indices.numeralColor === 'match'
+                        : (target === 'numerals' && config.dial.indices.numeralColor === 'match') ||
+                            (target === 'chapterRing' && config.dial.chapterRingColor === 'match')
                           ? t().grid.ink
                           : colorLabel(target)}
                   </span>{/if}

@@ -1,4 +1,4 @@
-import { effectiveDialColor, numeralColor } from './dial';
+import { chapterRingColor, effectiveDialColor, numeralColor } from './dial';
 import { rehautColor } from './rehaut';
 import { normalizeNumerals, numeralSystem, type NumeralSystem } from './numerals';
 import { lumeChoice, withLume, type LumeChoice } from './lume';
@@ -9,7 +9,15 @@ import { lugJoin, type LugJoin } from './lugs';
 
 /** Pièces réglées dans le panneau latéral. */
 export type ColorTarget =
-  'dial' | 'hands' | 'seconds' | 'rehaut' | 'bezel' | 'numerals' | 'indices' | 'lugs';
+  | 'dial'
+  | 'hands'
+  | 'seconds'
+  | 'rehaut'
+  | 'bezel'
+  | 'numerals'
+  | 'indices'
+  | 'lugs'
+  | 'chapterRing';
 export interface ColorChoice {
   lugJoin?: LugJoin;
   handLayout?: HandLayout;
@@ -71,6 +79,7 @@ export function handColor(config: WatchConfig): HexColor {
 }
 
 export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  if (target === 'chapterRing') return { color: config.dial.chapterRingColor, finish: 'print' };
   if (target === 'lugs')
     return { color: targetColor(config, target) as HexColor, finish: '', lugJoin: lugJoin(config) };
   if (target === 'bezel')
@@ -120,6 +129,8 @@ export function withColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  if (target === 'chapterRing')
+    return { ...config, dial: { ...config.dial, chapterRingColor: choice.color } };
   if (target === 'lugs')
     return { ...config, case: { ...config.case, lugJoin: choice.lugJoin ?? lugJoin(config) } };
   if (target === 'numerals') config = normalizeNumerals(config);
@@ -195,6 +206,7 @@ export function withColorChoice(
 }
 
 export function targetColor(config: WatchConfig, target: ColorTarget): string {
+  if (target === 'chapterRing') return chapterRingColor(config.dial);
   if (target === 'lugs')
     return rehautColor({ ...config, rehaut: { ...config.rehaut, finish: 'metal' } });
   if (target === 'bezel') return config.bezel.color;

@@ -42,6 +42,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
     color: '#111317',
     pattern: null,
     chapterRing: 'railroad',
+    chapterRingColor: 'match',
     indices: {
       style: 'baton',
       finish: 'applied-polished',

@@ -104,6 +104,8 @@ export interface DialConfig {
   color: HexColor;
   pattern: string | null;
   chapterRing: Open<'none' | 'railroad' | 'dots' | 'ticks' | 'five-minute'>;
+  /** Encre automatique du cadran, sauf teinte choisie pour la piste des minutes. */
+  chapterRingColor: HexColor | 'match';
   indices: {
     style: Open<
       | 'baton'
