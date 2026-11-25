@@ -7,7 +7,8 @@ import { effectiveDialShape } from '../core/geometry/dial-shape';
 import { watchDimensions } from '../core/geometry/dimensions';
 import { DIAL_PATTERN_SETTINGS, isDialPatternFinish } from './dial-patterns';
 import { isBlackTonneau } from '../core/config/instrument';
-import { effectiveDialColor } from '../core/config/dial';
+import { effectiveDialColor, hasIntrinsicColor } from '../core/config/dial';
+import { dialSurface } from '../core/config/details';
 import { indexColor } from '../core/config/colors';
 import { lumeChoice, lumePigment } from '../core/config/lume';
 import type { WatchConfig } from '../core/config/types';
@@ -332,17 +333,53 @@ export class MaterialLibrary {
     const span = isDialPatternFinish(finish)
       ? Number((2 * watchDimensions(config).dialExtent).toFixed(3))
       : 0;
-    return this.cached(`dial:${finish}:${color}:${refined}:${shape}:${span}`, () => {
-      const material = this.dialMaterial(finish, color, refined, shape, span);
-      let shadow = this.dialShadows.get(shape);
-      if (!shadow) {
-        shadow = this.keep(radialOcclusionTexture(shape === 'round' ? 512 : 256, shape));
-        this.dialShadows.set(shape, shadow);
-      }
-      material.aoMap = shadow;
-      material.aoMapIntensity = 1;
-      return material;
-    });
+    const surface = dialSurface(config);
+    return this.cached(
+      `dial:${finish}:${color}:${refined}:${shape}:${span}:${JSON.stringify(config.details?.dial)}`,
+      () => {
+        const material = this.dialMaterial(finish, color, refined, shape, span / surface.grainSize);
+        if (config.details?.dial && !hasIntrinsicColor(finish)) {
+          if (material.normalMap) {
+            material.normalScale.multiplyScalar(surface.grainDepth);
+            if (finish === 'grained' && surface.grainSize !== 1) {
+              material.normalMap = this.keep(material.normalMap.clone());
+              material.normalMap.repeat.multiplyScalar(1 / surface.grainSize);
+              if (material.roughnessMap) {
+                material.roughnessMap = this.keep(material.roughnessMap.clone());
+                material.roughnessMap.repeat.multiplyScalar(1 / surface.grainSize);
+              }
+            }
+            material.roughness = surface.grainRoughness;
+          }
+          if (surface.fume > 0 || finish === 'fume') {
+            const center = new THREE.Color(color);
+            if (finish === 'fume') center.offsetHSL(0, 0, 0.08);
+            const edge =
+              surface.edgeColor === 'auto'
+                ? new THREE.Color(color).multiplyScalar(0.18)
+                : new THREE.Color(surface.edgeColor);
+            edge.copy(center.clone().lerp(edge, surface.fume));
+            material.color.set('#ffffff');
+            material.map = this.keep(
+              radialGradientTexture(
+                center.getStyle(),
+                edge.getStyle(),
+                shape === 'round' ? 512 : 256,
+                shape,
+              ),
+            );
+          }
+        }
+        let shadow = this.dialShadows.get(shape);
+        if (!shadow) {
+          shadow = this.keep(radialOcclusionTexture(shape === 'round' ? 512 : 256, shape));
+          this.dialShadows.set(shape, shadow);
+        }
+        material.aoMap = shadow;
+        material.aoMapIntensity = 1;
+        return material;
+      },
+    );
   }
 
   private dialMaterial(

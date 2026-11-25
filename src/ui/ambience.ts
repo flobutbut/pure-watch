@@ -141,6 +141,7 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
     case 'tapisserie':
     case 'waves':
     case 'scales':
+    case 'topographic':
     case 'hammered': {
       const line = rgba(tone === 'dark' ? '#ffffff' : '#000000', 0.025);
       const patterns: Record<string, string> = {
@@ -154,6 +155,7 @@ export function ambienceFor(dialConfig: { finish: string; color: string }): Ambi
         tapisserie: `repeating-linear-gradient(0deg, ${line} 0px 1px, transparent 1px 12px), repeating-linear-gradient(90deg, ${line} 0px 1px, transparent 1px 12px)`,
         waves: `repeating-radial-gradient(ellipse at 15% 130%, transparent 0px 20px, ${line} 21px 23px)`,
         scales: `repeating-radial-gradient(ellipse at 50% 110%, transparent 0px 12px, ${line} 13px 14px)`,
+        topographic: `repeating-radial-gradient(ellipse at 35% 40%, transparent 0px 18px, ${line} 19px 20px, transparent 21px 27px)`,
         hammered: [
           glow(25, 35, 24, 28, '#ffffff', 0.035),
           glow(72, 62, 30, 24, '#ffffff', 0.04),

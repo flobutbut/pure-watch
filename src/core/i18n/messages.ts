@@ -171,6 +171,7 @@ const fr = {
     rehaut: 'Matière et couleur du réhaut',
     numerals: 'Chiffres',
     indices: 'Index',
+    powerReserve: 'Réglages de la réserve de marche',
     seconds: 'Couleur de la trotteuse',
     rehautFinish: 'Finition du réhaut',
     handsFinish: 'Finition des aiguilles',
@@ -197,6 +198,8 @@ const fr = {
     recent: 'Récentes',
     recentLabel: 'Couleurs récentes',
     reuse: (hex: string) => `Réutiliser ${hex}`,
+    custom: 'Couleur libre',
+    reuseFrom: 'Reprendre une couleur de la montre',
     spectrum: (s: number, v: number) =>
       `Saturation ${s} %, luminosité ${v} % : utilisez les flèches, Maj pour un pas de dix`,
     hue: 'Teinte',
@@ -533,6 +536,7 @@ const en: Messages = {
     rehaut: 'Flange material and color',
     numerals: 'Numerals',
     indices: 'Indices',
+    powerReserve: 'Power reserve settings',
     seconds: 'Seconds hand color',
     rehautFinish: 'Flange finish',
     handsFinish: 'Hands finish',
@@ -559,6 +563,8 @@ const en: Messages = {
     recent: 'Recent',
     recentLabel: 'Recent colors',
     reuse: (hex: string) => `Reuse ${hex}`,
+    custom: 'Custom color',
+    reuseFrom: 'Reuse a color from the watch',
     spectrum: (s: number, v: number) =>
       `Saturation ${s}%, brightness ${v}%: use the arrow keys, Shift for steps of ten`,
     hue: 'Hue',

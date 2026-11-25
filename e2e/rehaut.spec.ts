@@ -21,6 +21,10 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(link({ a: 5, aa: 5, n: 5, x: '#19476B' }));
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
+  const finish = (name: string) =>
+    page
+      .getByRole('radiogroup', { name: 'Finition du réhaut', exact: true })
+      .getByRole('radio', { name, exact: true });
   await seek(page, 'rehaut');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
@@ -31,17 +35,20 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
     'aria-activedescendant',
     'cell-rehaut-sloped',
   );
-  const trigger = page.getByRole('button', { name: 'Matière et couleur du réhaut', exact: true });
+  // The flange and its scale rows share this button: only the active row's is focusable.
+  const trigger = page
+    .getByRole('button', { name: 'Matière et couleur du réhaut', exact: true })
+    .and(page.locator('[tabindex="0"]'));
   const saved = page.url();
   await trigger.click();
-  await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
+  await finish('Couleur libre').click();
   await (await hexField(page)).fill('#C85432');
   expect(page.url()).toBe(saved);
   await page.getByRole('button', { name: 'Rétablir' }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(page.url()).toBe(saved);
   await trigger.click();
-  await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
+  await finish('Couleur libre').click();
   await (await hexField(page)).fill('#C85432');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({
@@ -54,12 +61,12 @@ test('les profils, graduations et couleurs du réhaut se prévisualisent et surv
     ae: '#C85432',
   });
   await trigger.click();
-  await page.getByRole('button', { name: 'Matière du boîtier', exact: true }).click();
+  await finish('Matière du boîtier').click();
   await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).ad).toBe(2);
   await trigger.click();
-  await page.getByRole('button', { name: 'Couleur libre', exact: true }).click();
+  await finish('Couleur libre').click();
   await expect(await hexField(page)).toHaveValue('#C85432');
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await page.getByRole('grid').focus();

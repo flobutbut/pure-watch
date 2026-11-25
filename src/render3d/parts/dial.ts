@@ -20,6 +20,7 @@ import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 import { hasLume } from '../../core/config/lume';
 import { INDEX_RADIUS_RANGE } from '../../core/config/colors';
+import { indexAt } from '../../core/config/details';
 import { indexPlate } from './inserts';
 
 export interface DialParts {
@@ -283,9 +284,25 @@ export function buildIndices(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
+  hours?: readonly number[],
 ): THREE.Group {
   const group = new THREE.Group();
   group.name = 'indices';
+  if (!hours && Object.keys(config.details?.indices ?? {}).length) {
+    const plain = { ...config, details: { ...config.details, indices: undefined } };
+    const ordinary = Array.from({ length: 12 }, (_, h) => h).filter(
+      (h) => !config.details?.indices?.[String(h || 12)],
+    );
+    if (ordinary.length) group.add(buildIndices(plain, d, lib, ordinary));
+    for (const key of Object.keys(config.details!.indices!)) {
+      const hour = Number(key) % 12;
+      const specific = indexAt(config, hour);
+      const part = buildIndices(specific, d, lib, [hour]);
+      part.name = `index-${key}h`;
+      group.add(part);
+    }
+    return group;
+  }
   // Each composition resolves to existing geometries, shared across its hours.
   const skip = new Set([
     ...numeralHours(config.dial.indices.numerals),
@@ -307,6 +324,7 @@ export function buildIndices(
   const parts: THREE.BufferGeometry[] = [];
   const inserts: THREE.BufferGeometry[] = [];
   for (let hour = 0; hour < 12; hour++) {
+    if (hours && !hours.includes(hour)) continue;
     if (skip.has(hour)) continue;
     const style = config.dial.indices.style;
     const resolved =

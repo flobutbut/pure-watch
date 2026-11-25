@@ -4,6 +4,7 @@ import { ralName, tint } from '../../core/color/names';
 import { bezelScale, hasBezelInsert, bezelLayout, bezelShape } from '../../core/config/bezel';
 import { handAdjustment, handStyle } from '../../core/config/hands';
 import { PART_SETTINGS } from '../colors/part-settings';
+import { detailTraits } from './detail-traits';
 import { lugJoin } from '../../core/config/lugs';
 import { LUG_SETTINGS } from '../colors/lug-settings';
 import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
@@ -217,6 +218,7 @@ export function identitySections(
     if (!section) sections.push((section = { title, traits: [] }));
     section.traits.push({ label: row.i18n.name, value: rowValue(row, config) });
     section.traits.push(...colorTraits(row, config, locale));
+    section.traits.push(...detailTraits(row.id, config, locale));
     if (row.id === 'lugs' && config.case.lugs !== 'none')
       section.traits.push({
         label: LUG_SETTINGS[locale].label,

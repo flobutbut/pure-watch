@@ -23,14 +23,14 @@ test('le raccord se prévisualise, se rétablit, se partage et reste mémorisé 
   const saved = page.url();
   const button = page.getByRole('button', { name: 'Paramètres des cornes', exact: true });
   await button.click();
-  await page.getByRole('button', { name: 'Affleurant', exact: true }).click();
+  await page.getByRole('radio', { name: 'Affleurant', exact: true }).click();
   expect(page.url()).toBe(saved);
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Détaché', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Détaché', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
-  await page.getByRole('button', { name: 'Fondu', exact: true }).click();
+  await page.getByRole('radio', { name: 'Fondu', exact: true }).click();
   await page.waitForTimeout(550);
   await page.screenshot({ path: `documentation/lug-join/panel-${info.project.name}.png` });
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
@@ -41,8 +41,8 @@ test('le raccord se prévisualise, se rétablit, se partage et reste mémorisé 
   expect(page.url()).toBe(shared);
   await lugRow(page);
   await button.click();
-  await expect(page.getByRole('button', { name: 'Fondu', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Fondu', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
@@ -52,8 +52,8 @@ test('le raccord se prévisualise, se rétablit, se partage et reste mémorisé 
   expect(payload(page).ba).toBe(3);
   await page.keyboard.press('Home');
   await button.click();
-  await expect(page.getByRole('button', { name: 'Fondu', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Fondu', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();

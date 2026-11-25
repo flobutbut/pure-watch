@@ -64,6 +64,62 @@ Les tailles de glyphes (×, ↺, chiffres d'aide) et les cercles (`50%`) restent
 
 « ↺ Rétablir », au pied des panneaux de réglage (couleurs, dimensions).
 
+### `SegmentedControl`
+
+Deux à quatre **modes exclusifs** aux libellés courts, côte à côte dans un même rail
+(contour et fond légers, `--radius-m`). Le segment choisi reprend le rendu « choisi » de
+`Button` ; les segments se partagent la largeur à parts égales.
+
+- Sémantique `radiogroup` / `radio` + `aria-checked` : une seule tabulation pour le groupe,
+  ←/→ (ou ↑/↓), Début et Fin changent le choix sans faire défiler la grille derrière.
+- `label` donne le nom accessible ; un libellé visible se pose au-dessus avec
+  `.section-label`.
+- Exemples : Automatique / Couleur libre, Arabes / Romains, Sans insert / Luminescent,
+  Hériter / Personnaliser, jonction des cornes, repères accentués du réhaut.
+
+### `ChoiceGroup`
+
+Au-delà de quatre options, ou quand une option porte un aperçu (pastille de finition,
+pigment), les choix restent des boutons `Button` avec `aria-pressed`, regroupés sous un
+libellé et renvoyés à la ligne. Exemples : forme et finition de la lunette, dessin des index,
+heures des index (quatre colonnes). Aucun menu déroulant.
+
+### Réglage de couleur : `ColorField` (`src/ui/colors`)
+
+**Toute couleur d'un panneau passe par `ColorField`** — couleur principale d'un élément,
+encre du réhaut, fumé, réserve de marche, index personnalisé. Toujours dans cet ordre :
+
+1. un libellé (`.section-label`), omis seulement quand le titre du panneau nomme déjà la
+   couleur et qu'il n'y a pas de mode ;
+2. une `SegmentedControl` des modes : d'abord les couleurs qui en suivent une autre
+   (« Automatique », « Encre du cadran », « Assortie aux aiguilles », « Assorti au cadran »,
+   « Matière du boîtier »), en dernier « Couleur libre » (`CUSTOM`) ;
+3. en couleur libre seulement :
+   - les couleurs d'autres éléments de la montre à reprendre d'un geste (`matches`), en
+     boutons `compact` précédés de leur pastille ;
+   - le `ColorPicker` : teintes proposées, couleurs récentes, spectre, curseur de teinte et
+     champ HEX replié dans « Avancé ».
+
+Un mode lié **masque** le sélecteur au lieu de le griser. Sans `modes`, le réglage se réduit
+au sélecteur (couleur toujours libre). Le sélecteur natif du système n'est pas utilisé, et
+aucun panneau n'appelle `ColorPicker` directement.
+
+```svelte
+<ColorField
+  label={t().colors.color}
+  value={color}
+  {presets}
+  modes={[
+    { value: 'match', label: t().colors.dialInk },
+    { value: CUSTOM, label: t().colors.custom },
+  ]}
+  mode={matched ? 'match' : CUSTOM}
+  onmode={chooseMode}
+  matches={[{ label: t().colors.handsColor, color: handColor(config) }]}
+  onchange={selectHex}
+/>
+```
+
 ### `Sheet`
 
 Le seul panneau de l'interface : en-tête (sur-titre facultatif, titre, croix), barre

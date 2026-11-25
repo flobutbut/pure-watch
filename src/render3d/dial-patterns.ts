@@ -11,6 +11,7 @@ export const DIAL_PATTERN_FINISHES = [
   'tapisserie',
   'waves',
   'scales',
+  'topographic',
 ] as const;
 export type DialPatternFinish = (typeof DIAL_PATTERN_FINISHES)[number];
 export const DIAL_PATTERN_SETTINGS: Record<
@@ -28,6 +29,7 @@ export const DIAL_PATTERN_SETTINGS: Record<
   tapisserie: { heightMm: 0.075, roughness: [0.28, 0.5], metalness: 0.64 },
   waves: { heightMm: 0.045, roughness: [0.27, 0.49], metalness: 0.66 },
   scales: { heightMm: 0.045, roughness: [0.3, 0.52], metalness: 0.64 },
+  topographic: { heightMm: 0.024, roughness: [0.55, 0.78], metalness: 0.3 },
 };
 export function isDialPatternFinish(finish: string): finish is DialPatternFinish {
   return DIAL_PATTERN_FINISHES.some((value) => value === finish);
@@ -48,6 +50,16 @@ function noise(x: number, y: number): number {
 export function dialPatternHeight(finish: DialPatternFinish, x: number, y: number): number {
   const r = Math.hypot(x, y);
   switch (finish) {
+    case 'topographic': {
+      // Generic, deterministic terrain contours; this does not represent a real mountain.
+      const terrain =
+        0.8 * Math.exp(-((x + 3.5) ** 2 + (y - 2) ** 2) / 42) +
+        0.65 * Math.exp(-((x - 5) ** 2 + (y + 4) ** 2) / 29) +
+        0.13 * Math.sin(x * 0.23 + Math.sin(y * 0.21)) +
+        0.09 * Math.cos(y * 0.27 - Math.sin(x * 0.16));
+      const band = Math.abs(fract(terrain * 12) - 0.5);
+      return 0.9 - 0.7 * Math.exp(-((band / 0.055) ** 2));
+    }
     case 'guilloche': {
       const center = Math.min(1, r / 0.8);
       return (

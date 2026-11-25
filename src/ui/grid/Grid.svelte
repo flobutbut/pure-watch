@@ -603,21 +603,23 @@
                             ? t().grid.numeralsSettings
                             : target === 'indices'
                               ? t().grid.indicesSettings
-                              : t().grid.secondsColor}
+                              : target === 'powerReserve'
+                                ? t().colors.powerReserve
+                                : t().grid.secondsColor}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs'].includes(target)}
+              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve'].includes(target)}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
               <span>
-                {['numerals', 'indices', 'hands', 'bezel', 'lugs'].includes(target)
+                {['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve'].includes(target)
                   ? t().grid.settings
                   : t().grid.color}
-                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs'}<span
+                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve'}<span
                     class="color-value"
                   >
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'

@@ -33,11 +33,11 @@ test('un ancien lien romain complet reste romain, puis change d’écriture sans
   expect(payload(page)).toMatchObject({ D: 2, ao: 2, E: 4, aj: 1.3, ak: 0.85, al: '#C9A24A' });
   await expect(page.getByRole('row', { name: 'Index', exact: true })).toHaveCount(0);
   await parameters(page).click();
-  await expect(page.getByRole('button', { name: 'Romains', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Romains', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
-  await page.getByRole('button', { name: 'Arabes', exact: true }).click();
+  await page.getByRole('radio', { name: 'Arabes', exact: true }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({ D: 2, E: 4, aj: 1.3, ak: 0.85, al: '#C9A24A' });
   expect(payload(page).ao).toBeUndefined();
@@ -45,8 +45,8 @@ test('un ancien lien romain complet reste romain, puis change d’écriture sans
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
   await numeralsRow(page);
   await parameters(page).click();
-  await expect(page.getByRole('button', { name: 'Arabes', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Arabes', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
 });
@@ -60,7 +60,7 @@ test('XII seul, XII et VI, puis tous : mêmes positions et index disponibles en 
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
   await numeralsRow(page);
   await parameters(page).click();
-  await page.getByRole('button', { name: 'Romains', exact: true }).click();
+  await page.getByRole('radio', { name: 'Romains', exact: true }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page)).toMatchObject({ D: 4, ao: 2, A: 9 });
   const grid = page.getByRole('grid');
@@ -70,18 +70,18 @@ test('XII seul, XII et VI, puis tous : mêmes positions et index disponibles en 
   expect(payload(page)).toMatchObject({ D: 5, ao: 2 });
   await expect(page.getByRole('row', { name: 'Index', exact: true })).toHaveCount(1);
   await parameters(page).click();
-  await expect(page.getByRole('button', { name: 'Romains', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Romains', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
   await page.screenshot({
     path: `documentation/numeral-system/panel-${testInfo.project.name}.png`,
     animations: 'disabled',
   });
-  await page.getByRole('button', { name: 'Arabes', exact: true }).click();
+  await page.getByRole('radio', { name: 'Arabes', exact: true }).click();
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Romains', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Romains', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
   await page.keyboard.press('Escape');

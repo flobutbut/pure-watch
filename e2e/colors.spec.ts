@@ -27,8 +27,15 @@ test('la piste des minutes possède sa palette et conserve sa couleur après rec
   });
   await trigger.click();
   const original = page.url();
+  await page.getByRole('radio', { name: 'Couleur libre', exact: true }).click();
   await (await hexField(page)).fill('#C92750');
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Encre du cadran', exact: true })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await expect(page.getByRole('textbox', { name: 'Code HEX' })).toHaveCount(0);
+  await page.getByRole('radio', { name: 'Couleur libre', exact: true }).click();
   await expect(await hexField(page)).toHaveValue('#F2F1EC');
   await (await hexField(page)).fill('#C92750');
   expect(page.url()).toBe(original);
@@ -46,7 +53,7 @@ test('la piste des minutes possède sa palette et conserve sa couleur après rec
   await expect(trigger).toHaveAttribute('data-color', '#C92750');
   await trigger.click();
   await expect(await hexField(page)).toHaveValue('#C92750');
-  await page.getByRole('button', { name: 'Encre du cadran', exact: true }).click();
+  await page.getByRole('radio', { name: 'Encre du cadran', exact: true }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).be).toBeUndefined();
   await expect(trigger).toHaveAttribute('data-color', '#F2F1EC');
@@ -125,7 +132,7 @@ test('métal, laque et trotteuse assortie se retrouvent après rechargement', as
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowDown');
   await page.getByRole('button', { name: 'Couleur de la trotteuse', exact: true }).click();
-  await page.getByRole('button', { name: 'Assortie aux aiguilles', exact: true }).click();
+  await page.getByRole('radio', { name: 'Assortie aux aiguilles', exact: true }).click();
   await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowUp');

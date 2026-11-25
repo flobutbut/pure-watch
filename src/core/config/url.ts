@@ -12,6 +12,7 @@ import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
 import { HAND_STYLES } from './hands';
 import { BEZEL_SHAPES, BEZEL_FINISHES } from './bezel';
 import { LUG_JOINS } from './lugs';
+import { detailsSchema, cleanDetails } from './details';
 import { V1_PREFIX, V2_PREFIX, decodeLinkPayload, encodeLinkPayload } from './link-codec';
 
 // Wire defaults and identifiers are immutable for v1; link format 2 reuses them as they are.
@@ -204,6 +205,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     tapisserie: 17,
     waves: 18,
     scales: 19,
+    topographic: 20,
   }),
   x: field('dial.color', hex),
   y: field('dial.pattern', text.nullable()),
@@ -351,6 +353,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   bc: field('dial.indices.indexLength', z.number().finite().min(0.5).max(2)),
   bd: field('dial.indices.indexWidth', z.number().finite().min(0.5).max(2)),
   be: field('dial.chapterRingColor', z.union([hex, z.literal('match')])),
+  bf: field('details', detailsSchema),
 };
 
 /**
@@ -367,6 +370,7 @@ const LEGACY_V1: Readonly<Record<string, { paths: readonly string[]; schema: z.Z
 /** Small default-free payload; colors, Unicode text and unexposed options are retained. */
 export function encodeConfigHash(config: WatchConfig): string {
   config = normalizeNumerals(normalizeLume(config));
+  config = { ...config, details: cleanDetails(config.details) };
   const payload: Record<string, unknown> = {};
   for (const [key, descriptor] of Object.entries(FIELDS_V1)) {
     const value = getAtPath(config, descriptor.path);

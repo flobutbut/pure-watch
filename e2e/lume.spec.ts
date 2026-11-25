@@ -25,7 +25,7 @@ test('les pigments associent jour et nuit, se rétablissent et se retrouvent dan
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
   await handsPanel(page).click();
   await page.getByRole('button', { name: 'Or', exact: true }).click();
-  await page.getByRole('button', { name: 'Luminescent', exact: true }).click();
+  await page.getByRole('radio', { name: 'Luminescent', exact: true }).click();
   await page
     .getByRole('group', { name: 'Pigment luminescent' })
     .getByRole('button', { name: 'BGW9', exact: true })
@@ -46,7 +46,7 @@ test('les pigments associent jour et nuit, se rétablissent et se retrouvent dan
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-dive');
   await indicesPanel(page).click();
   await page.getByRole('button', { name: 'Or', exact: true }).click();
-  await page.getByRole('button', { name: 'Luminescent', exact: true }).click();
+  await page.getByRole('radio', { name: 'Luminescent', exact: true }).click();
   await page
     .getByRole('group', { name: 'Pigment luminescent' })
     .getByRole('button', { name: 'C3', exact: true })
@@ -80,15 +80,15 @@ test('les pigments associent jour et nuit, se rétablissent et se retrouvent dan
   await expect(
     page.getByText('Beige patiné de jour · Vert la nuit', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Sans insert', exact: true }).click();
+  await page.getByRole('radio', { name: 'Sans insert', exact: true }).click();
   await page.getByRole('button', { name: 'Acier bleui', exact: true }).click();
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Or', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await expect(page.getByRole('button', { name: 'Luminescent', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(page.getByRole('radio', { name: 'Luminescent', exact: true })).toHaveAttribute(
+    'aria-checked',
     'true',
   );
   await expect(page.getByRole('button', { name: 'BGW9', exact: true })).toHaveAttribute(
@@ -105,13 +105,14 @@ test('les pigments associent jour et nuit, se rétablissent et se retrouvent dan
   const card = page.getByRole('button', { name: 'Masquer la fiche d’identité', exact: true });
   if (await card.count()) await card.click();
   await grid.focus();
+  // The 3D view's own tool, not the one in the settings shown beside it.
+  const nightTool = page
+    .getByRole('button', { name: 'Aperçu nocturne', exact: true })
+    .and(page.getByTitle('Aperçu nocturne (N)'));
   await page.keyboard.press('1');
   await page.keyboard.press('p');
   await page.keyboard.press('n');
-  await expect(page.getByRole('button', { name: 'Aperçu nocturne', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(nightTool).toHaveAttribute('aria-pressed', 'true');
   await page.waitForTimeout(800);
   await page.screenshot({
     path: `documentation/lume/night-${info.project.name}.png`,
@@ -119,10 +120,7 @@ test('les pigments associent jour et nuit, se rétablissent et se retrouvent dan
   });
   expect(page.url()).toBe(saved);
   await page.keyboard.press('n');
-  await expect(page.getByRole('button', { name: 'Aperçu nocturne', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
+  await expect(nightTool).toHaveAttribute('aria-pressed', 'false');
   expect(errors).toEqual([]);
 });
 
@@ -134,7 +132,7 @@ test('les index imprimés gardent leur couleur et la luminescence peut être ret
   await page.getByRole('grid').focus();
   await page.keyboard.press('ArrowUp');
   await indicesPanel(page).click();
-  await page.getByRole('button', { name: 'Sans insert', exact: true }).click();
+  await page.getByRole('radio', { name: 'Sans insert', exact: true }).click();
   await page.getByRole('button', { name: 'Imprimé', exact: true }).click();
   await (await hexField(page)).fill('#1A2B3C');
   await closePanel(page);
@@ -146,7 +144,7 @@ test('les index imprimés gardent leur couleur et la luminescence peut être ret
   });
   expect(payload(page).C).toBeUndefined();
   await indicesPanel(page).click();
-  await page.getByRole('button', { name: 'Luminescent', exact: true }).click();
+  await page.getByRole('radio', { name: 'Luminescent', exact: true }).click();
   await expect(page.getByRole('button', { name: 'BGW9', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
