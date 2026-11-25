@@ -41,6 +41,8 @@
     onclose: (choice: ColorChoice) => void;
     night?: boolean;
     onnight?: () => void;
+    /** Beside the 3D preview: the view keeps the keyboard (arrows browse the rows). */
+    companion?: boolean;
   }
   let {
     target,
@@ -50,6 +52,7 @@
     onclose,
     night = false,
     onnight = () => {},
+    companion = false,
   }: Props = $props();
   const initial = untrack(() => colorChoice(config, target));
   const initialHex = untrack(() =>
@@ -245,8 +248,9 @@
   eyebrow={t().colors.eyebrow}
   {title}
   closeLabel={t().colors.close}
-  modal
+  modal={!companion}
   inertPage={false}
+  placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
   {#if handLayout}

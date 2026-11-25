@@ -39,6 +39,8 @@
     type CaseDimensions,
   } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
+  import { settingsForRow } from './ui/grid/row-settings';
+  import { browsesFrom, commandFromKey } from './ui/grid/keyboard';
   import { generationPrompt } from './ui/identity/prompt';
   import { ambienceFor, NIGHT_AMBIENCE } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
@@ -100,6 +102,23 @@
       values: caseDimensions({ ...config, case: { ...config.case, ...size } }),
     };
   });
+  /**
+   * The preview (3D view): the watch with the active row's settings beside it, following the
+   * rows browsed with the arrows. The card and sharing take its place while they are open; the
+   * panel's × puts the settings away until the view closes.
+   */
+  let settingsPreview = $state(false);
+  const previewSettings = $derived(
+    settingsPreview && nav.mode === 'view3d' && !card && !sharing
+      ? settingsForRow(rows[nav.activeRow]?.id ?? '', config)
+      : null,
+  );
+  /** Changes with every step in the preview: the panel starts afresh from the new watch. */
+  let previewStep = $state(0);
+  /** The colour panel open, in the grid or in the preview (its presets depend on it). */
+  const panelTarget = $derived(
+    colorTarget ?? (previewSettings && previewSettings !== 'dimensions' ? previewSettings : null),
+  );
   let bump = $state.raw<{ dir: Bump; n: number }>({ dir: null, n: 0 });
   let announcement = $state('');
   let renderer = $state.raw<PartRenderer | null>(null);
@@ -115,7 +134,7 @@
   );
   const colorPresets = $derived([
     // Chiffres et minuterie : blanc et noir d'impression, puis les accents de la trotteuse.
-    ...(['numerals', 'chapterRing'].includes(colorTarget ?? '')
+    ...(['numerals', 'chapterRing'].includes(panelTarget ?? '')
       ? [
           { name: t().app.white, color: '#F2F1EC' },
           { name: t().app.black, color: '#1B1F27' },
@@ -126,7 +145,7 @@
       named.rows.find(
         (row) =>
           row.id ===
-          (['seconds', 'numerals', 'chapterRing'].includes(colorTarget ?? '')
+          (['seconds', 'numerals', 'chapterRing'].includes(panelTarget ?? '')
             ? 'seconds-color'
             : 'dial-color'),
       )?.variants ?? []
@@ -134,6 +153,41 @@
       .filter((variant) => typeof variant.value === 'string' && variant.value.startsWith('#'))
       .map((variant) => ({ name: variant.i18n.name, color: variant.value as string })),
   ]);
+
+  /** Keeps what the preview's settings panel shows on the watch (the panel saves as it goes). */
+  function commitPreview() {
+    if (editing || !previewConfig) return;
+    const before = config;
+    const next = previewConfig;
+    previewConfig = null;
+    if (encodeConfigHash(next) === encodeConfigHash(before)) return;
+    config = next;
+    nav = {
+      ...nav,
+      selectionByRow: syncSelection(catalog, before, next, nav.selectionByRow, ''),
+    };
+    linkNotice = '';
+  }
+
+  /** Tool button and R key in the preview: shows or hides the row's settings. */
+  function toggleSettings() {
+    if (card || sharing) {
+      // The settings come back in place of the card or sharing.
+      card = null;
+      sharing = null;
+      settingsPreview = true;
+      return;
+    }
+    if (settingsPreview) commitPreview();
+    settingsPreview = !settingsPreview;
+  }
+
+  /** The preview's panel closed by itself (×, Escape): the 3D view stays, without settings. */
+  function closePreviewSettings(next: WatchConfig) {
+    previewConfig = next;
+    commitPreview();
+    settingsPreview = false;
+  }
 
   /** Leaves the panel without touching the configuration (a link took over). */
   function dropEditor() {
@@ -201,6 +255,7 @@
   function followConfigUrl() {
     if (location.href === lastConfigUrl) return;
     dropEditor();
+    resume = null;
     lastConfigUrl = location.href;
     const loaded = readConfigUrl(new URL(location.href), catalog);
     linkNotice = loaded.notice;
@@ -251,6 +306,8 @@
 
   function run(command: NavCommand) {
     if (editing) return;
+    // The preview's settings are kept before the watch moves on to another variant or row.
+    commitPreview();
     const result = step(nav, rowViews, command);
     if (result.bump) bump = { dir: result.bump, n: bump.n + 1 };
     if (!result.changed) return;
@@ -275,6 +332,7 @@
         rows.findIndex((r) => r.id === row.id),
       ),
     };
+    previewStep++;
     const variant = row.variants[index]?.i18n.name ?? '';
     announcement = rowChanged ? t().app.rowVariant(row.i18n.name, variant) : variant;
   }
@@ -286,31 +344,62 @@
     if (editing) return;
     if (nav.mode !== 'grid') return;
     nav = transition(nav, 'open');
+    // However it opens, the preview shows the settings of the row it is on.
+    settingsPreview = true;
     announcement = t().app.view3d;
     clearTimeout(modeTimer);
     modeTimer = setTimeout(() => (nav = transition(nav, 'opened')), OPEN_MS);
   }
 
+  /** Settings panel left for the card or sharing: leaving the 3D view comes back to it. */
+  let resume = $state.raw<{ color: ColorTarget } | { dimensions: true } | null>(null);
+
+  /** Closes the settings panel, keeping what it shows, and says which panel it was. */
+  function suspendEditor(): typeof resume {
+    if (colorTarget) {
+      const target = colorTarget;
+      closeColor();
+      return { color: target };
+    }
+    if (dimensionsEditing) {
+      if (previewConfig) closeDimensions(caseDimensions(previewConfig));
+      else dropEditor();
+      return { dimensions: true };
+    }
+    return null;
+  }
+
+  /**
+   * Shows the 3D watch with a panel beside it (card or sharing), from the grid, a settings
+   * panel or the 3D view. `opened`: leaving the panel also leaves the view.
+   */
+  function openPanel(): { opened: boolean } | null {
+    commitPreview();
+    const from = suspendEditor();
+    // Switching between card and sharing keeps the way back of the first one.
+    const opened = nav.mode === 'grid' || (card?.opened ?? sharing?.opened ?? false);
+    if (nav.mode === 'grid') open();
+    else if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return null;
+    if (from) resume = from;
+    return { opened };
+  }
+
   /** Sharing shows the watch in 3D beside the panel, as the identity card does. */
   function openShare() {
-    if (editing) return;
     if (sharing) return closeShare(true);
-    const opened = nav.mode === 'grid';
-    if (opened) open();
-    else if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
+    const panel = openPanel();
+    if (!panel) return;
     card = null;
-    sharing = { opened };
+    sharing = panel;
   }
 
   /** The header's card button: opens the 3D view with the identity card beside it. */
   function openCard() {
-    if (editing) return;
     if (card) return closeCard(true);
-    const opened = nav.mode === 'grid';
-    if (opened) open();
-    else if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
+    const panel = openPanel();
+    if (!panel) return;
     sharing = null;
-    card = { opened };
+    card = panel;
   }
 
   function closeCard(back: boolean) {
@@ -322,8 +411,9 @@
   /** In the 3D view (I key): shows or hides the card, the view stays open. */
   function toggleCard() {
     if (card) return closeCard(false);
+    const opened = sharing?.opened ?? false;
     sharing = null;
-    card = { opened: false };
+    card = { opened };
   }
 
   function closeShare(back: boolean) {
@@ -333,12 +423,19 @@
   }
 
   function close() {
+    commitPreview();
+    settingsPreview = false;
     sharing = null;
     card = null;
     if (nav.mode !== 'view3d' && nav.mode !== 'opening3d') return;
     nav = transition(nav, 'close');
     clearTimeout(modeTimer);
     modeTimer = setTimeout(() => (nav = transition(nav, 'closed')), OPEN_MS);
+    // Back to the settings panel the view was opened from.
+    const back = resume;
+    resume = null;
+    if (back && 'color' in back) colorTarget = back.color;
+    else if (back) dimensionsEditing = true;
   }
 </script>
 
@@ -346,6 +443,14 @@
   onkeydown={(e) => {
     // Modal sheets own Escape and commit their last valid values.
     if (e.key === 'Escape' && !editing && !e.defaultPrevented) close();
+    // The preview's panel is beside the view, outside the grid: its plain buttons leave the
+    // arrows to the rows, and the view takes the keyboard back.
+    if (previewSettings === null || e.defaultPrevented) return;
+    const command = commandFromKey(e);
+    if (!command || !browsesFrom(e.target, '[data-preview-panel]')) return;
+    e.preventDefault();
+    run(command);
+    document.querySelector<HTMLElement>('[role="grid"]')?.focus({ preventScroll: true });
   }}
 />
 
@@ -378,6 +483,10 @@
     onnight={() => (night = !night)}
     oncommand={run}
     onopen={open}
+    settings={previewSettings !== null}
+    settingsOn={settingsPreview && !card && !sharing}
+    settingsAvailable={settingsForRow(rows[nav.activeRow]?.id ?? '', config) !== null}
+    ontogglesettings={toggleSettings}
     onclose={close}
     card={card !== null}
     ontogglecard={toggleCard}
@@ -393,6 +502,7 @@
       dimensionsEditing = true;
     }}
     onbezel={(angle) => {
+      commitPreview();
       config = { ...config, bezel: { ...config.bezel, angleDeg: bezelAngle(angle) } };
       linkNotice = '';
     }}
@@ -414,6 +524,34 @@
       onpreview={previewDimensions}
       onclose={closeDimensions}
     />
+  {:else if previewSettings === 'dimensions'}
+    {#key previewStep}
+      <div data-preview-panel class="preview-panel">
+        <DimensionsPanel
+          {config}
+          defaults={sizeDefaults}
+          companion
+          onpreview={(values) => (previewConfig = withCaseDimensions(config, values))}
+          onclose={(values) => closePreviewSettings(withCaseDimensions(config, values))}
+        />
+      </div>
+    {/key}
+  {:else if previewSettings}
+    {@const target = previewSettings}
+    {#key `${target}:${previewStep}`}
+      <div data-preview-panel class="preview-panel">
+        <ColorPanel
+          {target}
+          {config}
+          presets={colorPresets}
+          {night}
+          companion
+          onnight={() => (night = !night)}
+          onpreview={(choice) => (previewConfig = withColorChoice(config, target, choice))}
+          onclose={(choice) => closePreviewSettings(withColorChoice(config, target, choice))}
+        />
+      </div>
+    {/key}
   {/if}
   <p class="sr-only" aria-live="polite">{announcement}</p>
   {#if linkNotice}<p class="link-notice" role="status">{t().linkNotice[linkNotice]}</p>{/if}
@@ -443,6 +581,11 @@
     color: var(--ink);
     box-shadow: 0 2px 18px #0003;
     font-size: 0.85rem;
+  }
+
+  /* A wrapper only: the panel inside is placed on its own (fixed). */
+  .preview-panel {
+    display: contents;
   }
 
   .sr-only {

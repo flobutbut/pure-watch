@@ -19,12 +19,15 @@
     defaults,
     onpreview,
     onclose,
+    companion = false,
   }: {
     config: WatchConfig;
     /** Values of the size chosen in the grid: the sliders' magnetic marks. */
     defaults: { name: string; values: CaseDimensions };
     onpreview: (values: CaseDimensions) => void;
     onclose: (values: CaseDimensions) => void;
+    /** Beside the 3D preview: the view keeps the keyboard (arrows browse the rows). */
+    companion?: boolean;
   } = $props();
   const stopsFor = (key: keyof CaseDimensions) => (key === 'lugWidthMm' ? STRAP_WIDTHS_MM : []);
   function valuetext(key: keyof CaseDimensions, value: number): string {
@@ -65,8 +68,9 @@
   eyebrow={t().colors.eyebrow}
   title={t().dimensions.title}
   closeLabel={t().dimensions.close}
-  modal
+  modal={!companion}
   inertPage={false}
+  placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
   <p class="intro">

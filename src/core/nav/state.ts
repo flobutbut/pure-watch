@@ -67,8 +67,9 @@ export function selectedIndex(state: NavState, rowId: RowId): number {
 }
 
 export function step(state: NavState, rows: readonly RowView[], command: NavCommand): StepResult {
-  // La grille est inerte tant que la vue 3D est ouverte ou en transition.
-  if (state.mode !== 'grid' || rows.length === 0) return unchanged(state);
+  // The grid is inert while the 3D view opens or closes; once open, the preview browses it too.
+  if ((state.mode !== 'grid' && state.mode !== 'view3d') || rows.length === 0)
+    return unchanged(state);
 
   switch (command.type) {
     case 'variant':

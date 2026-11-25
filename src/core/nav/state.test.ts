@@ -110,14 +110,20 @@ describe('createNavState', () => {
 });
 
 describe('vue 3D', () => {
-  it('suit la machine à états et rend la grille inerte pendant la 3D', () => {
+  it('suit la machine à états : grille inerte pendant les transitions, parcourue dans la vue', () => {
     let s = createNavState(rows, {}, 2);
     s = transition(s, 'open');
     expect(s.mode).toBe('opening3d');
     expect(step(s, rows, { type: 'variant', delta: 1 }).changed).toBe(false);
     s = transition(s, 'opened');
     expect(s.mode).toBe('view3d');
-    s = transition(transition(s, 'close'), 'closed');
+    // In the preview, the arrows browse rows and variants as in the grid.
+    const moved = step(s, rows, { type: 'row', delta: 1 });
+    expect(moved.changed).toBe(true);
+    expect(moved.state.mode).toBe('view3d');
+    s = transition(s, 'close');
+    expect(step(s, rows, { type: 'variant', delta: 1 }).changed).toBe(false);
+    s = transition(s, 'closed');
     expect(s.mode).toBe('grid');
   });
 

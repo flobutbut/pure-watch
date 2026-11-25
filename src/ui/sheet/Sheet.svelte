@@ -110,6 +110,8 @@
     pressed = null;
     if (!start || !isTopOverlay(overlay) || !outside(event) || !isTap(start, event)) return;
     if (!modal && !inVoid(event.target)) return;
+    // The header's actions (card, sharing) take over from the panel themselves.
+    if ((event.target as Element).closest?.('[data-takes-over]')) return;
     event.preventDefault();
     event.stopPropagation();
     onclose();
