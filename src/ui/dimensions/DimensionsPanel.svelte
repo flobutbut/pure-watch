@@ -56,6 +56,12 @@
     }, 100);
   });
   $effect(() => () => clearTimeout(timer));
+  /** Sends what the panel shows now, before the watch moves on (preview). */
+  export function flush() {
+    clearTimeout(timer);
+    timer = undefined;
+    onpreview(error ? lastValid : { ...values });
+  }
   function close() {
     clearTimeout(timer);
     onclose(error ? lastValid : { ...values });

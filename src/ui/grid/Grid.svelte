@@ -645,7 +645,7 @@
   <!-- Preview: the active row's name and variant stay sharp, where the grid shows them (on
        phones, level with the watch when a panel takes the bottom of the screen). -->
   <div
-    class="label active preview-label"
+    class="preview-label"
     aria-hidden="true"
     style:transform="translateY({open ? watchY : bumpY}px)"
   >
@@ -906,7 +906,8 @@
     );
   }
 
-  .label {
+  .label,
+  .preview-label {
     position: absolute;
     left: calc(clamp(16px, 2.5vw, 32px) + env(safe-area-inset-left));
     top: 50%;
@@ -940,11 +941,13 @@
     color: var(--ink-soft);
   }
 
-  .label.active .label-name {
+  .label.active .label-name,
+  .preview-label .label-name {
     font-weight: 600;
   }
 
-  .label.active .label-variant {
+  .label.active .label-variant,
+  .preview-label .label-variant {
     color: color-mix(in srgb, var(--ink) 50%, var(--ink-soft));
   }
 
