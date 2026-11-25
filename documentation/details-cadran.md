@@ -74,3 +74,30 @@ Le chemin de fer, qui est une graduation graphique, ne figure plus dans le choix
 relief des mini-cadrans. Les anciennes valeurs `rail` sont lues comme `flat`, sans
 rejeter les autres réglages du lien. Le chemin de fer du cadran principal reste indépendant.
 Les reliefs et finitions figurent dans la fiche technique et le prompt de génération d’image.
+
+## Organisation et couleurs des mini-cadrans
+
+Les trois panneaux suivent le même ordre : relief, finition et couleur du fond, effets,
+graduations, puis aiguille. La réserve ajoute ensuite ses réglages de taille et de position.
+La couleur du fond se trouve immédiatement sous la finition. Une finition naturellement
+colorée affiche sa coloration propre et ne propose pas de sélecteur inactif.
+
+Les graduations des petites secondes et des compteurs, comme celles de la réserve, peuvent
+rester automatiques (contraste calculé sur le fond effectif) ou recevoir une couleur libre.
+En mode automatique, le sélecteur de couleur est masqué. La zone de réserve basse possède
+ses propres modes automatique/couleur libre et n’apparaît que pour les segments et la jauge
+E–F. L’inscription ne se règle que pour l’échelle en heures, où elle est réellement utilisée.
+La couleur d’aiguille est indépendante : elle suit les aiguilles principales ou devient libre.
+Les choix sont conservés dans le lien et dans la fiche d’identité.
+
+Les boutons de paramètres de la réserve et du chronographe apparaissent lorsque leur
+complication est activée (une position ou une disposition choisie, au lieu de « Sans »).
+
+## Points de la piste des minutes
+
+La variante « Points » propose un curseur « Taille des points » de 5 % à 250 %, avec
+100 % comme référence historique. Il redimensionne le rayon et le contour des points
+pour permettre une réduction réelle, tout en conservant leurs positions et la différence
+entre les points de cinq minutes et les points intermédiaires. Le réglage apparaît seulement
+pour cette variante, reste mémorisé lorsqu’on en choisit une autre et est conservé dans
+le lien (`details.chapterRing.dotSize`), la fiche d’identité et le prompt d’image.

@@ -11,6 +11,7 @@ const hex = z
   .transform((value) => value as HexColor);
 const ink = z.union([hex, z.literal('auto')]);
 const factor = (min: number, max: number) => z.number().finite().min(min).max(max);
+export const CHAPTER_DOT_SIZE_RANGE = { min: 0.05, max: 2.5 } as const;
 // Read links created with the retired graphic option without rejecting the configuration.
 const subdialStyleSchema = z.enum([...SUBDIAL_STYLES, 'azure', 'rail']);
 function normalizeMiniStyle<T extends { subdialStyle?: string; finish?: string }>(
@@ -54,6 +55,12 @@ const dialSurfaceSchema = z
 export const detailsSchema = z
   .object({
     dial: dialSurfaceSchema.optional(),
+    chapterRing: z
+      .object({
+        dotSize: factor(CHAPTER_DOT_SIZE_RANGE.min, CHAPTER_DOT_SIZE_RANGE.max).optional(),
+      })
+      .strict()
+      .optional(),
     subdials: z
       .object({
         ink: ink.optional(),

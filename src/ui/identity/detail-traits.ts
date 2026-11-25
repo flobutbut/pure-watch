@@ -27,6 +27,16 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
       });
   };
   if (
+    row === 'chapter-ring' &&
+    config.dial.chapterRing === 'dots' &&
+    d.chapterRing?.dotSize !== undefined
+  ) {
+    traits.push({
+      label: locale === 'fr' ? 'Taille des points' : 'Dot size',
+      value: percent(d.chapterRing.dotSize),
+    });
+  }
+  if (
     ((row === 'small-seconds' && smallSeconds(config)) ||
       (row === 'chronograph' && chronograph(config))) &&
     d.subdials

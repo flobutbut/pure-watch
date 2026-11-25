@@ -5,6 +5,7 @@ import { applyVariant } from '../nav/selection';
 import { defaultConfig } from './defaults';
 import { decodeLinkPayload, encodeLinkPayload } from './link-codec';
 import { normalizeDialFinish } from './dial';
+import { detailsSchema } from './details';
 import { colorChoice, targetColor, withColorChoice, type ColorTarget } from './colors';
 import { getAtPath, setAtPath } from './path';
 import type { WatchConfig } from './types';
@@ -23,6 +24,22 @@ const hash = (payload: unknown) =>
   `#v1.${btoa(JSON.stringify(payload)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')}`;
 
 describe('versioned watch links', () => {
+  it('retains minute-dot size and independent colour through a shared link', () => {
+    const base = defaultConfig();
+    base.dial.chapterRing = 'dots';
+    const config = withColorChoice(base, 'chapterRing', {
+      ...colorChoice(base, 'chapterRing'),
+      color: '#253F79',
+      details: { chapterRing: { dotSize: 0.05 } },
+    });
+    expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
+    expect(config.dial.chapterRingColor).toBe('#253F79');
+    expect(detailsSchema.safeParse({ chapterRing: { dotSize: 0 } }).success).toBe(false);
+    expect(detailsSchema.safeParse({ chapterRing: { dotSize: 3 } }).success).toBe(false);
+    expect(
+      encodeConfigHash(withColorChoice(base, 'chapterRing', colorChoice(base, 'chapterRing'))),
+    ).toBe(encodeConfigHash(base));
+  });
   it('retires the fumé choice while preserving v1 and v2 links and their independent effects', () => {
     expect(
       catalog.rows.find((r) => r.id === 'dial-finish')!.variants.some((v) => v.value === 'fume'),

@@ -13,6 +13,8 @@ export interface DialPrintOptions {
   ink: string;
   /** Couleur de la piste des minutes (par défaut : l'encre). */
   chapterRingInk?: string;
+  /** Scale of minute dots, preserving the relative size of five-minute marks. */
+  chapterRingDotSize?: number;
   /** Jeu de chiffres (voir numeralHours) et famille typographique. */
   numerals?: string;
   numeralSystem?: 'arabic' | 'roman';
@@ -48,7 +50,12 @@ function tick(r0: number, r1: number, minute: number, width: number): string {
   return `<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke-width="${f(width)}"/>`;
 }
 
-function chapterRingMarkup(R: number, style: string, radiusAt?: (angle: number) => number): string {
+function chapterRingMarkup(
+  R: number,
+  style: string,
+  radiusAt?: (angle: number) => number,
+  dotSize = 1,
+): string {
   const radius = (minute: number, fraction: number) =>
     radiusAt
       ? radiusAt(Math.PI / 2 - (minute / 60) * Math.PI * 2) * 0.985 - R * (0.985 - fraction)
@@ -83,7 +90,7 @@ function chapterRingMarkup(R: number, style: string, radiusAt?: (angle: number) 
       for (let m = 0; m < 60; m++) {
         const [x, y] = polar(radius(m, 0.955), m);
         parts.push(
-          `<circle cx="${f(x)}" cy="${f(y)}" r="${f(m % 5 === 0 ? R * 0.016 : R * 0.007)}"/>`,
+          `<circle cx="${f(x)}" cy="${f(y)}" r="${f((m % 5 === 0 ? R * 0.016 : R * 0.007) * dotSize)}" stroke-width="${f(dotSize)}"/>`,
         );
       }
       break;
@@ -175,7 +182,7 @@ export function dialPrintSvg(options: DialPrintOptions): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${f(-extent)} ${f(-extent)} ${f(2 * extent)} ${f(2 * extent)}">` +
     (options.fontCss ? `<style>${options.fontCss}</style>` : '') +
-    `<g stroke="${options.chapterRingInk ?? options.ink}" fill="${options.chapterRingInk ?? options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt)}</g>` +
+    `<g stroke="${options.chapterRingInk ?? options.ink}" fill="${options.chapterRingInk ?? options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt, options.chapterRingDotSize)}</g>` +
     `<g fill="${options.ink}">${text.join('')}</g>` +
     `<g fill="${options.numeralInk ?? options.ink}">${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem)}</g>` +
     `</svg>`
