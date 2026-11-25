@@ -11,8 +11,10 @@ export default defineConfig({
       : {},
   },
   webServer: {
-    command: 'npm run build && npm run preview -- --port 4173 --strictPort',
+    command: 'EPURE_REVIEW=1 npm run build && npm run preview -- --port 4173 --strictPort',
     port: 4173,
+    // The production build can exceed Playwright's default 60 s on a cold cache.
+    timeout: 300_000,
     reuseExistingServer: !process.env.CI,
   },
   projects: [
