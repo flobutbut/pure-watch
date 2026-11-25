@@ -1,9 +1,9 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { linkPayload } from './link';
 import { hexField } from './hex';
 test.setTimeout(90_000);
 const link = (data: object) => '/#v1.' + Buffer.from(JSON.stringify(data)).toString('base64url');
-const payload = (page: Page) =>
-  JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
+const payload = (page: Page) => linkPayload(page.url());
 async function bezelRow(page: Page) {
   const grid = page.getByRole('grid');
   await grid.focus();

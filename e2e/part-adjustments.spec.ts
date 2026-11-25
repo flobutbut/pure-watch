@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { linkPayload } from './link';
 test.setTimeout(90_000);
 const link = (data: object) => '/#v1.' + Buffer.from(JSON.stringify(data)).toString('base64url');
-const payload = (page: Page) =>
-  JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
+const payload = (page: Page) => linkPayload(page.url());
 const handChoice = (page: Page, part: string, name: string) =>
   page
     .getByRole('radiogroup', { name: `Dessin des ${part}`, exact: true })

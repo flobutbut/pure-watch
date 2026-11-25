@@ -1002,7 +1002,7 @@ Une `WatchConfig` doit tenir dans une **URL courte**.
 
 1. Normaliser (supprimer les valeurs égales aux valeurs par défaut du catalogue).
 2. Transformer en tableau d'**identifiants courts** (table de correspondance versionnée) et en bits pour les booléens.
-3. Encoder en **base64url**, préfixé du numéro de version : `#v1.eyJz…`
+3. Sérialiser en octets compacts puis en **base64url**, préfixé du numéro de version : `#2AAMF…` (l’ancien format `#v1.eyJz…`, JSON en base64url, reste lu). Voir [liens-configuration.md](liens-configuration.md).
 4. Longueur visée : **≤ 200 caractères** pour une configuration typique.
 5. Le **fragment** (`#`) est utilisé plutôt que la requête : rien n'est envoyé au serveur.
 6. Validation à l'ouverture : identifiants inconnus → valeur par défaut, avec un message discret.

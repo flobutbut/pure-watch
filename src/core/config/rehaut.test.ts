@@ -24,7 +24,7 @@ it('keeps independent colour, follows dial and case dynamically and retains both
   expect(rehautColor(config)).toBe('#E6C068');
   expect(colorChoice(config, 'rehaut')).toEqual({ color: '#C85432', finish: 'metal' });
   expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
-  expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
+  expect(encodeConfigHash(defaultConfig())).toBe('#2');
   expect(decodeConfigHash('#v1.e30', catalog).config.rehaut).toEqual(before.rehaut);
 });
 it('shows graduations only on a compatible wide profile and preserves hidden selections', () => {

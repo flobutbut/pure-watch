@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
+import { linkPayload } from './link';
 
 test.setTimeout(90_000);
 const link = (payload: object) =>
   `/#v1.${Buffer.from(JSON.stringify(payload)).toString('base64url')}`;
-const payload = (page: Page) =>
-  JSON.parse(Buffer.from(page.url().split('#v1.')[1]!, 'base64url').toString());
+const payload = (page: Page) => linkPayload(page.url());
 async function row(page: Page, id: string) {
   const grid = page.getByRole('grid');
   await grid.focus();

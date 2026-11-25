@@ -75,7 +75,7 @@ it.each(
 it('keeps the default link and shares the optional connection without replacing the chosen lug style', () => {
   const c = defaultConfig(),
     catalog = parseCatalog(rawCatalog);
-  expect(encodeConfigHash(c)).toBe('#v1.e30');
+  expect(encodeConfigHash(c)).toBe('#2');
   expect(decodeConfigHash('#v1.e30', catalog)).toEqual({ config: c, notice: '' });
   c.case.lugs = 'drilled';
   c.case.lugJoin = 'blended';

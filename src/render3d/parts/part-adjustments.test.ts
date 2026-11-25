@@ -131,7 +131,7 @@ it.each(CASE_SHAPES)(
 it('preserves legacy links and round-trips independent settings; choosing a hand set clears only the drawings', () => {
   const catalog = parseCatalog(rawCatalog),
     c = defaultConfig();
-  expect(encodeConfigHash(c)).toBe('#v1.e30');
+  expect(encodeConfigHash(c)).toBe('#2');
   expect(decodeConfigHash('#v1.e30', catalog)).toEqual({ config: c, notice: '' });
   c.hands.hour = { style: 'mercedes', length: 1.12, width: 1.2 };
   c.hands.minute.style = 'pencil';

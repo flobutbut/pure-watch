@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { linkPayload } from './link';
 
 test('la forme précède la finition, suit les choix et se restaure par URL', async ({ page }) => {
   const errors: string[] = [];
@@ -18,7 +19,7 @@ test('la forme précède la finition, suit les choix et se restaure par URL', as
     await expect(grid).toHaveAttribute('aria-activedescendant', `cell-dial-shape-${shape}`);
   }
   const shared = page.url();
-  expect(JSON.parse(Buffer.from(shared.split('#v1.')[1]!, 'base64url').toString()).aa).toBe(6);
+  expect(linkPayload(shared).aa).toBe(6);
   // The dial size row sits between the shape and the finish.
   await page.keyboard.press('ArrowDown');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-size-open');
@@ -45,5 +46,6 @@ test('un ancien lien conserve le cadran rond', async ({ page }) => {
     await page.keyboard.press('ArrowUp');
   }
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-dial-shape-round');
-  expect(page.url()).toContain('#v1.e30');
+  // The old default link becomes the compact default link: nothing to carry.
+  expect(new URL(page.url()).hash).toBe('#2');
 });

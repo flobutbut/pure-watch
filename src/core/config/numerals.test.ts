@@ -71,7 +71,7 @@ describe('écriture et disposition indépendantes', () => {
     const row = catalog.rows.find((r) => r.id === 'numerals')!;
     expect(row.variants[variantIndexFromConfig(row, config)]!.id).toBe('all');
     expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
-    expect(encodeConfigHash(defaultConfig())).toBe('#v1.e30');
+    expect(encodeConfigHash(defaultConfig())).toBe('#2');
     expect(decodeConfigHash(hash({ D: 4 }), catalog).config.dial.indices).toMatchObject({
       numerals: 'twelve',
       numeralSystem: 'arabic',
