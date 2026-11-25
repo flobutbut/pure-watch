@@ -37,3 +37,15 @@ export function browsesFrom(target: EventTarget | null, panel: string): boolean 
   if (!element?.closest || element === document.body) return true;
   return Boolean(element.closest(panel)) && !element.closest(OWN_ARROWS);
 }
+
+const SLIDERS = 'input[type="range"], [role="slider"]';
+
+/**
+ * Curseur saisi au pointeur dans le panneau de l'aperçu : une fois relâché, il rend les
+ * flèches aux lignes (au clavier, atteint par Tab, il les garde pour se régler).
+ */
+export function pointerSlider(target: EventTarget | null, panel: string): Element | null {
+  const element = target as Element | null;
+  if (!element?.closest?.(panel)) return null;
+  return element.closest(SLIDERS);
+}

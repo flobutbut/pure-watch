@@ -40,7 +40,7 @@
   } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
   import { settingsForRow } from './ui/grid/row-settings';
-  import { browsesFrom, commandFromKey } from './ui/grid/keyboard';
+  import { browsesFrom, commandFromKey, pointerSlider } from './ui/grid/keyboard';
   import { generationPrompt } from './ui/identity/prompt';
   import { ambienceFor, NIGHT_AMBIENCE } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
@@ -437,6 +437,20 @@
     if (back && opened) close();
   }
 
+  /** Curseur de l'aperçu en cours de glissement, à la souris ou au doigt. */
+  let slider: Element | null = null;
+  /** Relâché, il rend les flèches à la navigation, sans clic dans le vide. */
+  function releaseSlider() {
+    const control = slider;
+    slider = null;
+    if (!control) return;
+    // Après le `change` du curseur, qui suit le relâchement.
+    setTimeout(() => {
+      if (document.activeElement !== control) return;
+      document.querySelector<HTMLElement>('[role="grid"]')?.focus({ preventScroll: true });
+    });
+  }
+
   function close() {
     commitPreview();
     settingsPreview = false;
@@ -455,6 +469,11 @@
 </script>
 
 <svelte:window
+  onpointerdowncapture={(e) => {
+    slider = previewSettings === null ? null : pointerSlider(e.target, '[data-preview-panel]');
+  }}
+  onpointerupcapture={releaseSlider}
+  onpointercancelcapture={releaseSlider}
   onkeydown={(e) => {
     // Modal sheets own Escape and commit their last valid values.
     if (e.key === 'Escape' && !editing && !e.defaultPrevented) close();
