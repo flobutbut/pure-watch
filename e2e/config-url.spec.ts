@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { linkPayload } from './link';
 
 const link = (payload: object) =>
   `/#v1.${Buffer.from(JSON.stringify(payload)).toString('base64url')}`;
@@ -41,6 +42,31 @@ test('le lien suit les choix, se recharge et se partage dans un autre onglet', a
   await other.goto(shared);
   await expect(other.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-leaf');
   expect(other.url()).toBe(shared);
+  await other.close();
+});
+
+test('l’adresse suit un réglage en cours, avant même la fermeture du panneau', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/');
+  const grid = page.getByRole('grid');
+  await grid.focus();
+  for (let i = 0; i < 45; i++) {
+    if ((await grid.getAttribute('aria-activedescendant'))?.startsWith('cell-strap-')) break;
+    await page.keyboard.press('ArrowDown');
+  }
+  await page.getByRole('button', { name: 'Réglages du bracelet', exact: true }).click();
+  // Couleur du bracelet (les teintes de la surpiqûre viennent après).
+  await page.getByRole('button', { name: 'Vert', exact: true }).first().click();
+  // Le lien copié depuis la barre d'adresse, panneau encore ouvert, garde la couleur.
+  await expect.poll(() => linkPayload(page.url()).R).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  const shared = page.url();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
+  expect(page.url()).toBe(shared);
+  const other = await context.newPage();
+  await other.goto(shared);
+  await expect.poll(() => linkPayload(other.url()).R).toBe(linkPayload(shared).R);
   await other.close();
 });
 
