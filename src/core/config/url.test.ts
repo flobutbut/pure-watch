@@ -5,7 +5,7 @@ import { applyVariant } from '../nav/selection';
 import { defaultConfig } from './defaults';
 import { decodeLinkPayload, encodeLinkPayload } from './link-codec';
 import { normalizeDialFinish } from './dial';
-import { detailsSchema } from './details';
+import { cleanDetails, detailsSchema } from './details';
 import { colorChoice, targetColor, withColorChoice, type ColorTarget } from './colors';
 import { getAtPath, setAtPath } from './path';
 import type { WatchConfig } from './types';
@@ -423,4 +423,90 @@ describe('every setting travels in the link', () => {
         ]);
       }
   });
+
+  // `details` (anneau, sous-cadrans, réserve, surface du cadran, réhaut, index, points de
+  // la piste) n'existe pas dans la configuration par défaut : ses réglages sont générés
+  // depuis le schéma, un par un, pour qu'un ajout oublié ou mal borné fasse échouer le test.
+  it('keeps each detailed setting, read from the schema', () => {
+    const variants = schemaVariants(detailsSchema) as Record<string, unknown>[];
+    // Chaque section du schéma est parcourue.
+    expect(new Set(variants.flatMap(Object.keys))).toEqual(
+      new Set(Object.keys(detailsSchema.shape)),
+    );
+    const lost: string[] = [];
+    for (const details of variants) {
+      const config = { ...defaultConfig(), details } as WatchConfig;
+      const back = decodeConfigHash(encodeConfigHash(config), catalog);
+      const sent = cleanDetails(detailsSchema.parse(details));
+      if (back.notice !== '' || !same(back.config.details, sent))
+        lost.push(JSON.stringify(details));
+    }
+    expect(lost).toEqual([]);
+  });
+
+  it('keeps the optional strap settings', () => {
+    const lost: string[] = [];
+    const options = {
+      length: ['short', 'long'],
+      taperMm: [0, 2.5, 6],
+      buckleFinish: ['steel', 'gold-yellow', 'gold-rose', 'black'],
+    };
+    for (const [key, values] of Object.entries(options))
+      for (const value of values) {
+        const config = setAtPath(defaultConfig(), `strap.${key}`, value) as WatchConfig;
+        const back = decodeConfigHash(encodeConfigHash(config), catalog);
+        if (back.notice !== '' || getAtPath(back.config, `strap.${key}`) !== value)
+          lost.push(`${key}=${value}`);
+      }
+    expect(lost).toEqual([]);
+  });
 });
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- walks zod's internal definitions */
+/** A valid value for a schema, with only its required fields. */
+function schemaMinimal(schema: any): unknown {
+  return schemaVariants(schema)[0];
+}
+
+/** Valid values for a schema, each one exercising a different leaf or option. */
+function schemaVariants(schema: any): unknown[] {
+  const def = schema._zod.def;
+  switch (def.type) {
+    case 'optional':
+    case 'nullable':
+      return schemaVariants(def.innerType);
+    case 'pipe':
+      return schemaVariants(def.in);
+    case 'object': {
+      const required = Object.fromEntries(
+        Object.entries(def.shape as Record<string, any>)
+          .filter(([, child]) => !['optional', 'nullable'].includes(child._zod.def.type))
+          .map(([key, child]) => [key, schemaMinimal(child)]),
+      );
+      return Object.entries(def.shape as Record<string, any>).flatMap(([key, child]) =>
+        schemaVariants(child).map((value) => ({ ...required, [key]: value })),
+      );
+    }
+    case 'record':
+      return schemaVariants(def.valueType).map((value) => ({ '3': value }));
+    case 'union':
+      return (def.options as any[]).flatMap(schemaVariants);
+    case 'enum':
+      return Object.values(def.entries);
+    case 'literal':
+      return [...def.values];
+    case 'number': {
+      const min = Number.isFinite(schema.minValue) ? schema.minValue : 0;
+      const max = Number.isFinite(schema.maxValue) ? schema.maxValue : 1;
+      return [min, Math.round((min + (max - min) * 0.37) * 1000) / 1000, max];
+    }
+    case 'string':
+      // A colour or a short label, whichever the string's format accepts.
+      return ['#2A7F62', 'Épure'].filter((value) => schema.safeParse(value).success);
+    case 'custom':
+      return ['sunburst'];
+    default:
+      throw new Error(`Schéma non parcouru : ${def.type}`);
+  }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
