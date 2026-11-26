@@ -7,13 +7,18 @@ import { strapTextureMaps } from './strap-textures';
 import type { StrapConfig } from '../core/config/types';
 import { effectiveDialShape } from '../core/geometry/dial-shape';
 import { watchDimensions } from '../core/geometry/dimensions';
-import { DIAL_PATTERN_SETTINGS, isDialPatternFinish } from './dial-patterns';
+import {
+  DIAL_PATTERN_SETTINGS,
+  isDialPatternFinish,
+  type DialPatternFinish,
+} from './dial-patterns';
 import { isBlackTonneau } from '../core/config/instrument';
 import { effectiveDialColor, hasIntrinsicColor } from '../core/config/dial';
 import { dialSurface } from '../core/config/details';
 import { indexColor } from '../core/config/colors';
 import { lumeChoice, lumePigment } from '../core/config/lume';
 import type { WatchConfig } from '../core/config/types';
+import type { ResolvedMaterial } from '../core/config/material';
 import { rehautColor, rehautSettings } from '../core/config/rehaut';
 import {
   forgedCarbonTexture,
@@ -289,6 +294,82 @@ export class MaterialLibrary {
     );
   }
 
+  /**
+   * Matière d'un élément imprimé (chiffres) : la forme vient de `glyphs` (blanc sur
+   * transparent), la teinte du matériau. Propre à la montre : l'appelant le libère.
+   * `relief` (chiffres flous sur noir) bombe les bords de l'encre vernie, du métal poli et
+   * de la matière luminescente ; le brossage, lui, suit les lignes du cadran brossé.
+   */
+  printed(
+    material: ResolvedMaterial,
+    glyphs: THREE.Texture,
+    relief: THREE.Texture | null,
+    spanMm: number,
+    color?: string,
+  ): THREE.MeshStandardMaterial {
+    const shape = { map: glyphs, alphaTest: 0.35, polygonOffset: true, polygonOffsetFactor: -2 };
+    const bump = relief ? { bumpMap: relief, bumpScale: 1.6 } : {};
+    let result: THREE.MeshStandardMaterial;
+    if (material.kind === 'lume') {
+      result = this.luminous({
+        lume: material.pigment,
+        lumeColor: material.day,
+        lumeEmission: material.night,
+      }).clone();
+      Object.assign(result, shape, bump);
+    } else if (material.kind === 'metal' && material.effect === 'brushed') {
+      const maps = this.patternMaps('vertical-brushed', spanMm);
+      result = new THREE.MeshPhysicalMaterial({
+        ...shape,
+        color: material.color,
+        metalness: 1,
+        roughness: 1,
+        roughnessMap: maps.roughness,
+        normalMap: maps.normal,
+        anisotropy: 0.88,
+        anisotropyRotation: Math.PI / 2,
+      });
+    } else if (material.kind === 'metal') {
+      result = new THREE.MeshPhysicalMaterial({
+        ...shape,
+        ...bump,
+        color: new THREE.Color(material.color).offsetHSL(0, 0, 0.04),
+        metalness: 1,
+        roughness: 0.12,
+      });
+    } else if (material.effect === 'varnished') {
+      result = new THREE.MeshPhysicalMaterial({
+        ...shape,
+        ...bump,
+        color: color ?? material.color,
+        roughness: 0.32,
+        clearcoat: 1,
+        clearcoatRoughness: 0.05,
+      });
+    } else {
+      result = new THREE.MeshStandardMaterial({
+        ...shape,
+        color: color ?? material.color,
+        roughness: 0.55,
+      });
+    }
+    result.name = `printed-${material.kind}`;
+    return result;
+  }
+
+  /** Cartes de relief d'un motif de cadran, partagées à l'échelle donnée. */
+  private patternMaps(finish: DialPatternFinish, span: number) {
+    const key = `${finish}:${span}`;
+    let maps = this.dialPatterns.get(key);
+    if (!maps) {
+      maps = dialPatternTextures(finish, span);
+      this.keep(maps.normal);
+      this.keep(maps.roughness);
+      this.dialPatterns.set(key, maps);
+    }
+    return maps;
+  }
+
   luminous(part: {
     lume?: string | null;
     lumeColor: `#${string}`;
@@ -452,14 +533,7 @@ export class MaterialLibrary {
     const c = new THREE.Color(color);
     const light = c.getHSL({ h: 0, s: 0, l: 0 }).l > 0.45;
     if (isDialPatternFinish(finish)) {
-      const key = `${finish}:${span}`;
-      let maps = this.dialPatterns.get(key);
-      if (!maps) {
-        maps = dialPatternTextures(finish, span);
-        this.keep(maps.normal);
-        this.keep(maps.roughness);
-        this.dialPatterns.set(key, maps);
-      }
+      const maps = this.patternMaps(finish, span);
       return new THREE.MeshPhysicalMaterial({
         color: c,
         metalness: DIAL_PATTERN_SETTINGS[finish].metalness,

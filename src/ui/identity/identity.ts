@@ -23,6 +23,7 @@ import { dialRing } from '../../core/config/dial-ring';
 import { subdialStyle } from '../../core/config/subdial-style';
 import { SUBDIAL_HAND_LABELS } from '../colors/subdial-hand-labels';
 import { numeralSystem } from '../../core/config/numerals';
+import { metalTint, numeralMaterial } from '../../core/config/material';
 import {
   chapterRingColor,
   effectiveDialColor,
@@ -170,9 +171,11 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
       },
       { label: m.numeralSize, value: share(numeralSize, 'size') },
       { label: m.numeralPosition, value: share(numeralRadius, 'distance') },
-      color === 'match'
-        ? { label: m.numeralColor, value: m.dialInk, swatch: numeralColor(config.dial) }
-        : painted(m.numeralColor, color),
+      ...numeralMaterialTraits(config, all, () =>
+        color === 'match'
+          ? { label: m.numeralColor, value: m.dialInk, swatch: numeralColor(config.dial) }
+          : painted(m.numeralColor, color),
+      ),
     ];
   }
   if (row.id === 'indices' && config.dial.indices.style !== 'none') {
@@ -453,4 +456,35 @@ export function identitySections(
     }
   }
   return sections;
+}
+
+/** Matière des chiffres : rien de plus pour l'encre mate, sinon matière, effet et teinte. */
+function numeralMaterialTraits<T>(
+  config: WatchConfig,
+  all: Messages,
+  inkColor: () => T,
+): (T | { label: string; value: string; swatch: string; metal?: boolean })[] {
+  const material = numeralMaterial(config);
+  const label = all.material.numerals;
+  if (material.kind === 'lume') {
+    const pigment = lumePigment(material.pigment);
+    return [
+      {
+        label,
+        value: `${all.material.kinds.lume} · ${pigment?.name ?? material.pigment}`,
+        swatch: material.day,
+      },
+    ];
+  }
+  if (material.kind === 'metal')
+    return [
+      {
+        label,
+        value: `${all.handFinish[metalTint(material.metal).label]} · ${all.material.effects[material.effect]}`,
+        swatch: material.color,
+        metal: true,
+      },
+    ];
+  if (material.effect === 'matte') return [inkColor()];
+  return [inkColor(), { label, value: all.material.effects.varnished!, swatch: material.color }];
 }

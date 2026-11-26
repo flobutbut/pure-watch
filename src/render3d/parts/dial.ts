@@ -28,6 +28,7 @@ import { indexPlate } from './inserts';
 import { buildDialRing } from './dial-ring';
 import { ringLift } from '../../core/config/dial-ring';
 import { ringInk } from '../../core/config/subdials';
+import { isFlatInk, numeralMaterial, numeralMaterialSettings } from '../../core/config/material';
 
 export interface DialParts {
   dial: THREE.Group;
@@ -68,8 +69,16 @@ export function buildDial(
   ];
   // Police de style éventuelle : chargée à la demande puis embarquée dans les SVG.
   const fontCss = fontFaceCss(config.dial.indices.numeralFont);
+  // Chiffres en matière (métal, vernis, luminescent) : sortis de l'impression, ils ont
+  // leur propre calque. L'encre mate reste imprimée, comme toujours.
+  const numerals = numeralMaterial(config);
+  const flatNumerals = isFlatInk(numerals);
+  const followsIndices = numeralMaterialSettings(config).follow === 'indices';
   /** Impression du cadran, aux encres données (celles du fond, ou celles de l'anneau). */
-  const printMarkup = (inks: { ink: string; chapterRingInk: string; numeralInk: string }) =>
+  const printMarkup = (
+    inks: { ink: string; chapterRingInk: string; numeralInk: string },
+    layer: Partial<Parameters<typeof dialPrintSvg>[0]> = {},
+  ) =>
     fontCss.then((fontCss) =>
       dialPrintSvg({
         fontCss,
@@ -87,8 +96,30 @@ export function buildDial(
         numeralRadius: config.dial.indices.numeralRadius,
         omitHours: complicationHours(config),
         ...inks,
+        ...(flatNumerals ? {} : { numerals: 'none' }),
+        ...layer,
       }),
     );
+  /** Chiffres seuls, en blanc : leur forme (et, floutés sur noir, leur relief). */
+  const numeralLayer = (layer: Partial<Parameters<typeof dialPrintSvg>[0]>) =>
+    printMarkup(
+      { ink: '#ffffff', chapterRingInk: '#ffffff', numeralInk: '#ffffff' },
+      {
+        chapterRing: 'none',
+        brand: '',
+        line2: '',
+        numerals: config.dial.indices.numerals,
+        ...layer,
+      },
+    );
+  const numeralInkOn = (ink: string) =>
+    followsIndices
+      ? numerals.kind === 'ink'
+        ? numerals.color
+        : ink
+      : config.dial.indices.numeralColor === 'match'
+        ? ink
+        : config.dial.indices.numeralColor;
 
   const dial = new THREE.Group();
   dial.name = 'dial';
@@ -129,10 +160,7 @@ export function buildDial(
           ink: ringInkColor,
           chapterRingInk:
             config.dial.chapterRingColor === 'match' ? ringInkColor : config.dial.chapterRingColor,
-          numeralInk:
-            config.dial.indices.numeralColor === 'match'
-              ? ringInkColor
-              : config.dial.indices.numeralColor,
+          numeralInk: numeralInkOn(ringInkColor),
         })
       : null,
     printSize: options.printSize,
@@ -170,7 +198,7 @@ export function buildDial(
   const markup = printMarkup({
     ink: inkForDial(effectiveDialColor(config.dial)),
     chapterRingInk: chapterRingColor(config.dial),
-    numeralInk: numeralColor(config.dial),
+    numeralInk: numeralInkOn(numeralColor(config.dial)),
   });
   const { texture, ready } = svgTexture(markup, options.printSize);
   // Découpe alpha plutôt que transparence : la passe de transmission du cristal ne voit
@@ -190,12 +218,45 @@ export function buildDial(
   printMesh.position.z = 0.01;
   print.add(printMesh);
 
+  const waits: Promise<void>[] = [];
+  if (!flatNumerals && numeralHours(config.dial.indices.numerals).length) {
+    const glyphs = svgTexture(numeralLayer({}), options.printSize);
+    const relief =
+      numerals.kind === 'metal' && numerals.effect === 'brushed'
+        ? null
+        : svgTexture(numeralLayer({ background: '#000000', numeralBlur: R * 0.004 }), 1024);
+    if (relief) relief.texture.colorSpace = THREE.NoColorSpace;
+    const span = Number((2 * d.dialExtent).toFixed(3));
+    const layer = (ink: string, mask: THREE.Texture | null) => {
+      const material = sharpPrint(
+        lib.printed(numerals, glyphs.texture, relief?.texture ?? null, span, numeralInkOn(ink)),
+      );
+      if (mask) material.alphaMap = mask;
+      owned.push(material);
+      return material;
+    };
+    const plate = new THREE.Mesh(
+      dialSurface(d, holes),
+      layer(numeralColor(config.dial), ring?.printMask ?? null),
+    );
+    plate.position.z = 0.014;
+    plate.name = 'numerals';
+    print.add(plate);
+    if (ring) {
+      const band = ring.overlay(layer(ringInkColor, null));
+      band.name = 'numerals';
+      print.add(band);
+    }
+    owned.push(glyphs.texture, ...(relief ? [relief.texture] : []));
+    waits.push(glyphs.ready, ...(relief ? [relief.ready] : []));
+  }
+
   return {
     dial,
     print,
     indices,
     loupe,
-    ready: Promise.all([ready, dateReady, reserve?.ready]).then(() => {}),
+    ready: Promise.all([ready, dateReady, reserve?.ready, ...waits]).then(() => {}),
     owned: [texture, printMaterial, ...owned],
   };
 }

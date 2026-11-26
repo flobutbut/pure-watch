@@ -53,6 +53,8 @@
   import IndexOverrides from './IndexOverrides.svelte';
   import { hasBezelInsert } from '../../core/config/bezel';
   import ColorField, { CUSTOM } from './ColorField.svelte';
+  import MaterialField from './MaterialField.svelte';
+  import { numeralMaterial } from '../../core/config/material';
   import { i18n, t } from '../i18n.svelte';
 
   interface Props {
@@ -577,7 +579,20 @@
         />
       </div>
     {/if}
-    <div class="element-color">{@render elementColor()}</div>
+    {#if target === 'numerals'}
+      <MaterialField
+        label={t().material.numerals}
+        value={details.numerals ?? {}}
+        resolved={numeralMaterial(withColorChoice(config, target, choice))}
+        follow={t().material.followIndices}
+        ink={elementColor}
+        {night}
+        {onnight}
+        onchange={(numerals) => (details = { ...details, numerals })}
+      />
+    {:else}
+      <div class="element-color">{@render elementColor()}</div>
+    {/if}
   {/if}
 
   {#if miniTarget}

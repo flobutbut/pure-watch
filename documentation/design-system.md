@@ -51,7 +51,7 @@ Les tailles de glyphes (×, ↺, chiffres d'aide) et les cercles (`50%`) restent
 
 | Variante  | Apparence                         | Exemples                                                    |
 | --------- | --------------------------------- | ----------------------------------------------------------- |
-| `control` | contour sur fond léger (défaut)   | finitions, luminescence, écriture des chiffres, capture     |
+| `control` | contour sur fond léger (défaut)   | finitions, matières, luminescence, écriture des chiffres, capture |
 | `primary` | plein, à l'encre                  | Copier le lien, Copier le prompt                            |
 | `quiet`   | sans contour, fond au survol      | onglets de la fiche, réglage de la lunette, Plus d'options  |
 
@@ -117,6 +117,44 @@ aucun panneau n'appelle `ColorPicker` directement.
   onmode={chooseMode}
   matches={[{ label: t().colors.handsColor, color: handColor(config) }]}
   onchange={selectHex}
+/>
+```
+
+### Réglage de matière : `MaterialField` (`src/ui/colors`)
+
+Une **matière** décrit la substance d'un petit élément imprimé ou appliqué — d'abord les
+chiffres. Elle ne se confond pas avec une **finition de surface** (soleillé, guilloché,
+azuré…), qui décrit le motif d'une grande surface et se choisit dans un carrousel avec
+l'aperçu rond du motif (`FinishPreview`).
+
+Le catalogue vit dans `src/core/config/material.ts` (trois axes, schéma du lien, résolution)
+et le rendu dans `MaterialLibrary.printed` : un seul endroit pour ajouter une matière.
+Le réglage suit toujours cet ordre :
+
+1. un libellé (`.section-label`) ;
+2. s'il existe, le mode qui suit un autre élément (« Comme les index ») ou
+   « Personnalisée », en `SegmentedControl` ; suivre **masque** le reste ;
+3. la **matière** : Encre / Métal / Lumineux, en `SegmentedControl` ;
+4. l'**effet** de cette matière, en boutons avec pastille : Mat ou Vernis en relief pour
+   l'encre, Poli ou Brossé pour le métal (le luminescent n'en a pas) ;
+5. la **teinte** : le `ColorField` du panneau pour l'encre (passé en `ink`), les teintes de
+   métal (Acier, Or, Acier bleui, Noir) ou les pigments luminescents, avec l'aperçu
+   nocturne.
+
+`MaterialSwatch` dessine la pastille : reflet pour le vernis et le poli, stries pour le
+brossé, moitiés jour et nuit avec un halo pour le luminescent. Changer de matière repart
+de ses valeurs par défaut, en gardant la teinte de métal et le pigment déjà choisis.
+
+```svelte
+<MaterialField
+  label={t().material.numerals}
+  value={details.numerals ?? {}}
+  resolved={numeralMaterial(watch)}
+  follow={t().material.followIndices}
+  ink={elementColor}
+  {night}
+  {onnight}
+  onchange={(numerals) => (details = { ...details, numerals })}
 />
 ```
 

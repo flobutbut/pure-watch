@@ -132,7 +132,8 @@
       (nav.mode === 'view3d' ||
         nav.mode === 'opening3d' ||
         colorTarget === 'hands' ||
-        colorTarget === 'indices'),
+        colorTarget === 'indices' ||
+        colorTarget === 'numerals'),
   );
   const ambience = $derived(
     nightPreview ? NIGHT_AMBIENCE : ambienceFor((previewConfig ?? config).dial),

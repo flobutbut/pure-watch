@@ -4,6 +4,7 @@ import { pigmentChoice, lumePigment } from './lume';
 import { isDialFinish, type DialFinish } from './dial-finishes';
 import { SUBDIAL_HAND_STYLES } from './subdial-hand';
 import { SUBDIAL_STYLES, type SubdialStyle } from './subdial-style';
+import { materialSchema } from './material';
 import { RING_DIAMETER_RANGE, RING_RELIEFS, RING_SHAPES, RING_WIDTH_RANGE } from './dial-ring';
 
 const hex = z
@@ -115,6 +116,8 @@ export const detailsSchema = z
           .strict(),
       )
       .optional(),
+    /** Matière des chiffres des heures (encre, métal, luminescent) ; absente : encre mate. */
+    numerals: materialSchema.optional(),
     // `null` : la ligne « Anneau » sur « Sans anneau » (cleanDetails l'efface ensuite).
     ring: z
       .object({
