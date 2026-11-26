@@ -7,6 +7,8 @@ import type { WatchConfig } from '../../core/config/types';
 /** The colour or settings panel a row's label offers, when its part is shown. */
 export function colorForRow(id: string, config: WatchConfig): ColorTarget | null {
   switch (id) {
+    case 'strap':
+      return 'strap';
     case 'chapter-ring':
       return config.dial.chapterRing !== 'none' ? 'chapterRing' : null;
     case 'lugs':

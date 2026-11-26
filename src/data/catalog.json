@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.14.0",
+  "catalogVersion": "0.15.0",
   "rows": [
     {
       "id": "case-shape",
@@ -1904,7 +1904,10 @@
       "id": "seconds",
       "group": "hands",
       "kind": "enum",
-      "visibleWhen": { "path": "complications.small-seconds", "equals": null },
+      "visibleWhen": {
+        "path": "complications.small-seconds",
+        "equals": null
+      },
       "path": "hands.second",
       "previewContext": "dark-disc",
       "looping": true,
@@ -2614,6 +2617,52 @@
           "preview": "chronograph-pushers/pump.svg",
           "i18n": {
             "name": "Pompe"
+          }
+        }
+      ]
+    },
+    {
+      "id": "strap",
+      "group": "strap",
+      "kind": "enum",
+      "path": "strap.type",
+      "previewContext": "none",
+      "looping": true,
+      "priority": "P1",
+      "i18n": {
+        "name": "Bracelet"
+      },
+      "variants": [
+        {
+          "id": "metal",
+          "value": "metal",
+          "preview": "strap/metal.svg",
+          "i18n": {
+            "name": "Métal"
+          }
+        },
+        {
+          "id": "rubber",
+          "value": "rubber",
+          "preview": "strap/rubber.svg",
+          "i18n": {
+            "name": "Caoutchouc"
+          }
+        },
+        {
+          "id": "leather",
+          "value": "leather",
+          "preview": "strap/leather.svg",
+          "i18n": {
+            "name": "Cuir"
+          }
+        },
+        {
+          "id": "fabric",
+          "value": "fabric",
+          "preview": "strap/fabric.svg",
+          "i18n": {
+            "name": "Tissu"
           }
         }
       ]

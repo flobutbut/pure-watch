@@ -56,6 +56,10 @@ export const DIAL_FINISH_NAMES = {
 };
 
 export const CATALOG_EN: Record<string, RowNames> = {
+  strap: {
+    name: 'Strap',
+    variants: { metal: 'Metal', rubber: 'Rubber', leather: 'Leather', fabric: 'Fabric' },
+  },
   'case-shape': { name: 'Case shape', variants: SHAPES },
   'case-profile': {
     name: 'Case profile',

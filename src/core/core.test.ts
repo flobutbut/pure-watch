@@ -47,6 +47,7 @@ describe('catalogue', () => {
       'chronograph',
       'chronograph-counters',
       'chronograph-pushers',
+      'strap',
     ]);
   });
 

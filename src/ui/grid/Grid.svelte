@@ -237,7 +237,11 @@
       const last = ended.samples[ended.samples.length - 1];
       const velocity =
         first && last && last.t > first.t ? (last.p - first.p) / (last.t - first.t) : 0;
-      const steps = dragSteps(ended.offset, velocity, metrics.pitch);
+      const steps = dragSteps(
+        ended.offset,
+        velocity,
+        ended.axis === 'x' ? metrics.pitch : metrics.rowPitch,
+      );
       if (steps !== 0) {
         oncommand(
           ended.axis === 'x' ? { type: 'variant', delta: steps } : { type: 'row', delta: steps },
@@ -398,22 +402,22 @@
   /** Densité de l'écran : les montres et cellules sont calées sur ses pixels (netteté). */
   const dpr = globalThis.devicePixelRatio ?? 1;
   /** Share of the height a settings sheet takes on phones, and the air left above it. */
-  const PHONE_SHEET_SHARE = 0.66;
+  const PHONE_SHEET_SHARE = 0.6;
   const PHONE_SHEET_GAP = 12;
-  const openSize = $derived(Math.round(Math.min(width, height) * 0.82 * dpr) / dpr);
+  const openSize = $derived(Math.round(Math.min(width * 1.55, height * 1.16) * dpr) / dpr);
   const liveScale = $derived(open ? 1 : metrics.watch / Math.max(1, openSize));
   const colorWatchSize = $derived(
     width >= 760
-      ? Math.min(width - 400, height * 0.76, 520)
-      : Math.min(width * 0.62, height * 0.28),
+      ? Math.min((width - 400) * 1.25, (height - 140) * 1.3, 1000)
+      : Math.min(width * 1.2, Math.max(100, height * (1 - PHONE_SHEET_SHARE) - 96) * 1.3),
   );
   /** In the 3D view the identity card takes the right side (or the bottom on phones). */
   // On phones the card is a bottom sheet (52 % of the height): the watch fits between it and the tools.
   const cardBand = $derived({ top: 140, bottom: height * 0.48 });
   const cardWatchSize = $derived(
     width >= 760
-      ? Math.min(width - 440, openSize)
-      : Math.min(width * 0.86, cardBand.bottom - cardBand.top + 40, openSize),
+      ? Math.min((width - 400) * 1.25, (height - 160) * 1.3, openSize)
+      : Math.min(width * 1.2, (cardBand.bottom - cardBand.top) * 1.4, openSize),
   );
   const watchScale = $derived(
     editing
@@ -426,9 +430,8 @@
   const watchX = $derived(sidePanel && width >= 760 ? (editing ? -175 : -182) : 0);
   const watchY = $derived(
     editing && width < 760
-      ? // Settings are a bottom sheet on phones (Sheet.svelte, --sheet-max: 66dvh): the watch
-        // rests just above its top edge instead of touching it.
-        height * (1 - PHONE_SHEET_SHARE) - PHONE_SHEET_GAP - colorWatchSize / 2 - height / 2
+      ? // Center the model in the band between the header and the settings sheet.
+        (84 + height * (1 - PHONE_SHEET_SHARE) - PHONE_SHEET_GAP) / 2 - height / 2
       : panelShown && width < 760
         ? (cardBand.top + cardBand.bottom) / 2 - height / 2
         : dragY + bumpY,
@@ -494,7 +497,7 @@
           {@const h = hierarchy(slot.dCol, slot.dRow)}
           {@const place = pixelSnap(
             width / 2 + slot.dCol * metrics.pitch + (isActiveRow ? dragX + bumpX : 0),
-            height / 2 + slot.dRow * metrics.pitch + dragY + bumpY,
+            height / 2 + slot.dRow * metrics.rowPitch + dragY + bumpY,
             metrics.cell,
             h.scale,
             dpr,
@@ -545,7 +548,7 @@
         class:jump={end.jump}
         aria-hidden="true"
         style:transform="translate({end.dCol * metrics.pitch + (isActiveRow ? dragX + bumpX : 0)}px, {end.dRow *
-          metrics.pitch +
+          metrics.rowPitch +
           dragY +
           bumpY}px)"
         style:opacity={hierarchy(Math.trunc(end.dCol), end.dRow).opacity * 0.4}
@@ -563,7 +566,7 @@
         class:active={dRow === 0}
         data-row={rowIndex}
         data-variant={selected(rowIndex)}
-        style:transform="translateY({dRow * metrics.pitch + dragY + bumpY}px)"
+        style:transform="translateY({dRow * metrics.rowPitch + dragY + bumpY}px)"
         style:opacity={dRow === 0 ? 1 : hierarchy(0, dRow).opacity * 0.75}
       >
         <span class="label-name" aria-hidden="true">{row.i18n.name}</span>
@@ -608,7 +611,7 @@
                             ? t().grid.numeralsSettings
                             : target === 'indices'
                               ? t().grid.indicesSettings
-                              : target === 'date' || target === 'ring'
+                              : target === 'date' || target === 'ring' || target === 'strap'
                                 ? t().colors[target]
                                 : target === 'powerReserve' || target === 'subdials'
                                   ? target === 'subdials' &&
@@ -620,7 +623,7 @@
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials', 'date', 'ring'].includes(target)}
+              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials', 'date', 'ring', 'strap'].includes(target)}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
@@ -636,10 +639,11 @@
                   'subdials',
                   'date',
                   'ring',
+                  'strap',
                 ].includes(target)
                   ? t().grid.settings
                   : t().grid.color}
-                {#if target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials' && target !== 'date' && target !== 'ring'}<span
+                {#if target !== 'strap' && target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials' && target !== 'date' && target !== 'ring'}<span
                     class="color-value"
                   >
                     · {target === 'rehaut' && config.rehaut.finish !== 'custom'
@@ -777,6 +781,14 @@
         bind:handle={live}
       />
     </div>
+    {#if !open && !editing}
+      <div
+        class="watch-hit"
+        role="presentation"
+        data-row={nav.activeRow}
+        data-variant={selected(nav.activeRow)}
+      ></div>
+    {/if}
   </div>
 </div>
 
@@ -1040,6 +1052,17 @@
   .grid.color-editing .live-slot {
     pointer-events: auto;
     cursor: grab;
+  }
+
+  /* The whole enlarged watch, including its strap, opens the preview. */
+  .watch-hit {
+    position: absolute;
+    left: 27%;
+    top: 12%;
+    width: 46%;
+    height: 76%;
+    pointer-events: auto;
+    cursor: zoom-in;
   }
 
   .backdrop {

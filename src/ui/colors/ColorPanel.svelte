@@ -47,6 +47,7 @@
   import DetailRange from './DetailRange.svelte';
   import { CHAPTER_DOT_SIZE_RANGE } from '../../core/config/details';
   import BezelSettings from './BezelSettings.svelte';
+  import StrapSettings from './StrapSettings.svelte';
   import LugSettings from './LugSettings.svelte';
   import DetailSettings from './DetailSettings.svelte';
   import IndexOverrides from './IndexOverrides.svelte';
@@ -99,6 +100,7 @@
   let handLayout = $state(initial.handLayout);
   let bezelLayout = $state(initial.bezelLayout);
   let lugJoin = $state(initial.lugJoin);
+  let strap = $state(initial.strap);
   let details = $state(initial.details ?? {});
   const initialComplications = untrack(() => config.complications);
   let complications = $state(initialComplications);
@@ -148,7 +150,7 @@
       : { size: NUMERAL_SIZE_RANGE, width: null, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    target === 'date'
+    target === 'strap' || target === 'date'
       ? false
       : surfaceTarget
         ? !hasIntrinsicColor(appearanceOf({ ...config, details }).config.dial.finish)
@@ -164,6 +166,7 @@
   );
   const choice = $derived<ColorChoice>({
     details,
+    ...(strap ? { strap } : {}),
     ...(complicationTarget ? { complications } : {}),
     ...(cyclops !== undefined ? { cyclops } : {}),
     color: matched ? 'match' : color,
@@ -215,6 +218,7 @@
       JSON.stringify(choice.bezelLayout) !== JSON.stringify(initial.bezelLayout) ||
       JSON.stringify(choice.details ?? {}) !== JSON.stringify(initial.details ?? {}) ||
       choice.lugJoin !== initial.lugJoin ||
+      JSON.stringify(choice.strap) !== JSON.stringify(initial.strap) ||
       !sameLayout(choice.layout, initial.layout),
   );
   let previewTimer: ReturnType<typeof setTimeout> | undefined;
@@ -255,6 +259,7 @@
     handLayout = initial.handLayout;
     bezelLayout = initial.bezelLayout;
     lugJoin = initial.lugJoin;
+    strap = initial.strap;
     details = initial.details ?? {};
     complications = initialComplications;
     cyclops = initial.cyclops;
@@ -356,6 +361,12 @@
   placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
+  {#if strap}<StrapSettings
+      value={strap}
+      {config}
+      {presets}
+      onchange={(value) => (strap = value)}
+    />{/if}
   {#if target === 'date'}
     <ComplicationSettings
       {settingsRows}
@@ -620,6 +631,7 @@
       handLayout ||
       bezelLayout ||
       lugJoin ||
+      strap ||
       complicationTarget ||
       target === 'ring' ||
       target === 'chapterRing'

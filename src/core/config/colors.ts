@@ -2,7 +2,8 @@ import { chapterRingColor, effectiveDialColor, numeralColor } from './dial';
 import { rehautColor } from './rehaut';
 import { normalizeNumerals, numeralSystem, type NumeralSystem } from './numerals';
 import { lumeChoice, withLume, type LumeChoice } from './lume';
-import type { HexColor, WatchConfig } from './types';
+import { strapSettings } from './strap';
+import type { HexColor, StrapConfig, WatchConfig } from './types';
 import { handAdjustment, type HandLayout } from './hands';
 import { bezelLayout, type BezelLayout } from './bezel';
 import { lugJoin, type LugJoin } from './lugs';
@@ -11,6 +12,7 @@ import { subdialAppearance, reserveAppearance, ringAppearance } from './subdials
 
 /** Pièces réglées dans le panneau latéral. */
 export type ColorTarget =
+  | 'strap'
   | 'dial'
   | 'hands'
   | 'seconds'
@@ -25,6 +27,7 @@ export type ColorTarget =
   | 'lugs'
   | 'chapterRing';
 export interface ColorChoice {
+  strap?: StrapConfig;
   details?: WatchDetails;
   complications?: WatchConfig['complications'];
   /** Date : loupe sur le verre, réglée dans le panneau de la date. */
@@ -96,6 +99,8 @@ export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoi
 }
 
 function baseColorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  if (target === 'strap')
+    return { color: config.strap.color, finish: '', strap: strapSettings(config) };
   // La date n'a pas de couleur propre : son panneau règle le guichet et le disque.
   if (target === 'date') return { color: 'match', finish: '', cyclops: config.crystal.cyclops };
   if (target === 'subdials')
@@ -183,6 +188,7 @@ function withBaseColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  if (target === 'strap') return { ...config, strap: choice.strap ?? config.strap };
   if (target === 'date')
     return choice.cyclops === undefined
       ? config
@@ -265,6 +271,7 @@ function withBaseColorChoice(
 }
 
 export function targetColor(config: WatchConfig, target: ColorTarget): string {
+  if (target === 'strap') return config.strap.color;
   if (target === 'subdials') {
     return subdialAppearance(config).color;
   }

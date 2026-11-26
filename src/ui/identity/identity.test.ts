@@ -17,6 +17,7 @@ describe('fiche d’identité', () => {
       'Cadran',
       'Aiguilles',
       'Complications',
+      'Bracelet',
     ]);
     expect(sections[0]!.traits[0]).toEqual({ label: 'Diamètre', value: '40 mm' });
     const all = sections.flatMap((s) => s.traits);

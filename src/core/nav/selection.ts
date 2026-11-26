@@ -7,6 +7,7 @@ import { getAtPath, matchesValue, setAtPath } from '../config/path';
 import { resolveLayout } from '../config/complications';
 import { cleanDetails } from '../config/details';
 import { restoreSeconds, withoutSeconds } from '../config/seconds';
+import { withStrapType, type StrapType } from '../config/strap';
 import type { WatchConfig } from '../config/types';
 import type { RowView } from './state';
 
@@ -51,7 +52,12 @@ export function selectionFromConfig(catalog: Catalog, config: WatchConfig): Reco
 export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: number): WatchConfig {
   const variant = row.variants[variantIndex];
   if (!variant) return config;
-  let next = setAtPath(config, row.path, variant.value);
+  let next =
+    row.id === 'strap'
+      ? config.strap.type === variant.value
+        ? config
+        : withStrapType(config, variant.value as StrapType)
+      : setAtPath(config, row.path, variant.value);
   if (row.id === 'hands')
     next = {
       ...next,

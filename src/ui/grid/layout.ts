@@ -9,29 +9,33 @@ export const REFERENCE = { cell: 160, pitch: 216 } as const;
 export interface GridMetrics {
   /** Distance centre à centre entre deux cellules (px). */
   pitch: number;
+  /** Distance verticale entre deux lignes (px), indépendante des variantes. */
+  rowPitch: number;
   /** Diamètre d'une cellule (px). */
   cell: number;
   /** Nombre de colonnes / lignes à monter de chaque côté du centre (visibles + 1 de marge). */
   colsHalf: number;
   rowsHalf: number;
-  /** Diamètre visible de la montre centrale, cornes comprises (px). */
+  /** Côté du rendu central, bracelet compris (px). */
   watch: number;
 }
 
 /**
- * Bureau : 7 colonnes × 5 lignes au pas de 216 px sur 1440 × 1024.
+ * Les lignes respirent autour de la montre complète ; les variantes gardent leur pas.
  * Téléphone portrait : 3 colonnes, cellule ≈ 104–120 px.
  */
 export function gridMetrics(width: number, height: number): GridMetrics {
   const columnsTarget = width >= 900 ? 6.67 : 3.25;
   const pitch = Math.max(96, Math.min(REFERENCE.pitch, width / columnsTarget, height / 4.74));
+  const rowPitch = pitch * 1.5;
   const cell = (pitch * REFERENCE.cell) / REFERENCE.pitch;
   return {
     pitch,
+    rowPitch,
     cell,
     colsHalf: Math.ceil(width / 2 / pitch) + 1,
-    rowsHalf: Math.ceil(height / 2 / pitch) + 1,
-    watch: pitch * 1.55,
+    rowsHalf: Math.ceil(height / 2 / rowPitch) + 1,
+    watch: Math.min(pitch * 3, height * 0.88),
   };
 }
 

@@ -335,6 +335,9 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   bd: field('dial.indices.indexWidth', z.number().finite().min(0.5).max(2)),
   be: field('dial.chapterRingColor', z.union([hex, z.literal('match')])),
   bf: field('details', detailsSchema),
+  bg: field('strap.length', z.enum(['short', 'standard', 'long'])),
+  bh: field('strap.taperMm', z.number().finite().min(0).max(6)),
+  bi: field('strap.buckleFinish', z.enum(['case', 'steel', 'gold-yellow', 'gold-rose', 'black'])),
 };
 
 /**
