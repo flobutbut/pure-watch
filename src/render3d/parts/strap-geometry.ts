@@ -200,6 +200,40 @@ export class StrapBuilder {
     this.geometry(geometry, material, name, sign);
   }
 
+  /** Metal hardware follows the attachment's tangent as a rigid piece. */
+  rigid(s: number, z: number, sign = 1): StrapBuilder {
+    const origin = this.point(0, s, z, sign);
+    const xAxis = this.point(1, s, z, sign).sub(origin).normalize();
+    const tangent = this.point(0, s + 0.05, z, sign)
+      .sub(this.point(0, s - 0.05, z, sign))
+      .normalize();
+    const normal = xAxis.clone().cross(tangent).normalize();
+    return new StrapBuilder((x, ss, zz) =>
+      origin
+        .clone()
+        .addScaledVector(xAxis, x)
+        .addScaledVector(tangent, ss - s)
+        .addScaledVector(normal, zz - z),
+    );
+  }
+
+  absorb(builder: StrapBuilder): void {
+    const root = builder.finish();
+    for (const child of [...root.children]) {
+      if (child instanceof THREE.Mesh && !Array.isArray(child.material)) {
+        const key = `${child.name}:${child.material.uuid}`;
+        const batch = this.batches.get(key) ?? {
+          name: child.name,
+          material: child.material,
+          geometries: [] as THREE.BufferGeometry[],
+        };
+        batch.geometries.push(child.geometry);
+        this.batches.set(key, batch);
+        root.remove(child);
+      } else this.root.add(child);
+    }
+  }
+
   finish(): THREE.Group {
     for (const batch of this.batches.values()) {
       const geometry = mergeGeometries(batch.geometries);

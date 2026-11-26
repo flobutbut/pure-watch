@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import type { StrapConfig, WatchConfig } from '../../core/config/types';
 import type { MaterialLibrary } from '../materials';
 import { StrapBuilder, roundedRect } from './strap-geometry';
+import { metalClasp } from './strap-metal';
+import { buckleStrapEye, rolledStrapEnd, tongueSleeve } from './strap-attachments';
 
 /** A real frame, pivot bar and profiled tongue; a deployant has hinged folding blades. */
 export function strapHardware(
@@ -27,13 +29,33 @@ export function strapHardware(
   const face = lib.caseMetal(hardwareConfig, 'brushed'),
     edge = lib.caseMetal(hardwareConfig, 'jewel');
   const recess = lib.matte('#24272B');
-  const s = length - 7,
+  if (strap.type === 'metal') {
+    metalClasp(builder, strap, width, face, edge, recess);
+    return;
+  }
+  const eye = strap.type !== 'metal' ? buckleStrapEye(strap.type, length) : null;
+  const s = eye?.s ?? length - 7,
     w = width(s),
     z = top(0, s) + 0.25;
+  if (eye)
+    rolledStrapEnd(
+      builder,
+      eye,
+      width,
+      top,
+      lib.strap(strap),
+      lib.strap(strap, false, 'edge'),
+      1,
+      'strap-buckle-eye',
+      strap.buckle === 'tang' ? 1.8 : 0,
+      strap.type === 'leather' ? -0.36 : 0,
+    );
+  // The frame, axle and tongue are one rigid assembly anchored in the rolled strap end.
+  const hardware = eye ? builder.rigid(s, eye.z) : builder;
   if (strap.buckle === 'deployant') {
     // Two recessed folding leaves underneath the cover and their transverse hinge pins.
     for (const offset of [-1, 1]) {
-      builder.extrude(
+      hardware.extrude(
         roundedRect(offset * w * 0.3, s - 23, w * 0.21, 24, 0.8),
         0.75,
         1,
@@ -45,8 +67,8 @@ export function strapHardware(
       );
     }
     for (const at of [s - 23, s - 10, s + 1])
-      builder.pin(0, at, -0.25, w * 0.8, 0.6, 1, edge, 'strap-clasp-hinge');
-    builder.extrude(
+      hardware.pin(0, at, -0.25, w * 0.8, 0.6, 1, edge, 'strap-clasp-hinge');
+    hardware.extrude(
       roundedRect(0, s - 12, w + 0.2, 16, 1.3),
       0.9,
       1,
@@ -56,7 +78,7 @@ export function strapHardware(
       0.35,
       { edge },
     );
-    builder.extrude(
+    hardware.extrude(
       roundedRect(0, s - 10, w - 2.2, 11.7, 0.8),
       0.2,
       1,
@@ -66,7 +88,7 @@ export function strapHardware(
       0.17,
       { edge },
     );
-    builder.extrude(
+    hardware.extrude(
       roundedRect(0, s - 13, w + 0.5, 3.5, 0.5),
       0.8,
       1,
@@ -76,43 +98,70 @@ export function strapHardware(
       0.14,
     );
     for (const side of [-1, 1])
-      builder.pin(side * (w / 2 + 0.45), s - 5, z + 0.6, 1.4, 0.65, 1, edge, 'strap-clasp-button');
+      hardware.pin(side * (w / 2 + 0.45), s - 5, z + 0.6, 1.4, 0.65, 1, edge, 'strap-clasp-button');
     for (const at of [s - 8.5, s - 7.7])
-      builder.box(0, at, z + 1.46, w * 0.3, 0.12, 0.04, 1, recess, 'strap-clasp-engraving');
+      hardware.box(0, at, z + 1.46, w * 0.3, 0.12, 0.04, 1, recess, 'strap-clasp-engraving');
   } else {
-    const outer = roundedRect(0, s - 1, w + 3.1, 10, 1.7);
-    const inner = roundedRect(0, s + 0.45, w + 0.1, 6.8, 1.0);
-    // Reverse the inner path so the frame is a genuine opening.
-    const hole = new THREE.Path(inner.getPoints().reverse());
-    outer.holes.push(hole);
-    builder.extrude(outer, 1.25, 1, face, 'strap-buckle', z, 0.3, { edge });
-    builder.pin(0, s + 0.4, z + 0.6, w + 2.1, 0.65, 1, edge, 'strap-buckle-pivot');
+    const pivotZ = eye!.z,
+      half = (w + 3.2) / 2,
+      arm = 1.4,
+      end = s + 9.2;
+    // A U-frame closes around the pivot axle; material never fills the frame opening.
+    const frame = new THREE.Shape();
+    frame.moveTo(-half, s - 0.25);
+    frame.lineTo(-half, end - 1.5);
+    frame.quadraticCurveTo(-half, end, -half + 1.5, end);
+    frame.lineTo(half - 1.5, end);
+    frame.quadraticCurveTo(half, end, half, end - 1.5);
+    frame.lineTo(half, s - 0.25);
+    frame.quadraticCurveTo(half, s - 0.65, half - arm, s - 0.65);
+    frame.lineTo(half - arm, end - 2.3);
+    frame.quadraticCurveTo(half - arm, end - 1.65, half - arm - 0.65, end - 1.65);
+    frame.lineTo(-half + arm + 0.65, end - 1.65);
+    frame.quadraticCurveTo(-half + arm, end - 1.65, -half + arm, end - 2.3);
+    frame.lineTo(-half + arm, s - 0.65);
+    frame.quadraticCurveTo(-half, s - 0.65, -half, s - 0.25);
+    frame.closePath();
+    hardware.extrude(frame, 1.3, 1, face, 'strap-buckle', pivotZ - 0.65, 0.25, { edge });
+    hardware.pin(0, s, pivotZ, w + 2.3, 0.54, 1, edge, 'strap-buckle-pivot');
+    tongueSleeve(hardware, s, pivotZ, edge);
     const tongue = new THREE.Shape();
-    tongue.moveTo(-0.55, s - 0.1);
-    tongue.lineTo(0.55, s - 0.1);
-    tongue.lineTo(0.42, s + 7.3);
-    tongue.quadraticCurveTo(0, s + 8, -0.42, s + 7.3);
+    tongue.moveTo(-0.48, s + 0.3);
+    tongue.lineTo(0.48, s + 0.3);
+    tongue.lineTo(0.4, s + 6.8);
+    tongue.quadraticCurveTo(0.35, s + 8.9, 0, s + 8.9);
+    tongue.quadraticCurveTo(-0.35, s + 8.9, -0.4, s + 6.8);
     tongue.closePath();
-    builder.extrude(tongue, 0.65, 1, edge, 'strap-pin', z + 1.1, 0.14, {
-      lift: (_x, y, zz) => zz + Math.sin((Math.max(0, y - s) / 8) * Math.PI) * 0.25,
+    hardware.extrude(tongue, 0.36, 1, edge, 'strap-pin', pivotZ + 0.72, 0.1, {
+      lift: (_x, y, zz) =>
+        zz +
+        0.18 * Math.sin((Math.PI * (y - s)) / 9) -
+        0.07 * THREE.MathUtils.smoothstep(y, s + 6.8, s + 8.9),
     });
     for (const side of [-1, 1])
-      builder.pin(
-        side * (w / 2 + 1.5),
-        s + 0.4,
-        z + 0.6,
-        0.22,
-        0.8,
-        1,
-        edge,
-        'strap-buckle-pivot-cap',
-      );
+      hardware.pin(side * (half + 0.06), s, pivotZ, 0.16, 0.7, 1, edge, 'strap-buckle-pivot-cap');
+  }
+  if (eye) {
+    if (strap.buckle === 'deployant') {
+      hardware.pin(0, s, eye.z, w + 2, 0.54, 1, edge, 'strap-clasp-mount');
+      for (const side of [-1, 1])
+        hardware.extrude(
+          roundedRect(side * (w / 2 + 0.5), s - 7, 0.9, 7.6, 0.4),
+          1.3,
+          1,
+          edge,
+          'strap-clasp-mount-arm',
+          eye.z - 0.65,
+          0.12,
+        );
+    }
+    builder.absorb(hardware);
   }
   if (strap.type === 'metal') return;
   // Closed rectangular keepers wrap the strap instead of sitting on it as solid blocks.
   const strapMaterial = lib.strap(strap),
     edgeMaterial = lib.strap(strap, false, 'edge');
-  for (const [index, at] of [s - 16, s - 26].entries()) {
+  for (const [index, at] of [s - 11, s - 20].entries()) {
     const keeperWidth = width(at) + 0.9,
       keeperHeight = top(0, at) + 1.1;
     const shape = roundedRect(0, -0.6, keeperWidth + 1.3, keeperHeight + 1.5, 0.85);

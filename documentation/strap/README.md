@@ -34,3 +34,15 @@ Les modèles détaillés gardent les mêmes variantes et les mêmes liens :
 Les cartes de couleur, normales et rugosité sont procédurales et utilisent une échelle physique de 8 mm. Les géométries sont regroupées par surface ; les tests vérifient les douze variantes standard sous 150 000 triangles et 24 objets. Un cache de six modèles par bibliothèque de matériaux réutilise les calculs lors des remontages, avec des copies de géométrie appartenant à chaque montre.
 
 Les vues de contrôle détaillées sont dans `refined/`. Les tests couvrent également les normales des deux brins, les ouvertures traversantes, l’indépendance des ressources et la conservation des réglages par lien.
+
+## Fixations et extrémités arrondies
+
+Les bracelets cuir, tissu et caoutchouc se terminent désormais par un œillet creux et arrondi autour de la barrette. Le dessus et le dessous rejoignent le brin progressivement ; la tranche droite n’est plus visible entre les cornes. La position et l’inclinaison de la barrette restent celles du logement des cornes.
+
+À la boucle, le brin court revient autour d’un second axe. Deux oreilles encadrent le passage de l’ardillon, qui possède son propre manchon de pivot. Le cadre en U, l’axe et la languette constituent un ensemble rigide ; les passants sont rapprochés du repli. Les boucles déployantes utilisent elles aussi un axe traversant le repli et des bras de fixation.
+
+Les tests vérifient les passages d’axe, le nez circulaire, la découpe de l’ardillon, la rigidité du cadre et les trois matières avec une boucle déployante, en plus des logements de barrette dans chaque style de corne.
+
+Les trois bracelets métal utilisent également des attaches articulées. Les embouts ajustés des versions à trois et cinq maillons se prolongent par des charnons cylindriques alternés, avec jeu entre les doigts et axe traversant. La maille milanaise entre dans des canaux métalliques sertis, reliés à un œillet autour de la barrette.
+
+Aux extrémités, des doigts alternés raccordent les deux brins au fermoir déployant. Les lames et le couvercle restent rigides ; leurs axes sont placés sur les deux extrémités réelles du bracelet, pour les trois longueurs. Les tests contrôlent le dégagement des charnons et la coïncidence des axes, en conservant le budget de rendu des douze variantes.
