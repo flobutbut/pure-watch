@@ -77,6 +77,8 @@
   /** Identity card open beside the 3D watch; `opened`: the 3D view was opened for it. */
   let card = $state<{ opened: boolean } | null>(null);
   const shareUrl = $derived(sharedLink(config, new URL(location.href)).href);
+  /** Le banc de rendu studio ouvre la montre en cours (studio.html#…). */
+  const studioLink = $derived(configUrl(config, new URL('/studio.html', location.href)).href);
   const share = $derived(
     sharing
       ? { url: shareUrl, prompt: generationPrompt(rows, config, shareUrl, i18n.locale) }
@@ -507,6 +509,7 @@
   <AppChrome
     sharing={sharing !== null}
     onshare={openShare}
+    {studioLink}
     card={card !== null}
     oncard={openCard}
     inspecting={nav.mode === 'view3d' || nav.mode === 'opening3d'}
