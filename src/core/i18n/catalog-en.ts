@@ -199,7 +199,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
   },
   'dial-ring': {
     name: 'Ring',
-    variants: { none: 'No ring', hours: 'Hour ring', outer: 'Outer ring', center: 'Centre disc' },
+    variants: { none: 'No ring', ring: 'Ring' },
   },
   'chapter-ring': {
     name: 'Minute track',

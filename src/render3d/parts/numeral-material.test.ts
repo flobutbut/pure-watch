@@ -25,7 +25,7 @@ async function dial(numerals?: MaterialSettings, ring = false) {
   config.dial.indices.numerals = 'all';
   config.details = {
     ...(numerals ? { numerals } : {}),
-    ...(ring ? { ring: { shape: 'hours' as const } } : {}),
+    ...(ring ? { ring: { shape: 'ring' as const } } : {}),
   };
   const lib = new MaterialLibrary();
   vi.spyOn(lib, 'dial').mockReturnValue(lib.polishedSteel());

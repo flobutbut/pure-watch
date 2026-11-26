@@ -1,10 +1,12 @@
 <script lang="ts">
   import {
     dialRing,
-    RING_DIAMETER_RANGE,
+    moveRing,
     RING_RELIEFS,
-    RING_WIDTH_RANGE,
+    ringSliderRange,
+    ringSliderValue,
     type RingRelief,
+    type RingSlider,
   } from '../../core/config/dial-ring';
   import type { RingSettings } from '../../core/config/details';
   import type { WatchConfig } from '../../core/config/types';
@@ -20,6 +22,13 @@
     onchange: (patch: Partial<RingSettings>) => void;
   } = $props();
   const ring = $derived(dialRing(config));
+  // Du centre vers le bord : l'intérieur à 0 ferme l'anneau en disque, l'extérieur à 100 %
+  // touche le rehaut, la position fait glisser la bande sans changer son épaisseur.
+  const sliders = $derived<{ id: RingSlider; label: string }[]>([
+    { id: 'inner', label: t().colors.ringInner },
+    { id: 'position', label: t().colors.ringPosition },
+    { id: 'outer', label: t().colors.ringOuter },
+  ]);
 </script>
 
 {#if ring}
@@ -36,21 +45,17 @@
     />
   </section>
   <section class="ranges" aria-label={t().colors.ringSize}>
-    <DetailRange
-      label={t().colors.ringDiameter}
-      value={ring.diameter}
-      min={RING_DIAMETER_RANGE.min}
-      max={RING_DIAMETER_RANGE.max}
-      onchange={(diameter) => onchange({ diameter })}
-    />
-    <!-- Une largeur au moins égale au rayon donne un disque plein. -->
-    <DetailRange
-      label={t().colors.ringWidth}
-      value={Math.min(ring.width, ring.diameter)}
-      min={RING_WIDTH_RANGE.min}
-      max={ring.diameter}
-      onchange={(width) => onchange({ width })}
-    />
+    {#each sliders as slider (slider.id)}
+      {@const range = ringSliderRange(ring, slider.id)}
+      <DetailRange
+        label={slider.label}
+        value={ringSliderValue(ring, slider.id)}
+        min={range.min}
+        max={range.max}
+        step={0.005}
+        onchange={(value) => onchange(moveRing(ring, slider.id, value))}
+      />
+    {/each}
   </section>
 {/if}
 

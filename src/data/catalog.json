@@ -1407,33 +1407,13 @@
           }
         },
         {
-          "id": "hours",
+          "id": "ring",
           "value": {
-            "shape": "hours"
+            "shape": "ring"
           },
-          "preview": "dial-ring/hours.svg",
+          "preview": "dial-ring/ring.svg",
           "i18n": {
-            "name": "Anneau des heures"
-          }
-        },
-        {
-          "id": "outer",
-          "value": {
-            "shape": "outer"
-          },
-          "preview": "dial-ring/outer.svg",
-          "i18n": {
-            "name": "Anneau extérieur"
-          }
-        },
-        {
-          "id": "center",
-          "value": {
-            "shape": "center"
-          },
-          "preview": "dial-ring/center.svg",
-          "i18n": {
-            "name": "Disque central"
+            "name": "Anneau"
           }
         }
       ]

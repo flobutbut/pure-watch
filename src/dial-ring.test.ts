@@ -11,7 +11,11 @@ import { colorChoice, withColorChoice } from './core/config/colors';
 import { defaultConfig } from './core/config/defaults';
 import {
   dialRing,
+  moveRing,
+  RING_MIN_WIDTH,
   RING_RAISED_HEIGHT,
+  ringSliderRange,
+  ringSliderValue,
   ringLift,
   ringRadii,
   ringToneColor,
@@ -48,14 +52,10 @@ describe('anneau du cadran', () => {
     expect(settingsForRow('dial-ring', config)).toBeNull();
   });
 
-  it('ajoute une forme type avec ses proportions, puis la retire', () => {
-    let config = pick(defaultConfig(), 'hours');
-    expect(dialRing(config)).toEqual({
-      shape: 'hours',
-      diameter: 0.95,
-      width: 0.26,
-      relief: 'flat',
-    });
+  it('est un anneau unique, ajouté avec ses proportions, puis retiré', () => {
+    expect(row('dial-ring').variants.map((v) => v.id)).toEqual(['none', 'ring']);
+    let config = pick(defaultConfig(), 'ring');
+    expect(dialRing(config)).toEqual({ inner: 0.69, outer: 0.95, relief: 'flat' });
     expect(variantIndexFromConfig(row('dial-ring'), config)).toBe(1);
     expect(settingsForRow('dial-ring', config)).toBe('ring');
 
@@ -65,38 +65,61 @@ describe('anneau du cadran', () => {
     expect(roundTrip(config).notice).toBe('');
   });
 
-  it('change de forme en gardant matière et couleur, pas les proportions', () => {
-    const hours = pick(defaultConfig(), 'hours');
-    const tuned = withColorChoice(hours, 'ring', {
-      ...colorChoice(hours, 'ring'),
+  it('se règle par trois curseurs : intérieur, position, extérieur', () => {
+    const ring = { inner: 0.6, outer: 0.8, relief: 'flat' } as const;
+    // L'intérieur à zéro ferme l'anneau en disque plein.
+    expect(ringSliderRange(ring, 'inner').min).toBe(0);
+    expect(moveRing(ring, 'inner', 0)).toEqual({ inner: 0, outer: 0.8 });
+    // L'extérieur va jusqu'au rehaut, pas au-delà.
+    expect(ringSliderRange(ring, 'outer').max).toBe(1);
+    expect(moveRing(ring, 'outer', 1.2)).toEqual({ inner: 0.6, outer: 1 });
+    // La position fait glisser la bande, à épaisseur constante, sans sortir du cadran.
+    expect(ringSliderValue(ring, 'position')).toBeCloseTo(0.7);
+    expect(moveRing(ring, 'position', 0.5)).toEqual({ inner: 0.4, outer: 0.6 });
+    expect(moveRing(ring, 'position', 1)).toEqual({ inner: 0.8, outer: 1 });
+    expect(moveRing(ring, 'position', 0)).toEqual({ inner: 0, outer: 0.2 });
+  });
+
+  it('descend jusqu’à un cercle fin, un bord poussant l’autre', () => {
+    const ring = { inner: 0.6, outer: 0.8, relief: 'flat' } as const;
+    expect(RING_MIN_WIDTH).toBeLessThanOrEqual(0.01);
+    expect(moveRing(ring, 'inner', 0.9)).toEqual({ inner: 0.9, outer: 0.91 });
+    expect(moveRing(ring, 'outer', 0.3)).toEqual({ inner: 0.29, outer: 0.3 });
+    expect(moveRing(ring, 'inner', 1)).toEqual({ inner: 0.99, outer: 1 });
+    // Un réglage hors bornes (lien modifié à la main) reste un anneau dessinable.
+    const crossed = withColorChoice(pick(defaultConfig(), 'ring'), 'ring', {
+      ...colorChoice(pick(defaultConfig(), 'ring'), 'ring'),
+      details: { ring: { shape: 'ring', inner: 0.9, outer: 0.5 } },
+    });
+    expect(dialRing(crossed)).toMatchObject({ inner: 0.49, outer: 0.5 });
+  });
+
+  it('change de réglages en gardant matière et couleur', () => {
+    const ring = pick(defaultConfig(), 'ring');
+    const tuned = withColorChoice(ring, 'ring', {
+      ...colorChoice(ring, 'ring'),
       color: '#C0A060',
       details: {
-        ring: { shape: 'hours', diameter: 0.8, width: 0.1, relief: 'raised', finish: 'sunburst' },
+        ring: { shape: 'ring', inner: 0.1, outer: 0.2, relief: 'raised', finish: 'sunburst' },
       },
     });
-    expect(dialRing(tuned)).toMatchObject({ diameter: 0.8, width: 0.1, relief: 'raised' });
+    expect(dialRing(tuned)).toEqual({ inner: 0.1, outer: 0.2, relief: 'raised' });
     expect(tuned.details?.ring?.color).toBe('#C0A060');
-
-    const center = pick(tuned, 'center');
-    expect(dialRing(center)).toEqual({
-      shape: 'center',
-      diameter: 0.6,
-      width: 1,
-      relief: 'raised',
-    });
-    expect(center.details?.ring).toMatchObject({ color: '#C0A060', finish: 'sunburst' });
-    expect(variantIndexFromConfig(row('dial-ring'), center)).toBe(3);
+    // Choisir à nouveau l'anneau dans la grille le ramène à ses proportions d'origine.
+    const again = pick(tuned, 'ring');
+    expect(dialRing(again)).toEqual({ inner: 0.69, outer: 0.95, relief: 'raised' });
+    expect(again.details?.ring).toMatchObject({ color: '#C0A060', finish: 'sunburst' });
   });
 
   it('passe dans le lien', () => {
-    const config = withColorChoice(pick(defaultConfig(), 'outer'), 'ring', {
+    const config = withColorChoice(pick(defaultConfig(), 'ring'), 'ring', {
       color: '#2255AA',
       finish: '',
       details: {
         ring: {
-          shape: 'outer',
-          diameter: 0.9,
-          width: 0.2,
+          shape: 'ring',
+          inner: 0,
+          outer: 0.455,
           relief: 'raised',
           finish: 'grained',
           surface: { grainSize: 1.5 },
@@ -106,23 +129,38 @@ describe('anneau du cadran', () => {
     expect(roundTrip(config)).toEqual({ config, notice: '' });
   });
 
+  it.each([
+    ['hours', {}, { inner: 0.69, outer: 0.95 }],
+    ['outer', {}, { inner: 0.88, outer: 1 }],
+    ['center', {}, { inner: 0, outer: 0.6 }],
+    ['outer', { diameter: 0.9, width: 0.2 }, { inner: 0.7, outer: 0.9 }],
+    ['center', { diameter: 0.5, width: 0.8 }, { inner: 0, outer: 0.5 }],
+  ] as const)('lit un ancien lien « %s » %o aux mêmes bords', (shape, sizes, edges) => {
+    const old = pick(defaultConfig(), 'ring');
+    old.details = { ring: { shape, ...sizes, color: '#2255AA' } as never };
+    const { config, notice } = roundTrip(old);
+    expect(notice).toBe('');
+    expect(config.details?.ring).toEqual({ shape: 'ring', ...edges, color: '#2255AA' });
+    expect(variantIndexFromConfig(row('dial-ring'), config)).toBe(1);
+  });
+
   it('calcule ses rayons, et soulève ce qui repose dessus en relief', () => {
-    const flat = pick(defaultConfig(), 'hours');
-    expect(ringRadii(flat, 10)).toEqual({ inner: 6.9, outer: 9.5, relief: 'flat' });
+    const flat = pick(defaultConfig(), 'ring');
+    const radii = ringRadii(flat, 10)!;
+    expect(radii.inner).toBeCloseTo(6.9);
+    expect(radii).toMatchObject({ outer: 9.5, relief: 'flat' });
     expect(ringLift(flat, 10, 8)).toBe(0);
 
     const raised = withColorChoice(flat, 'ring', {
       ...colorChoice(flat, 'ring'),
-      details: { ring: { shape: 'hours', relief: 'raised' } },
+      details: { ring: { shape: 'ring', relief: 'raised' } },
     });
     expect(ringLift(raised, 10, 8)).toBe(RING_RAISED_HEIGHT);
     expect(ringLift(raised, 10, 5)).toBe(0);
-    // Un disque central part du centre, même avec une largeur plus grande que son rayon.
-    expect(ringRadii(pick(defaultConfig(), 'center'), 10)?.inner).toBe(0);
   });
 
   it('se lit ton sur ton, et imprime à une encre lisible sur lui', () => {
-    const dark = pick(defaultConfig(), 'hours');
+    const dark = pick(defaultConfig(), 'ring');
     dark.dial.color = '#111317';
     const tone = ringToneColor(dark);
     expect(tone).not.toBe('#111317');
@@ -149,21 +187,21 @@ describe('anneau du cadran', () => {
     );
   });
 
-  it('figure dans la fiche, sous sa forme', () => {
-    const config = withColorChoice(pick(defaultConfig(), 'hours'), 'ring', {
+  it('figure dans la fiche, avec ses bords', () => {
+    const config = withColorChoice(pick(defaultConfig(), 'ring'), 'ring', {
       color: '#F4F2EC',
       finish: '',
-      details: { ring: { shape: 'hours', relief: 'raised', finish: 'sunburst' } },
+      details: { ring: { shape: 'ring', relief: 'raised', finish: 'sunburst' } },
     });
     const traits = identitySections(visibleRows(catalog.rows, config), config)
       .flatMap((s) => s.traits)
       .map((t) => `${t.label} : ${t.value}`);
-    const start = traits.indexOf('Anneau : Anneau des heures');
+    const start = traits.indexOf('Anneau : Anneau');
     expect(start).toBeGreaterThan(-1);
     expect(traits.slice(start + 1, start + 5)).toEqual([
       'Relief de l’anneau : En relief',
-      'Diamètre : 95 % du cadran',
-      'Largeur : 26 % du rayon',
+      'Intérieur : 69 % du rayon',
+      'Extérieur : 95 % du rayon',
       'Finition de l’anneau : Soleillé',
     ]);
     expect(traits[start + 5]).toMatch(/^Couleur de l’anneau : /);

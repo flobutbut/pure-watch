@@ -209,11 +209,8 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
           : null;
     return [
       { label: c.ringRelief, value: ring.relief === 'raised' ? c.ringRaised : c.ringFlat },
-      { label: c.ringDiameter, value: c.ringOfDial(Math.round(ring.diameter * 100)) },
-      {
-        label: c.ringWidth,
-        value: c.ringOfRadius(Math.round(Math.min(ring.width, ring.diameter) * 100)),
-      },
+      { label: c.ringInner, value: c.ringOfRadius(Math.round(ring.inner * 100)) },
+      { label: c.ringOuter, value: c.ringOfRadius(Math.round(ring.outer * 100)) },
       ...(finishName ? [{ label: c.ringFinish, value: finishName }] : []),
       ...(hasIntrinsicColor(appearance.config.dial.finish)
         ? []
