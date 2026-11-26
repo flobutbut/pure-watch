@@ -69,11 +69,13 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   await page.getByRole('grid').press('Enter');
   const close = page.getByRole('button', { name: 'Fermer', exact: true });
   await expect(close).toBeVisible();
+  // In 3D the arrows browse rows and variants; rotation is a drag.
   await expect(
-    page.getByText(mobile ? 'Glisser pour tourner · Pincer pour zoomer' : /^← ↑ ↓ → Tourner$/, {
+    page.getByText(mobile ? 'Glisser pour tourner · Pincer pour zoomer' : /^Glisser pour tourner$/, {
       exact: mobile,
     }),
   ).toBeVisible();
+  if (!mobile) await expect(page.getByText(/^R Réglages$/)).toBeVisible();
   const headerBox = await share.boundingBox();
   const closeBox = await close.boundingBox();
   expect(closeBox!.y).toBeGreaterThan(headerBox!.y + headerBox!.height);
