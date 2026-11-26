@@ -54,9 +54,9 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   expect(page.url()).toBe(before);
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
-  await expect(share).toBeFocused();
-  // The grid ignores keys until the 3D view has finished closing.
+  // The share panel opened the 3D view: once it has closed, the grid takes the keyboard back.
   await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.getByRole('grid')).toBeFocused();
   await page.getByRole('grid').press('ArrowRight');
   const changed = page.url();
   expect(changed).not.toBe(before);
@@ -69,11 +69,19 @@ test('le partage ouvre une modale qui copie le lien courant, les aides suivent l
   await page.getByRole('grid').press('Enter');
   const close = page.getByRole('button', { name: 'Fermer', exact: true });
   await expect(close).toBeVisible();
-  await expect(
-    page.getByText(mobile ? 'Glisser pour tourner · Pincer pour zoomer' : /^← ↑ ↓ → Tourner$/, {
-      exact: mobile,
-    }),
-  ).toBeVisible();
+  // Once open, the preview shows the active row's settings. Below 760 px they cover the
+  // footer: putting them away brings the hints back.
+  const rowSettings = page.getByRole('button', { name: 'Réglages de la ligne', exact: true });
+  await expect(rowSettings).toHaveAttribute('aria-pressed', 'true');
+  const touchHint = page.getByText('Glisser pour tourner · Pincer pour zoomer', { exact: true });
+  if (mobile) {
+    await expect(touchHint).toBeHidden();
+    await rowSettings.click();
+    await expect(rowSettings).toHaveAttribute('aria-pressed', 'false');
+  }
+  // In 3D the arrows browse rows and variants; rotation is a drag.
+  await expect(mobile ? touchHint : page.getByText(/^Glisser pour tourner$/)).toBeVisible();
+  if (!mobile) await expect(page.getByText(/^R Réglages$/)).toBeVisible();
   const headerBox = await share.boundingBox();
   const closeBox = await close.boundingBox();
   expect(closeBox!.y).toBeGreaterThan(headerBox!.y + headerBox!.height);
