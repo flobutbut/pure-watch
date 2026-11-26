@@ -135,7 +135,9 @@ export interface DialConfig {
     lumeColor: HexColor;
     lumeEmission: HexColor;
     /** Jeu de chiffres : quelles heures portent un chiffre (les index y sont retirés). */
-    numerals: Open<'none' | 'all' | 'cardinal' | 'twelve' | 'six-twelve' | 'explorer' | 'roman'>;
+    numerals: Open<
+      'none' | 'all' | 'cardinal' | 'twelve' | 'six-twelve' | 'explorer' | 'even' | 'roman'
+    >;
     /** Independent of the hour positions. `numerals: roman` is a legacy alias only. */
     numeralSystem: 'arabic' | 'roman';
     /** Famille typographique des chiffres et textes imprimés. */

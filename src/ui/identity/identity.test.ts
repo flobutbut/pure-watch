@@ -48,9 +48,9 @@ describe('fiche d’identité', () => {
       (s) => s.traits,
     );
     const labels = all.map((t) => t.label);
-    const style = labels.indexOf('Chiffres');
+    const style = labels.indexOf('Repères horaires');
     expect(labels.slice(style, style + 5)).toEqual([
-      'Chiffres',
+      'Repères horaires',
       'Écriture des chiffres',
       'Taille des chiffres',
       'Position des chiffres',

@@ -455,12 +455,14 @@
   };
   /** Metal hands are named by their material; painted surfaces by their tint. */
   const colorLabel = (target: ColorTarget) =>
-    target === 'lugs'
-      ? t().grid.lugsSettings
-      : target === 'hands' && config.hands.finish !== 'lacquer'
-        ? (t().handFinish[config.hands.finish] ?? '')
-        : ((target === 'numerals' ? numeralLabel() : null) ??
-          tint(targetColor(config, target), i18n.locale).name);
+    target === 'markers'
+      ? t().colors.markers
+      : target === 'lugs'
+        ? t().grid.lugsSettings
+        : target === 'hands' && config.hands.finish !== 'lacquer'
+          ? (t().handFinish[config.hands.finish] ?? '')
+          : ((target === 'numerals' ? numeralLabel() : null) ??
+            tint(targetColor(config, target), i18n.locale).name);
 
   const colorForRow = (id: string) => rowColor(id, config);
 
@@ -585,7 +587,19 @@
       >
         <span class="label-name" aria-hidden="true">{row.i18n.name}</span>
         <span class="label-variant" aria-hidden="true">
-          {row.id === 'case-size' ? sizeLabel(config) : row.variants[selected(rowIndex)]?.i18n.name}
+          {row.id === 'case-size'
+            ? sizeLabel(config)
+            : row.id === 'numerals' && Object.keys(config.details?.hourMarkers ?? {}).length
+              ? i18n.locale === 'fr'
+                ? 'Personnalisé'
+                : 'Custom'
+              : row.id === 'numerals' &&
+                  config.dial.indices.numerals === 'none' &&
+                  config.dial.indices.style === 'none'
+                ? i18n.locale === 'fr'
+                  ? 'Aucun repère'
+                  : 'No markers'
+                : row.variants[selected(rowIndex)]?.i18n.name}
         </span>
         {#if row.id === 'case-size'}
           <button
@@ -609,8 +623,8 @@
               class="color-button"
               type="button"
               tabindex={dRow === 0 ? 0 : -1}
-              aria-label={target === 'chapterRing'
-                ? t().grid.chapterRingColor
+              aria-label={target === 'chapterRing' || target === 'rehautScale'
+                ? t().colors[target]
                 : target === 'dial'
                   ? t().grid.dialColor
                   : target === 'lugs'
@@ -621,29 +635,35 @@
                         ? t().grid.handsColor
                         : target === 'rehaut'
                           ? t().grid.rehautColor
-                          : target === 'numerals'
-                            ? t().grid.numeralsSettings
-                            : target === 'indices'
-                              ? t().grid.indicesSettings
-                              : target === 'date' || target === 'ring' || target === 'strap'
-                                ? t().colors[target]
-                                : target === 'powerReserve' || target === 'subdials'
-                                  ? target === 'subdials' &&
-                                    config.complications.some((c) => c.type === 'chronograph')
-                                    ? t().colors.chronograph
-                                    : t().colors[target]
-                                  : t().grid.secondsColor}
+                          : target === 'markers'
+                            ? t().colors.markers
+                            : target === 'numerals'
+                              ? t().grid.numeralsSettings
+                              : target === 'indices'
+                                ? t().grid.indicesSettings
+                                : target === 'date' || target === 'ring' || target === 'strap'
+                                  ? t().colors[target]
+                                  : target === 'powerReserve' || target === 'subdials'
+                                    ? target === 'subdials' &&
+                                      config.complications.some((c) => c.type === 'chronograph')
+                                      ? t().colors.chronograph
+                                      : t().colors[target]
+                                    : t().grid.secondsColor}
               title={colorLabel(target)}
               data-color={targetColor(config, target)}
               onclick={() => oncolor(target)}
             >
-              {#if ['numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials', 'date', 'ring', 'strap'].includes(target)}
+              {#if ['rehaut', 'chapterRing', 'rehautScale', 'markers', 'numerals', 'indices', 'hands', 'bezel', 'lugs', 'powerReserve', 'subdials', 'date', 'ring', 'strap'].includes(target)}
                 {@render settingsIcon()}
               {:else}
                 <span class="color-dot" style:background={targetColor(config, target)}></span>
               {/if}
               <span>
                 {[
+                  'chapterRing',
+                  'rehautScale',
+                  'rehaut',
+                  'markers',
                   'numerals',
                   'indices',
                   'hands',
@@ -657,22 +677,16 @@
                 ].includes(target)
                   ? t().grid.settings
                   : t().grid.color}
-                {#if target !== 'strap' && target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials' && target !== 'date' && target !== 'ring'}<span
+                {#if target !== 'rehaut' && target !== 'chapterRing' && target !== 'rehautScale' && target !== 'markers' && target !== 'strap' && target !== 'indices' && target !== 'bezel' && target !== 'lugs' && target !== 'powerReserve' && target !== 'subdials' && target !== 'date' && target !== 'ring'}<span
                     class="color-value"
                   >
-                    · {target === 'rehaut' && config.rehaut.finish !== 'custom'
-                      ? config.rehaut.finish === 'metal'
-                        ? t().grid.caseMatch
-                        : t().grid.dialMatch
-                      : target === 'seconds' && config.hands.second.color === 'match'
-                        ? t().grid.handsMatch
-                        : target === 'numerals' && numeralLabel()
-                          ? numeralLabel()
-                          : (target === 'numerals' &&
-                                config.dial.indices.numeralColor === 'match') ||
-                              (target === 'chapterRing' && config.dial.chapterRingColor === 'match')
-                            ? t().grid.ink
-                            : colorLabel(target)}
+                    · {target === 'seconds' && config.hands.second.color === 'match'
+                      ? t().grid.handsMatch
+                      : target === 'numerals' && numeralLabel()
+                        ? numeralLabel()
+                        : target === 'numerals' && config.dial.indices.numeralColor === 'match'
+                          ? t().grid.ink
+                          : colorLabel(target)}
                   </span>{/if}
               </span>
             </button>

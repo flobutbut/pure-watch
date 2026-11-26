@@ -212,8 +212,14 @@ export const CATALOG_EN: Record<string, RowNames> = {
     },
   },
   numerals: {
-    name: 'Numerals',
-    variants: { none: 'None', twelve: '12 only', 'six-twelve': '6 and 12', all: 'All' },
+    name: 'Hour markers',
+    variants: {
+      none: 'Indices only',
+      twelve: '12 only',
+      'six-twelve': '6 and 12',
+      even: 'Even hours',
+      all: 'All numerals',
+    },
   },
   'numeral-font': {
     name: 'Numeral style',

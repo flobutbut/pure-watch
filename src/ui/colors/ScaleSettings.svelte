@@ -1,0 +1,153 @@
+<script lang="ts">
+  import type { WatchConfig } from '../../core/config/types';
+  import type { WatchDetails } from '../../core/config/details';
+  import { CHAPTER_DOT_SIZE_RANGE } from '../../core/config/details';
+  import type { RowDef } from '../../core/catalog/types';
+  import { chapterRingColor } from '../../core/config/dial';
+  import { normalizeHex } from '../../core/config/colors';
+  import { SCALE_LABELS } from './scale-labels';
+  import { t, i18n } from '../i18n.svelte';
+  import ChoiceCarousel from '../kit/ChoiceCarousel.svelte';
+  import SegmentedControl from '../kit/SegmentedControl.svelte';
+  import DetailRange from './DetailRange.svelte';
+  import ColorField, { CUSTOM } from './ColorField.svelte';
+  import DetailSettings from './DetailSettings.svelte';
+  import ScalePreview from './ScalePreview.svelte';
+  let {
+    target,
+    config,
+    settingsRows,
+    presets,
+    oncommit,
+    onchange,
+  }: {
+    target: 'chapterRing' | 'rehautScale';
+    config: WatchConfig;
+    settingsRows: RowDef[];
+    presets: { name: string; color: string }[];
+    oncommit: () => void;
+    onchange: (style: string, details: WatchDetails) => void;
+  } = $props();
+  const m = $derived(SCALE_LABELS[i18n.locale]);
+  const rehaut = $derived(target === 'rehautScale');
+  const row = $derived(
+    settingsRows.find((row) => row.id === (rehaut ? 'rehaut-scale' : 'chapter-ring'))!,
+  );
+  const style = $derived(rehaut ? config.rehaut.scale : config.dial.chapterRing);
+  const details = $derived(config.details ?? {});
+  const track = $derived(details.chapterRing ?? {});
+  function patch(patch: Partial<NonNullable<WatchDetails['chapterRing']>>) {
+    onchange(style, { ...details, chapterRing: { ...track, ...patch } });
+  }
+</script>
+
+<div class="scale-settings">
+  <ChoiceCarousel
+    value={style}
+    label={m.style}
+    heading={m.style}
+    previous={m.previous}
+    next={m.next}
+    options={row.variants.map((variant) => ({
+      value: String(variant.value),
+      label: variant.i18n.name,
+    }))}
+    onchange={(style) => onchange(style, details)}
+  >
+    {#snippet preview(value: string)}<ScalePreview {value} {rehaut} />{/snippet}
+  </ChoiceCarousel>
+  {#if style === 'none'}<p class="hint">{m.hidden}</p>{/if}
+  {#if rehaut}
+    <DetailSettings
+      target="rehaut"
+      {config}
+      {presets}
+      {oncommit}
+      value={details}
+      onchange={(details) => onchange(style, details)}
+    />
+  {:else}
+    {#if style === 'dots'}
+      <DetailRange
+        label={t().colors.dotSize}
+        value={track.dotSize ?? 1}
+        min={CHAPTER_DOT_SIZE_RANGE.min}
+        max={CHAPTER_DOT_SIZE_RANGE.max}
+        onchange={(dotSize) => patch({ dotSize })}
+      />
+    {:else}
+      <DetailRange
+        label={m.length}
+        value={track.length ?? 1}
+        min={0.5}
+        max={1.6}
+        onchange={(length) => patch({ length })}
+      />
+      <DetailRange
+        label={m.width}
+        value={track.lineWidth ?? 1}
+        min={0.5}
+        max={2}
+        onchange={(lineWidth) => patch({ lineWidth })}
+      />
+    {/if}
+    <DetailRange
+      label={m.radius}
+      value={track.radius ?? 1}
+      min={0.6}
+      max={1}
+      onchange={(radius) => patch({ radius })}
+    />
+    <div>
+      <p class="section-label">{m.accents}</p>
+      <SegmentedControl
+        label={m.accents}
+        value={track.accentAt ?? 'none'}
+        options={[
+          { value: 'none', label: m.none },
+          { value: 'zero', label: m.zero },
+          { value: 'quarters', label: m.quarters },
+        ]}
+        onchange={(accentAt) => patch({ accentAt })}
+      />
+    </div>
+    {#if track.accentAt && track.accentAt !== 'none'}
+      <ColorField
+        label={m.accent}
+        {presets}
+        {oncommit}
+        value={track.accent && track.accent !== 'auto'
+          ? track.accent
+          : chapterRingColor(config.dial)}
+        modes={[
+          { value: 'auto', label: m.auto },
+          { value: CUSTOM, label: t().colors.custom },
+        ]}
+        mode={!track.accent || track.accent === 'auto' ? 'auto' : CUSTOM}
+        onmode={(mode) =>
+          patch({
+            accent: mode === 'auto' ? 'auto' : normalizeHex(chapterRingColor(config.dial))!,
+          })}
+        onchange={(accent) => patch({ accent })}
+      />
+    {/if}
+  {/if}
+</div>
+
+<style>
+  .scale-settings {
+    display: grid;
+    gap: 18px;
+    margin-bottom: 20px;
+    min-width: 0;
+  }
+  .hint {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: var(--text-s);
+    line-height: 1.5;
+  }
+  .section-label {
+    margin: 0 0 10px;
+  }
+</style>

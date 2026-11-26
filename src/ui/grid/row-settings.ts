@@ -10,7 +10,7 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
     case 'strap':
       return 'strap';
     case 'chapter-ring':
-      return config.dial.chapterRing !== 'none' ? 'chapterRing' : null;
+      return 'chapterRing';
     case 'lugs':
       return config.case.lugs !== 'none' ? 'lugs' : null;
     case 'bezel':
@@ -44,7 +44,7 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
     case 'dial-ring':
       return dialRing(config) ? 'ring' : null;
     case 'numerals':
-      return config.dial.indices.numerals !== 'none' ? 'numerals' : null;
+      return 'markers';
     case 'indices':
       return 'indices';
     default:

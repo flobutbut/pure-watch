@@ -15,8 +15,10 @@ export interface DialPrintOptions {
   chapterRingInk?: string;
   /** Scale of minute dots, preserving the relative size of five-minute marks. */
   chapterRingDotSize?: number;
+  chapterRingDetails?: import('../core/config/details').WatchDetails['chapterRing'];
   /** Jeu de chiffres (voir numeralHours) et famille typographique. */
   numerals?: string;
+  hourMarkers?: import('../core/config/numerals').HourMarkers;
   numeralSystem?: 'arabic' | 'roman';
   numeralFont?: string;
   /** Couleur des chiffres des heures (par défaut : l'encre). */
@@ -41,6 +43,8 @@ export interface DialPrintOptions {
 
 import { fontAttributes, fontDef } from './fonts';
 import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
+import { numeralHours, type HourMarkers } from '../core/config/numerals';
+export { numeralHours } from '../core/config/numerals';
 
 const f = (n: number) => n.toFixed(3);
 
@@ -49,10 +53,10 @@ function polar(r: number, minute: number): [number, number] {
   return [r * Math.sin(a), -r * Math.cos(a)];
 }
 
-function tick(r0: number, r1: number, minute: number, width: number): string {
+function tick(r0: number, r1: number, minute: number, width: number, color?: string): string {
   const [x0, y0] = polar(r0, minute);
   const [x1, y1] = polar(r1, minute);
-  return `<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke-width="${f(width)}"/>`;
+  return `<line x1="${f(x0)}" y1="${f(y0)}" x2="${f(x1)}" y2="${f(y1)}" stroke-width="${f(width)}"${color ? ` stroke="${color}"` : ''}/>`;
 }
 
 function chapterRingMarkup(
@@ -60,28 +64,45 @@ function chapterRingMarkup(
   style: string,
   radiusAt?: (angle: number) => number,
   dotSize = 1,
+  settings?: DialPrintOptions['chapterRingDetails'],
+  ink?: string,
 ): string {
+  const width = settings?.lineWidth ?? 1;
+  const dots = settings?.dotSize ?? dotSize;
+  const length = settings?.length ?? 1;
+  const position = settings?.radius ?? 1;
+  const accent = settings?.accent && settings.accent !== 'auto' ? settings.accent : ink;
+  const accentAt = (minute: number) =>
+    settings?.accentAt === 'quarters'
+      ? minute % 15 === 0
+      : settings?.accentAt === 'zero' && minute === 0;
   const radius = (minute: number, fraction: number) =>
-    radiusAt
+    (radiusAt
       ? radiusAt(Math.PI / 2 - (minute / 60) * Math.PI * 2) * 0.985 - R * (0.985 - fraction)
-      : R * fraction;
+      : R * fraction) * position;
   const mark = (r0: number, r1: number, minute: number, width: number) =>
-    tick(radius(minute, r0), radius(minute, r1), minute, width);
+    tick(
+      radius(minute, r1 - (r1 - r0) * length),
+      radius(minute, r1),
+      minute,
+      width * (settings?.lineWidth ?? 1),
+      accentAt(minute) ? accent : undefined,
+    );
   const track = (fraction: number) => {
     if (!radiusAt)
-      return `<circle r="${f(R * fraction)}" fill="none" stroke-width="${f(R * 0.006)}"/>`;
+      return `<circle r="${f(R * fraction * position)}" fill="none" stroke-width="${f(R * 0.006 * width)}"/>`;
     const path =
       Array.from({ length: 240 }, (_, i) => {
         const m = (i / 240) * 60;
         const [x, y] = polar(radius(m, fraction), m);
         return `${i === 0 ? 'M' : 'L'}${f(x)} ${f(y)}`;
       }).join('') + 'Z';
-    return `<path d="${path}" fill="none" stroke-width="${f(R * 0.006)}"/>`;
+    return `<path d="${path}" fill="none" stroke-width="${f(R * 0.006 * width)}"/>`;
   };
   const parts: string[] = [];
   switch (style) {
     case 'railroad':
-      parts.push(track(0.985), track(0.93));
+      parts.push(track(0.985), track(0.985 - (0.985 - 0.93) * length));
       for (let m = 0; m < 60; m++) {
         parts.push(mark(0.93, 0.985, m, m % 5 === 0 ? R * 0.014 : R * 0.006));
       }
@@ -95,7 +116,7 @@ function chapterRingMarkup(
       for (let m = 0; m < 60; m++) {
         const [x, y] = polar(radius(m, 0.955), m);
         parts.push(
-          `<circle cx="${f(x)}" cy="${f(y)}" r="${f((m % 5 === 0 ? R * 0.016 : R * 0.007) * dotSize)}" stroke-width="${f(dotSize)}"/>`,
+          `<circle cx="${f(x)}" cy="${f(y)}" r="${f((m % 5 === 0 ? R * 0.016 : R * 0.007) * dots)}" stroke-width="${f(dots)}"${accentAt(m) && accent ? ` stroke="${accent}" fill="${accent}"` : ''}/>`,
         );
       }
       break;
@@ -110,25 +131,6 @@ function chapterRingMarkup(
 
 const ROMAN = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
 
-/** Heures (0 = 12 h) qui portent un chiffre ; les index appliqués y sont retirés. */
-export function numeralHours(set: string | undefined): number[] {
-  switch (set) {
-    case 'all':
-    case 'roman':
-      return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-    case 'cardinal':
-      return [0, 3, 6, 9];
-    case 'explorer':
-      return [3, 6, 9];
-    case 'twelve':
-      return [0];
-    case 'six-twelve':
-      return [0, 6];
-    default:
-      return [];
-  }
-}
-
 /** Portée maximale des chiffres, en fraction du rayon : la même que celle des index. */
 export const NUMERAL_REACH = 0.995;
 
@@ -141,17 +143,25 @@ function numeralsMarkup(
   sizeFactor = 1,
   radiusFactor = 1,
   system: 'arabic' | 'roman' = 'arabic',
+  overrides?: HourMarkers,
 ): string {
-  const hours = numeralHours(set).filter((h) => !omit.includes(h));
+  const selected = numeralHours(set, overrides);
+  const hours = selected.filter((h) => !omit.includes(h));
   if (hours.length === 0) return '';
   const font = fontDef(fontId);
   const roman = set === 'roman' || system === 'roman';
-  const few = numeralHours(set).length <= 4;
+  const few = selected.length <= 4;
   const reference = few ? 0.74 : 0.77;
   const fraction = reference * radiusFactor;
   // Rapprochés du centre, douze chiffres voisins se toucheraient : la taille est bornée par
   // l'écart entre deux heures (« 10 » ≈ 1,25 cadratin, « VIII » ≈ 2,2).
-  const neighbours = 2 * R * fraction * Math.sin(Math.PI / (few ? 4 : 12));
+  // Custom layouts can put even a few numerals on consecutive hours. Keep the historical
+  // limit for sparse layouts, and tighten it to the closest actual pair when needed.
+  const gap =
+    selected.length > 1
+      ? Math.min(3, ...selected.map((h, i) => (selected[(i + 1) % selected.length]! - h + 12) % 12))
+      : 3;
+  const neighbours = 2 * R * fraction * Math.sin((Math.PI * gap) / 12);
   const size = Math.min(
     R * (few ? 0.2 : roman ? 0.12 : 0.14) * sizeFactor,
     neighbours / (roman ? 2.2 : 1.25),
@@ -205,9 +215,9 @@ export function dialPrintSvg(options: DialPrintOptions): string {
     (options.numeralBlur
       ? `<defs><filter id="numeral-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${f(options.numeralBlur)}"/></filter></defs>`
       : '') +
-    `<g stroke="${options.chapterRingInk ?? options.ink}" fill="${options.chapterRingInk ?? options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt, options.chapterRingDotSize)}</g>` +
+    `<g stroke="${options.chapterRingInk ?? options.ink}" fill="${options.chapterRingInk ?? options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt, options.chapterRingDotSize, options.chapterRingDetails, options.chapterRingInk ?? options.ink)}</g>` +
     `<g fill="${options.ink}">${text.join('')}</g>` +
-    `<g fill="${options.numeralInk ?? options.ink}"${options.numeralBlur ? ' filter="url(#numeral-blur)"' : ''}>${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem)}</g>` +
+    `<g fill="${options.numeralInk ?? options.ink}"${options.numeralBlur ? ' filter="url(#numeral-blur)"' : ''}>${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem, options.hourMarkers)}</g>` +
     `</svg>`
   );
 }

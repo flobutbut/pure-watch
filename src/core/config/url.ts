@@ -213,6 +213,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     'six-twelve': 5,
     explorer: 6,
     roman: 7,
+    even: 8,
   }),
   E: field('dial.indices.numeralFont', id, {
     sans: 1,
@@ -351,13 +352,26 @@ const LEGACY_V1: Readonly<Record<string, { paths: readonly string[]; schema: z.Z
   },
 };
 
+/** UI edits and schema parsing insert detail keys in different orders. Give shared links
+ * one representation for the same settings, without changing or validating their values. */
+function orderedDetails(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(orderedDetails);
+  if (!isPlainObject(value)) return value;
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .map((key) => [key, orderedDetails(value[key])]),
+  );
+}
+
 /** Small default-free payload; colors, Unicode text and unexposed options are retained. */
 export function encodeConfigHash(config: WatchConfig): string {
   config = normalizeDialFinish(normalizeNumerals(normalizeLume(config)));
   config = { ...config, details: cleanDetails(config.details) };
   const payload: Record<string, unknown> = {};
   for (const [key, descriptor] of Object.entries(FIELDS_V1)) {
-    const value = getAtPath(config, descriptor.path);
+    const raw = getAtPath(config, descriptor.path);
+    const value = descriptor.path === 'details' ? orderedDetails(raw) : raw;
     if (JSON.stringify(value) === JSON.stringify(getAtPath(V1_DEFAULTS, descriptor.path))) continue;
     payload[key] = descriptor.bit
       ? value

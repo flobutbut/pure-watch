@@ -1,0 +1,51 @@
+const fr = {
+  title: 'Repères horaires',
+  appearance: 'Apparence des repères',
+  numerals: 'Chiffres',
+  indices: 'Index',
+  font: 'Typographie',
+  shape: 'Forme des index',
+  previous: 'Précédent',
+  next: 'Suivant',
+  individual: 'Personnaliser les heures',
+  hint: 'Choisis une heure sur le cadran, puis son repère.',
+  kind: 'Repère à cette heure',
+  numeral: 'Chiffre',
+  index: 'Index',
+  none: 'Aucun',
+  follow: 'Suivre la disposition',
+  inherited: 'Selon la disposition',
+  custom: 'Personnalisé',
+  occupied:
+    'Une complication occupe cette heure. Ton choix est conservé et réapparaîtra si cet emplacement est libéré.',
+  noNumerals:
+    'Cette disposition ne comporte pas de chiffres. Les réglages seront utilisés dès que tu en ajouteras.',
+  noIndices:
+    'Cette disposition ne comporte pas d’index. Les réglages sont conservés pour les autres dispositions.',
+};
+export const MARKER_LABELS: Record<'fr' | 'en', typeof fr> = {
+  fr,
+  en: {
+    title: 'Hour markers',
+    appearance: 'Marker appearance',
+    numerals: 'Numerals',
+    indices: 'Indices',
+    font: 'Typeface',
+    shape: 'Marker shape',
+    previous: 'Previous',
+    next: 'Next',
+    individual: 'Customize the hours',
+    hint: 'Choose an hour on the dial, then its marker.',
+    kind: 'Marker at this hour',
+    numeral: 'Numeral',
+    index: 'Index',
+    none: 'None',
+    follow: 'Follow the layout',
+    inherited: 'From the layout',
+    custom: 'Customized',
+    occupied:
+      'A complication occupies this hour. Your choice is kept and will reappear when this position is free.',
+    noNumerals: 'This layout has no numerals. These settings will apply when you add some.',
+    noIndices: 'This layout has no indices. These settings are kept for other layouts.',
+  },
+};

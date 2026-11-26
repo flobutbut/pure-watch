@@ -70,6 +70,13 @@ export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: num
   if (row.id === 'case-size' && next.case.lugWidthMm !== config.case.lugWidthMm)
     next = { ...next, strap: { ...next.strap, widthMm: next.case.lugWidthMm } };
   if (row.id === 'seconds') next = withoutSeconds(next);
+  if (row.id === 'numerals' && next.details?.hourMarkers) {
+    const details = { ...next.details };
+    delete details.hourMarkers;
+    const cleaned = cleanDetails(details);
+    next = { ...next, details: cleaned };
+    if (!cleaned) delete next.details;
+  }
   if (row.id === 'dial-ring') {
     const details = { ...next.details };
     if (details.ring) {

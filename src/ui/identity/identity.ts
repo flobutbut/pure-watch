@@ -22,7 +22,7 @@ import { subdialAppearance, reserveAppearance, ringAppearance } from '../../core
 import { dialRing } from '../../core/config/dial-ring';
 import { subdialStyle } from '../../core/config/subdial-style';
 import { SUBDIAL_HAND_LABELS } from '../colors/subdial-hand-labels';
-import { numeralSystem } from '../../core/config/numerals';
+import { numeralHours, numeralSystem } from '../../core/config/numerals';
 import { metalTint, numeralMaterial } from '../../core/config/material';
 import {
   chapterRingColor,
@@ -162,7 +162,10 @@ function colorTraits(row: RowDef, config: WatchConfig, locale: Locale): Trait[] 
     ];
   }
   // Writing system and layout share the panel attached to the numeral positions.
-  if (row.id === 'numerals' && config.dial.indices.numerals !== 'none') {
+  if (
+    row.id === 'numerals' &&
+    numeralHours(config.dial.indices.numerals, config.details?.hourMarkers).length > 0
+  ) {
     const { numeralSize, numeralRadius, numeralColor: color } = config.dial.indices;
     return [
       {
@@ -239,6 +242,34 @@ export function identitySections(
   config: WatchConfig,
   locale: Locale = 'fr',
 ): TraitSection[] {
+  rows = rows.flatMap((row) => {
+    if (row.id !== 'numerals' && row.id !== 'rehaut') return [row];
+    const additions = (row.id === 'rehaut' ? ['rehaut-scale'] : ['numeral-font', 'indices']).filter(
+      (id) =>
+        !rows.some((r) => r.id === id) &&
+        (id === 'rehaut-scale'
+          ? effectiveRehautProfile(config) !== 'classic'
+          : id === 'numeral-font'
+            ? numeralHours(config.dial.indices.numerals, config.details?.hourMarkers).length > 0
+            : numeralHours(config.dial.indices.numerals, config.details?.hourMarkers).length < 12),
+    );
+    return [
+      row,
+      ...additions.map((id) => {
+        const definition = rawCatalog.rows.find((r) => r.id === id)! as RowDef;
+        return locale === 'fr'
+          ? definition
+          : {
+              ...definition,
+              i18n: { ...definition.i18n, name: CATALOG_EN[id]!.name },
+              variants: definition.variants.map((v) => ({
+                ...v,
+                i18n: { ...v.i18n, name: CATALOG_EN[id]!.variants?.[v.id] ?? v.i18n.name },
+              })),
+            };
+      }),
+    ];
+  });
   const m = MESSAGES[locale];
   const len = (value: number, digits = 2) => mm(value, digits, locale);
   const sections: TraitSection[] = [

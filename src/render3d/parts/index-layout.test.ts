@@ -130,3 +130,20 @@ describe('taille et position des index', () => {
     },
   );
 });
+
+it('rend seulement les index demandés, y compris dans un cadran entièrement chiffré', () => {
+  const config = defaultConfig();
+  config.dial.indices.numerals = 'all';
+  config.details = { hourMarkers: { '1': 'index', '2': 'none', '6': 'index' } };
+  config.complications = [{ type: 'small-seconds', position: '6h' }];
+  const group = buildIndices(config, watchDimensions(config), lib);
+  const hours = new Set<number>();
+  group.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const p = o.geometry.getAttribute('position');
+    for (let i = 0; i < p.count; i++)
+      hours.add((Math.round((Math.atan2(p.getX(i), p.getY(i)) * 6) / Math.PI) + 12) % 12);
+    o.geometry.dispose();
+  });
+  expect([...hours]).toEqual([1]);
+});

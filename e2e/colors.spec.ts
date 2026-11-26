@@ -19,10 +19,15 @@ test('la piste des minutes possède sa palette et conserve sa couleur après rec
 }) => {
   await page.goto('/');
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
-  await dialRow(page);
-  await page.keyboard.press('ArrowDown');
+  await page.getByRole('grid').focus();
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByRole('grid')).toHaveAttribute(
+    'aria-activedescendant',
+    /^cell-chapter-ring-/,
+  );
   const trigger = page.getByRole('button', {
-    name: 'Couleur de la piste des minutes',
+    name: 'Piste des minutes',
     exact: true,
   });
   await trigger.click();
@@ -46,8 +51,13 @@ test('la piste des minutes possède sa palette et conserve sa couleur après rec
   await expect(trigger).toHaveAttribute('data-color', '#C92750');
   await page.reload();
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
-  await dialRow(page);
-  await page.keyboard.press('ArrowDown');
+  await page.getByRole('grid').focus();
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByRole('grid')).toHaveAttribute(
+    'aria-activedescendant',
+    /^cell-chapter-ring-/,
+  );
   await expect(trigger).toHaveAttribute('data-color', '#C92750');
   await page.keyboard.press('ArrowRight');
   await expect(trigger).toHaveAttribute('data-color', '#C92750');
@@ -59,7 +69,7 @@ test('la piste des minutes possède sa palette et conserve sa couleur après rec
   await expect(trigger).toHaveAttribute('data-color', '#F2F1EC');
   await page.getByRole('grid').focus();
   await page.keyboard.press('Home');
-  await expect(trigger).toHaveCount(0);
+  await expect(trigger).toHaveCount(1);
 });
 
 test('le cadran se prévisualise, s’annule et se partage avec une teinte libre', async ({
@@ -110,6 +120,7 @@ test('le cadran se prévisualise, s’annule et se partage avec une teinte libre
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   expect(page.url()).toBe(saved);
+  await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowDown');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
@@ -198,7 +209,14 @@ test('la teinte naturelle remplace le réglage sans perdre la couleur personnell
   await expect(page.getByRole('grid')).toHaveAttribute('aria-activedescendant', 'cell-hands-sword');
   await dialRow(page);
   await page.keyboard.press('Home');
-  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowRight');
+  for (let i = 0; i < 8; i++) {
+    if (
+      (await page.getByRole('grid').getAttribute('aria-activedescendant')) ===
+      'cell-dial-finish-iridescent-oil'
+    )
+      break;
+    await page.keyboard.press('ArrowRight');
+  }
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
     'cell-dial-finish-iridescent-oil',

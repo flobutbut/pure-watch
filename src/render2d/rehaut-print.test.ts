@@ -30,3 +30,22 @@ it.each(['round', 'square', 'tonneau', 'rectangle'])(
     );
   },
 );
+
+it('allonge les traits du réhaut sans déplacer leur bord extérieur ni les inscriptions', () => {
+  const config = defaultConfig();
+  config.rehaut.profile = 'sloped';
+  config.rehaut.scale = 'five-minute';
+  const d = watchDimensions(config);
+  const original = rehautPrintSvg(config, d);
+  config.details = { rehaut: { tickLength: 1.5 } };
+  const svg = rehautPrintSvg(config, d);
+  expect([...svg.matchAll(/<text[^>]*>[^<]+<\/text>/g)].map((m) => m[0])).toEqual(
+    [...original.matchAll(/<text[^>]*>[^<]+<\/text>/g)].map((m) => m[0]),
+  );
+  const first = (text: string) =>
+    text.match(/<line x1="([\d.-]+)" y1="([\d.-]+)" x2="([\d.-]+)" y2="([\d.-]+)"/)!;
+  expect(first(svg).slice(1, 3)).toEqual(first(original).slice(1, 3));
+  expect(first(svg).slice(3)).not.toEqual(first(original).slice(3));
+  config.details.rehaut!.tickLength = 1;
+  expect(rehautPrintSvg(config, d)).toBe(original);
+});

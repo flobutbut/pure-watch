@@ -69,7 +69,11 @@
   // Lignes affichées : celles dont les prérequis sont remplis (principe 5 de la spec).
   const rows = $derived(visibleRows(named.rows, config));
   const settingsRows = $derived(
-    named.rows.filter((row) => (PANEL_ROWS as readonly string[]).includes(row.id)),
+    named.rows.filter(
+      (row) =>
+        (PANEL_ROWS as readonly string[]).includes(row.id) ||
+        ['chapter-ring', 'rehaut'].includes(row.id),
+    ),
   );
   const rowViews = $derived(toRowViews(rows));
   /** Share panel open beside the 3D watch; `opened`: the 3D view was opened for it. */
@@ -135,7 +139,8 @@
         nav.mode === 'opening3d' ||
         colorTarget === 'hands' ||
         colorTarget === 'indices' ||
-        colorTarget === 'numerals'),
+        colorTarget === 'numerals' ||
+        colorTarget === 'markers'),
   );
   const ambience = $derived(
     nightPreview ? NIGHT_AMBIENCE : ambienceFor((previewConfig ?? config).dial),
@@ -148,7 +153,7 @@
   );
   const colorPresets = $derived([
     // Chiffres et minuterie : blanc et noir d'impression, puis les accents de la trotteuse.
-    ...(['numerals', 'chapterRing'].includes(panelTarget ?? '')
+    ...(['markers', 'numerals', 'chapterRing', 'rehautScale'].includes(panelTarget ?? '')
       ? [
           { name: t().app.white, color: '#F2F1EC' },
           { name: t().app.black, color: '#1B1F27' },
@@ -159,7 +164,9 @@
       named.rows.find(
         (row) =>
           row.id ===
-          (['seconds', 'numerals', 'chapterRing'].includes(panelTarget ?? '')
+          (['seconds', 'markers', 'numerals', 'chapterRing', 'rehautScale'].includes(
+            panelTarget ?? '',
+          )
             ? 'seconds-color'
             : 'dial-color'),
       )?.variants ?? []
@@ -239,14 +246,27 @@
     if (!colorTarget) return;
     const next = choice ? withColorChoice(config, colorTarget, choice) : previewConfig;
     if (next && encodeConfigHash(next) !== encodeConfigHash(config)) {
+      const before = config;
       config = next;
+      nav = {
+        ...nav,
+        selectionByRow: syncSelection(catalog, before, next, nav.selectionByRow, ''),
+      };
       linkNotice = '';
       announcement =
-        colorTarget === 'numerals'
-          ? t().app.numeralsSaved
-          : colorTarget === 'indices'
-            ? t().app.indicesSaved
-            : t().app.colorSaved;
+        colorTarget === 'markers'
+          ? i18n.locale === 'fr'
+            ? 'Repères horaires enregistrés'
+            : 'Hour markers saved'
+          : colorTarget === 'numerals'
+            ? t().app.numeralsSaved
+            : colorTarget === 'indices'
+              ? t().app.indicesSaved
+              : colorTarget === 'rehaut'
+                ? t().app.rehautSaved
+                : colorTarget === 'chapterRing' || colorTarget === 'rehautScale'
+                  ? t().app.scaleSaved
+                  : t().app.colorSaved;
     }
     dropEditor();
   }

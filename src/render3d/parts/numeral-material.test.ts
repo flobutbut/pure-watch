@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
+import type { WatchConfig } from '../../core/config/types';
 import { defaultConfig } from '../../core/config/defaults';
 import type { MaterialSettings } from '../../core/config/material';
 import { watchDimensions } from '../../core/geometry/dimensions';
@@ -19,7 +20,11 @@ vi.spyOn(textures, 'svgTexture').mockImplementation((markup) => {
 /** Chiffres des heures dans une impression (le texte de marque n'est pas centré ainsi). */
 const numeralCount = (svg: string) => svg.split('dominant-baseline="central"').length - 1;
 
-async function dial(numerals?: MaterialSettings, ring = false) {
+async function dial(
+  numerals?: MaterialSettings,
+  ring = false,
+  customize?: (config: WatchConfig) => void,
+) {
   markups.length = 0;
   const config = defaultConfig();
   config.dial.indices.numerals = 'all';
@@ -27,6 +32,7 @@ async function dial(numerals?: MaterialSettings, ring = false) {
     ...(numerals ? { numerals } : {}),
     ...(ring ? { ring: { shape: 'ring' as const } } : {}),
   };
+  customize?.(config);
   const lib = new MaterialLibrary();
   vi.spyOn(lib, 'dial').mockReturnValue(lib.polishedSteel());
   const parts = buildDial(config, watchDimensions(config), lib);
@@ -84,4 +90,14 @@ describe('matière des chiffres', () => {
       layers.every((mesh) => (mesh.material as THREE.Material & { alphaMap: unknown }).alphaMap),
     ).toBe(true);
   });
+});
+
+it('un chiffre personnalisé en métal reste sur son calque, même sans chiffres dans la disposition', async () => {
+  const { layers, printed, glyphs } = await dial({ kind: 'metal' }, false, (config) => {
+    config.dial.indices.numerals = 'none';
+    config.details!.hourMarkers = { '7': 'numeral' };
+  });
+  expect(layers).toHaveLength(1);
+  expect(printed.every((count) => count === 0)).toBe(true);
+  expect(glyphs[0]).toBe(1);
 });

@@ -44,13 +44,14 @@
   import ComplicationSettings from './ComplicationSettings.svelte';
   import SubdialHandSettings from './SubdialHandSettings.svelte';
   import SubdialPrintSettings from './SubdialPrintSettings.svelte';
-  import DetailRange from './DetailRange.svelte';
-  import { CHAPTER_DOT_SIZE_RANGE } from '../../core/config/details';
   import BezelSettings from './BezelSettings.svelte';
   import StrapSettings from './StrapSettings.svelte';
   import LugSettings from './LugSettings.svelte';
   import DetailSettings from './DetailSettings.svelte';
   import IndexOverrides from './IndexOverrides.svelte';
+  import MarkerSettings from './MarkerSettings.svelte';
+  import ScaleSettings from './ScaleSettings.svelte';
+  import RehautSettings from './RehautSettings.svelte';
   import { hasBezelInsert } from '../../core/config/bezel';
   import ColorField, { CUSTOM } from './ColorField.svelte';
   import MaterialField from './MaterialField.svelte';
@@ -104,6 +105,9 @@
   let lugJoin = $state(initial.lugJoin);
   let strap = $state(initial.strap);
   let details = $state(initial.details ?? {});
+  let markers = $state(initial.markers);
+  let graduationStyle = $state(initial.graduationStyle);
+  let rehautProfile = $state(initial.rehautProfile);
   const initialComplications = untrack(() => config.complications);
   let complications = $state(initialComplications);
   let cyclops = $state(initial.cyclops);
@@ -152,7 +156,7 @@
       : { size: NUMERAL_SIZE_RANGE, width: null, radius: NUMERAL_RADIUS_RANGE },
   );
   const free = $derived(
-    target === 'strap' || target === 'date'
+    target === 'rehautScale' || target === 'markers' || target === 'strap' || target === 'date'
       ? false
       : surfaceTarget
         ? !hasIntrinsicColor(appearanceOf({ ...config, details }).config.dial.finish)
@@ -168,6 +172,9 @@
   );
   const choice = $derived<ColorChoice>({
     details,
+    ...(graduationStyle !== undefined ? { graduationStyle } : {}),
+    ...(rehautProfile !== undefined ? { rehautProfile } : {}),
+    ...(markers ? { markers } : {}),
     ...(strap ? { strap } : {}),
     ...(complicationTarget ? { complications } : {}),
     ...(cyclops !== undefined ? { cyclops } : {}),
@@ -212,6 +219,9 @@
   const changed = $derived(
     JSON.stringify(complications) !== JSON.stringify(initialComplications) ||
       choice.cyclops !== initial.cyclops ||
+      choice.graduationStyle !== initial.graduationStyle ||
+      choice.rehautProfile !== initial.rehautProfile ||
+      JSON.stringify(choice.markers) !== JSON.stringify(initial.markers) ||
       choice.finish !== initial.finish ||
       !sameColor(choice.color, initial.color) ||
       choice.numeralSystem !== initial.numeralSystem ||
@@ -263,6 +273,9 @@
     lugJoin = initial.lugJoin;
     strap = initial.strap;
     details = initial.details ?? {};
+    markers = initial.markers;
+    graduationStyle = initial.graduationStyle;
+    rehautProfile = initial.rehautProfile;
     complications = initialComplications;
     cyclops = initial.cyclops;
   }
@@ -363,6 +376,20 @@
   placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
+  {#if target === 'markers' && markers}
+    <MarkerSettings
+      config={{ ...config, dial: { ...config.dial, indices: markers }, details }}
+      {settingsRows}
+      {presets}
+      {night}
+      {onnight}
+      oncommit={close}
+      onchange={(next, nextDetails) => {
+        markers = next;
+        details = nextDetails;
+      }}
+    />
+  {/if}
   {#if strap}<StrapSettings
       value={strap}
       {config}
@@ -459,14 +486,30 @@
   {/if}
   {#if lugJoin}<LugSettings value={lugJoin} onchange={(value) => (lugJoin = value)} />{/if}
   {#if target === 'rehaut'}
-    <div class="element-color">{@render elementColor()}</div>
-    <DetailSettings
-      {target}
-      {config}
+    <RehautSettings
+      config={withColorChoice(config, target, choice)}
+      {settingsRows}
       {presets}
       oncommit={close}
-      value={details}
-      onchange={(value) => (details = value)}
+      surface={elementColor}
+      onprofile={(value) => (rehautProfile = value)}
+      onchange={(style, value) => {
+        graduationStyle = style;
+        details = value;
+      }}
+    />
+  {/if}
+  {#if target === 'chapterRing' || target === 'rehautScale'}
+    <ScaleSettings
+      {target}
+      config={withColorChoice(config, target, choice)}
+      {settingsRows}
+      {presets}
+      oncommit={close}
+      onchange={(style, value) => {
+        graduationStyle = style;
+        details = value;
+      }}
     />
   {/if}
   {#if target === 'hands'}
@@ -567,18 +610,6 @@
     </div>
   {/if}
   {#if target === 'numerals' || target === 'chapterRing'}
-    {#if target === 'chapterRing' && config.dial.chapterRing === 'dots'}
-      <div class="layout">
-        <DetailRange
-          label={t().colors.dotSize}
-          value={details.chapterRing?.dotSize ?? 1}
-          min={CHAPTER_DOT_SIZE_RANGE.min}
-          max={CHAPTER_DOT_SIZE_RANGE.max}
-          onchange={(dotSize) =>
-            (details = { ...details, chapterRing: { ...details.chapterRing, dotSize } })}
-        />
-      </div>
-    {/if}
     {#if target === 'numerals'}
       <MaterialField
         label={t().material.numerals}
@@ -648,8 +679,11 @@
       lugJoin ||
       strap ||
       complicationTarget ||
+      target === 'markers' ||
       target === 'ring' ||
-      target === 'chapterRing'
+      target === 'chapterRing' ||
+      target === 'rehautScale' ||
+      target === 'rehaut'
         ? t().colors.restoreSettings
         : t().colors.restoreColor}
       disabled={!changed}

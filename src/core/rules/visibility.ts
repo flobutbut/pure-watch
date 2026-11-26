@@ -30,6 +30,9 @@ export function evaluate(rule: Record<string, unknown>, config: WatchConfig): bo
 
 /** Lignes réglées dans le panneau de leur ligne mère, pas dans la grille. */
 export const PANEL_ROWS = [
+  'rehaut-scale',
+  'numeral-font',
+  'indices',
   'small-seconds-style',
   'chronograph-counters',
   'power-reserve-style',

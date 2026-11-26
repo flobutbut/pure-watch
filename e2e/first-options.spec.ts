@@ -8,10 +8,17 @@ const payload = (page: Page) => linkPayload(page.url());
 async function row(page: Page, id: string) {
   const grid = page.getByRole('grid');
   await grid.focus();
-  for (let i = 0; i < 6; i++) await page.keyboard.press('PageUp');
+  for (let i = 0; i < 6; i++) {
+    const active = await grid.getAttribute('aria-activedescendant');
+    if (active?.startsWith('cell-case-shape-')) break;
+    await page.keyboard.press('PageUp');
+    await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
+  }
   for (let i = 0; i < 40; i++) {
     if ((await grid.getAttribute('aria-activedescendant'))?.startsWith(`cell-${id}-`)) break;
+    const active = await grid.getAttribute('aria-activedescendant');
     await page.keyboard.press('ArrowDown');
+    await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
   }
   await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`^cell-${id}-`));
 }
@@ -30,6 +37,9 @@ test('sans trotteuse : retire la petite seconde, masque la couleur et survit au 
     }),
   );
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
+  await expect(page.getByRole('row', { name: 'Trotteuse', exact: true })).toHaveCount(0);
+  await row(page, 'small-seconds');
+  await page.keyboard.press('Home');
   await row(page, 'seconds');
   await page.keyboard.press('End');
   await expect(page.getByRole('grid')).toHaveAttribute(
@@ -102,10 +112,10 @@ test('les jeux mixtes restent inspectables et les anciens liens gardent leurs in
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(link({ A: 9, L: 11, n: 7, p: 2, ag: 2 }));
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
-  await row(page, 'indices');
+  await row(page, 'numerals');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
-    'cell-indices-dive',
+    'cell-numerals-none',
   );
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeVisible();
@@ -120,21 +130,23 @@ test('les jeux mixtes restent inspectables et les anciens liens gardent leurs in
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Fermer', exact: true })).toBeHidden();
   await expect(page.getByRole('grid')).toHaveAttribute('aria-busy', 'false');
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('grid')).toHaveAttribute(
-    'aria-activedescendant',
-    'cell-indices-mixed-batons',
+  await page.getByRole('button', { name: 'Repères horaires', exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Plongée', exact: true })).toHaveAttribute(
+    'aria-checked',
+    'true',
   );
+  await page.getByRole('radio', { name: 'Bâtons et points', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les couleurs', exact: true }).click();
   expect(payload(page).A).toBe(10);
   const saved = page.url();
   await page.reload();
   await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
   expect(page.url()).toBe(saved);
   await page.goto(link({ A: 4 }));
-  await row(page, 'indices');
+  await row(page, 'numerals');
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',
-    'cell-indices-dots',
+    'cell-numerals-none',
   );
   expect(errors).toEqual([]);
 });

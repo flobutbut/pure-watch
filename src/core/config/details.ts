@@ -82,6 +82,11 @@ export const detailsSchema = z
     chapterRing: z
       .object({
         dotSize: factor(CHAPTER_DOT_SIZE_RANGE.min, CHAPTER_DOT_SIZE_RANGE.max).optional(),
+        lineWidth: factor(0.5, 2).optional(),
+        length: factor(0.5, 1.6).optional(),
+        radius: factor(0.6, 1).optional(),
+        accent: ink.optional(),
+        accentAt: z.enum(['none', 'zero', 'quarters']).optional(),
       })
       .strict()
       .optional(),
@@ -109,6 +114,7 @@ export const detailsSchema = z
         accent: ink.optional(),
         accentAt: z.enum(['none', 'zero', 'quarters']).optional(),
         labelSize: factor(0.6, 1.6).optional(),
+        tickLength: factor(0.5, 1.6).optional(),
         lineWidth: factor(0.5, 2).optional(),
       })
       .strict()
@@ -137,6 +143,10 @@ export const detailsSchema = z
           })
           .strict(),
       )
+      .optional(),
+    /** Explicit marker kinds, independent of the retained per-index appearance. */
+    hourMarkers: z
+      .record(z.string().regex(/^(?:[1-9]|1[0-2])$/), z.enum(['numeral', 'index', 'none']))
       .optional(),
     /** Matière des chiffres des heures (encre, métal, luminescent) ; absente : encre mate. */
     numerals: materialSchema.optional(),

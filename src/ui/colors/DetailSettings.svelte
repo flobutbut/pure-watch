@@ -10,6 +10,7 @@
   import { i18n, t } from '../i18n.svelte';
   import { DETAIL_SETTINGS } from './detail-settings';
   import DetailRange from './DetailRange.svelte';
+  import { SCALE_LABELS } from './scale-labels';
   import ColorField, { CUSTOM } from './ColorField.svelte';
   import SegmentedControl from '../kit/SegmentedControl.svelte';
   let {
@@ -135,12 +136,21 @@
       )}
     {/if}
     <DetailRange
-      label={m.labelSize}
-      value={rehaut.labelSize ?? 1}
-      min={0.6}
+      label={SCALE_LABELS[i18n.locale].length}
+      value={rehaut.tickLength ?? 1}
+      min={0.5}
       max={1.6}
-      onchange={(labelSize) => patch('rehaut', { labelSize })}
+      onchange={(tickLength) => patch('rehaut', { tickLength })}
     />
+    {#if ['five-minute', '24h', 'tachymeter'].includes(config.rehaut.scale)}
+      <DetailRange
+        label={m.labelSize}
+        value={rehaut.labelSize ?? 1}
+        min={0.6}
+        max={1.6}
+        onchange={(labelSize) => patch('rehaut', { labelSize })}
+      />
+    {/if}
     <DetailRange
       label={m.lineWidth}
       value={rehaut.lineWidth ?? 1}
