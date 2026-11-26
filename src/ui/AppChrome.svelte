@@ -6,6 +6,7 @@
   let {
     sharing,
     onshare,
+    studioLink,
     card,
     oncard,
     inspecting,
@@ -15,6 +16,8 @@
     /** The share panel is open beside the 3D watch. */
     sharing: boolean;
     onshare: () => void;
+    /** Banc de rendu studio (studio.html) de la configuration en cours. */
+    studioLink: string;
     /** The identity card is open beside the 3D watch. */
     card: boolean;
     oncard: () => void;
@@ -50,6 +53,18 @@
     <span>ÉPURE</span>
   </div>
   <div class="actions">
+    <a
+      class="share-button studio-button"
+      href={studioLink}
+      aria-label={t().chrome.studioLabel}
+      title={t().chrome.studioLabel}
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 8.5h3.2L9 6h6l1.8 2.5H20V19H4z" />
+        <circle cx="12" cy="13.2" r="3.4" />
+      </svg>
+      <span>{t().chrome.studio}</span>
+    </a>
     <button
       class="share-button card-button"
       bind:this={cardButton}
@@ -186,6 +201,15 @@
   }
   .card-button[aria-pressed='true']:hover {
     background: color-mix(in srgb, var(--ink) 88%, var(--veil));
+  }
+  /* Le lien du rendu studio a l'allure des boutons de l'en-tête. */
+  .studio-button {
+    color: inherit;
+    text-decoration: none;
+  }
+  .studio-button:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 4px;
   }
   .share-button {
     display: inline-flex;
@@ -327,6 +351,10 @@
     .share-button {
       min-height: var(--control-height);
       padding: 9px 12px;
+    }
+    /* Sur téléphone, le rendu studio se réduit à son pictogramme (nom dans aria-label). */
+    .studio-button span {
+      display: none;
     }
     .actions {
       gap: 8px;

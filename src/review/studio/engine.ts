@@ -26,6 +26,12 @@ const DEG = Math.PI / 180;
 const DISTANCE = 136;
 /** Champ vertical de la caméra du configurateur (degrés). */
 const FOV = 28;
+/**
+ * Le viseur (la miniature) voit plus large que le rendu studio, du même point et dans la même
+ * direction : le champ du rendu y tient dans un cadre centré, réduit de ce facteur, et l'on voit
+ * ce qui l'entoure pour cadrer.
+ */
+export const VIEWFINDER_MARGIN = 1.4;
 
 export const STUDIO_VIEWS = {
   front: [0, 0],
@@ -361,9 +367,13 @@ export class StudioBench {
 
     const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 10000);
     const controls = new OrbitControls(camera, canvas);
-    controls.enablePan = false;
-    controls.minDistance = 60;
-    controls.maxDistance = 260;
+    // Dans le viseur : tourner, zoomer (molette, pincement) et déplacer le cadre (clic droit,
+    // Maj + glisser, deux doigts), pour choisir finement le rendu.
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+    controls.zoomSpeed = 0.6;
+    controls.minDistance = 40;
+    controls.maxDistance = 320;
     // L'objectif reste du côté du cadran : la table ne passe jamais devant.
     controls.minAzimuthAngle = -78 * DEG;
     controls.maxAzimuthAngle = 78 * DEG;
@@ -399,10 +409,12 @@ export class StudioBench {
     if (width === 0 || height === 0 || (width === current.x && height === current.y)) return;
     pane.renderer.setSize(width, height, false);
     pane.camera.aspect = width / height;
-    pane.camera.fov =
-      pane.camera.aspect >= 1
-        ? FOV
-        : (2 * Math.atan(Math.tan((FOV * DEG) / 2) / pane.camera.aspect)) / DEG;
+    // Demi-champ vertical, en tangente : celui du configurateur, ouvert en hauteur (téléphone)
+    // pour que la largeur de la montre tienne, et élargi pour le viseur.
+    let halfTan = Math.tan((FOV * DEG) / 2);
+    if (pane.camera.aspect < 1) halfTan /= pane.camera.aspect;
+    if (pane === this.raster) halfTan *= VIEWFINDER_MARGIN;
+    pane.camera.fov = (2 * Math.atan(halfTan)) / DEG;
     pane.camera.updateProjectionMatrix();
     this.restart();
   }

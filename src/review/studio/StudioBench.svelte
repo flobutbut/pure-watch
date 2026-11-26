@@ -12,7 +12,13 @@
   import { ambienceFor, NIGHT_AMBIENCE } from '../../ui/ambience';
   import Button from '../../ui/kit/Button.svelte';
   import SegmentedControl from '../../ui/kit/SegmentedControl.svelte';
-  import { StudioBench, type Lighting, type StudioStatus, type StudioView } from './engine';
+  import {
+    StudioBench,
+    VIEWFINDER_MARGIN,
+    type Lighting,
+    type StudioStatus,
+    type StudioView,
+  } from './engine';
 
   interface Props {
     config: WatchConfig;
@@ -77,6 +83,9 @@
   /** Taille de la scène : la miniature en reprend les proportions, donc le cadrage. */
   let stageWidth = $state(1);
   let stageHeight = $state(1);
+
+  /** Marge du viseur autour du cadre du rendu, en part de la miniature (chaque côté). */
+  const frameInset = `${((1 - 1 / VIEWFINDER_MARGIN) / 2) * 100}%`;
 
   const backdropColor = $derived(BACKDROPS.find((b) => b.value === backdrop)!.color);
   const ready = $derived(status.phase !== 'building' && status.phase !== 'preparing');
@@ -169,12 +178,16 @@
       aria-label="Montre en lancer de rayons"
     ></canvas>
 
-    <figure class="thumbnail" style:aspect-ratio="{stageWidth} / {stageHeight}">
-      <canvas
-        bind:this={rasterCanvas}
-        style:background={backdropColor}
-        aria-label="Viseur en temps réel ; glisser pour cadrer"
-      ></canvas>
+    <figure class="thumbnail">
+      <div class="viewport" style:aspect-ratio="{stageWidth} / {stageHeight}">
+        <canvas
+          bind:this={rasterCanvas}
+          style:background={backdropColor}
+          aria-label="Viseur en temps réel : glisser pour tourner, molette pour zoomer, clic droit pour déplacer"
+        ></canvas>
+        <!-- Champ exact du rendu studio : le viseur voit plus large autour. -->
+        <div class="frame" style:inset={frameInset} aria-hidden="true"></div>
+      </div>
       <figcaption class="viewfinder-bar">
         <span class="caption">
           {status.pending ? 'Nouveau cadrage' : 'Temps réel'}{rasterMs === null || status.pending
@@ -238,8 +251,9 @@
           onchange={(next) => bench?.setView(next)}
         />
         <p class="hint">
-          Glisser sur la miniature pour cadrer, puis « Rendre cette vue » : le rendu studio garde
-          son point de vue jusque-là.
+          Cadrer dans la miniature : glisser pour tourner, molette ou pincement pour zoomer, clic
+          droit ou Maj + glisser pour déplacer. Le cadre blanc montre le champ du rendu studio, qui
+          garde son point de vue jusqu’à « Rendre cette vue ».
         </p>
       </section>
 
@@ -381,31 +395,38 @@
       0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent),
       0 12px 40px #0004;
   }
-  .thumbnail canvas {
+  .viewport {
+    position: relative;
+    overflow: hidden;
+  }
+  .viewport canvas {
     display: block;
     width: 100%;
     height: 100%;
     touch-action: none;
     cursor: grab;
   }
-
-  /* Barre du viseur, au pied de la miniature : ce qu'elle montre et l'action du rendu. */
-  .viewfinder-bar {
+  /* Cadre du rendu studio : un trait clair bordé de sombre, lisible sur tous les fonds, et
+     l'extérieur du cadre légèrement voilé. */
+  .frame {
     position: absolute;
-    left: 6px;
-    right: 6px;
-    bottom: 6px;
+    border: 1px solid #fffd;
+    box-shadow:
+      0 0 0 1px #0007,
+      0 0 0 999px #0003;
+    pointer-events: none;
+  }
+
+  /* Barre du viseur, sous la miniature : ce qu'elle montre et l'action du rendu. */
+  .viewfinder-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 6px 8px;
-    padding: 5px 5px 5px 10px;
-    border-radius: var(--radius-s);
-    background: color-mix(in srgb, var(--veil) 88%, transparent);
-    backdrop-filter: blur(10px);
+    padding: 6px 6px 6px 12px;
+    background: var(--veil);
     color: var(--ink);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
   }
   .caption {
     font-size: var(--text-xs);
