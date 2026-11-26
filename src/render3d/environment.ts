@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three';
 
-interface Softbox {
+export interface Softbox {
   size: [number, number];
   position: [number, number, number];
   intensity: number;
@@ -31,14 +31,29 @@ const SOFTBOXES: Softbox[] = [
   { size: [50, 50], position: [0, -32, 4], intensity: 0.9, color: '#c4cad3' },
 ];
 
-export function studioScene(): THREE.Scene {
+/** Fond du studio : dégradé vertical, du haut vers le bas. */
+export interface StudioSky {
+  top: string;
+  bottom: string;
+}
+
+const SKY: StudioSky = { top: '#7d828b', bottom: '#25272c' };
+
+/**
+ * Studio du configurateur par défaut. Le banc de rendu studio (review/studio.ts) y passe un
+ * autre jeu de boîtes à lumière, réglé pour le lancer de rayons.
+ */
+export function studioScene(
+  softboxes: readonly Softbox[] = SOFTBOXES,
+  skyColors: StudioSky = SKY,
+): THREE.Scene {
   const scene = new THREE.Scene();
 
   // Fond : dégradé vertical sombre.
   const sky = new THREE.SphereGeometry(60, 32, 16);
   const colors: number[] = [];
-  const top = new THREE.Color('#7d828b');
-  const bottom = new THREE.Color('#25272c');
+  const top = new THREE.Color(skyColors.top);
+  const bottom = new THREE.Color(skyColors.bottom);
   const position = sky.getAttribute('position');
   const c = new THREE.Color();
   for (let i = 0; i < position.count; i++) {
@@ -51,7 +66,7 @@ export function studioScene(): THREE.Scene {
     new THREE.Mesh(sky, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })),
   );
 
-  for (const box of SOFTBOXES) {
+  for (const box of softboxes) {
     const material = new THREE.MeshBasicMaterial({
       color: new THREE.Color(box.color ?? '#ffffff').multiplyScalar(box.intensity),
       side: THREE.DoubleSide,
@@ -65,9 +80,11 @@ export function studioScene(): THREE.Scene {
 }
 
 /** Texture d'environnement préfiltrée, prête pour scene.environment. */
-export function studioEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
+export function studioEnvironment(
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene = studioScene(),
+): THREE.Texture {
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const scene = studioScene();
   const texture = pmrem.fromScene(scene, 0.02).texture;
   pmrem.dispose();
   scene.traverse((object) => {

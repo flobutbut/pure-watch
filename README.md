@@ -51,6 +51,8 @@ Catalogue étendu à 12 jeux d’aiguilles et 10 trotteuses : [nouvelles formes 
 
 Treize finitions de cadran, dont six nouvelles surfaces texturées : [comparaison et fonctionnement](documentation/dial-finishes/README.md).
 
+Rendu studio par lancer de rayons, calculé dans le navigateur : [banc de comparaison et limites](documentation/studio-render/README.md). Avec `npm run dev`, ouvrir [`/studio.html`](http://127.0.0.1:5173/studio.html) en y ajoutant le `#v1.…` d’une configuration.
+
 ## Langues
 
 Le site existe en français et en anglais. Au premier passage, il suit la langue du navigateur (anglais si ni le français ni l’anglais ne sont demandés) ; le sélecteur « FR · EN » du pied de page change de langue et retient le choix. Textes : [`src/core/i18n/messages.ts`](src/core/i18n/messages.ts) ; noms anglais du catalogue : [`src/core/i18n/catalog-en.ts`](src/core/i18n/catalog-en.ts) (un test signale toute ligne ou variante nouvelle sans traduction).
