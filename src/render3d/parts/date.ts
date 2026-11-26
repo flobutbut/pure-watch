@@ -14,7 +14,7 @@ import {
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { inkForDial } from '../../render2d/dial-print';
-import { fontDef } from '../../render2d/fonts';
+import { fontAttributes, fontDef } from '../../render2d/fonts';
 import type { MaterialLibrary } from '../materials';
 import { svgTexture } from '../textures';
 
@@ -89,7 +89,7 @@ export function dateDiscSvg(
     `<linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.22"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>` +
     `</defs>` +
     `<rect x="${f(-span / 2)}" y="${f(-span / 2)}" width="${f(span)}" height="${f(span)}" fill="${colors.color}"/>` +
-    `<text x="0" y="${f(rect.height * 0.03)}" font-size="${f(rect.height * 0.78)}" font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" text-anchor="middle" dominant-baseline="central" fill="${colors.ink}">${day}</text>` +
+    `<text x="0" y="${f(rect.height * 0.03)}" font-size="${f(rect.height * 0.78)}" ${fontAttributes(font)} text-anchor="middle" dominant-baseline="central" fill="${colors.ink}">${day}</text>` +
     `<rect x="${f(left)}" y="${f(top)}" width="${f(rect.width)}" height="${f(rect.height * 0.32)}" fill="url(#t)"/>` +
     `<rect x="${f(left)}" y="${f(top)}" width="${f(rect.width * 0.14)}" height="${f(rect.height)}" fill="url(#l)"/>` +
     `</svg>`

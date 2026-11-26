@@ -129,6 +129,14 @@ describe('polices à caractère', () => {
     expect(FONTS[id]?.embedded).toBeTruthy();
     expect(FONTS[id]?.load).toBeTypeOf('function');
   });
+
+  it('écrit des chiffres alignés, de même hauteur, même en italique', () => {
+    // Playfair Display (italique) dessine par défaut des chiffres elzéviriens.
+    const svg = dialPrintSvg({ ...base, numerals: 'all', numeralFont: 'italic' });
+    const texts = svg.match(/<text [^>]*>\d+</g) ?? [];
+    expect(texts).toHaveLength(12);
+    expect(texts.every((text) => text.includes('font-variant-numeric:lining-nums'))).toBe(true);
+  });
 });
 
 describe('couleur des chiffres', () => {

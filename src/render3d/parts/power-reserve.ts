@@ -13,7 +13,7 @@ import {
 } from '../../core/config/power-reserve';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
-import { fontDef } from '../../render2d/fonts';
+import { fontAttributes, fontDef } from '../../render2d/fonts';
 import { sharpPrint, svgTexture } from '../textures';
 import type { ReserveAdjustment } from '../../core/config/details';
 import { boss, profileGeometry } from './profile';
@@ -58,7 +58,7 @@ export function reserveSvg(
   const parts: string[] = [];
   const text = (x: number, y: number, size: number, label: string, fill = ink) =>
     parts.push(
-      `<text x="${f(x)}" y="${f(y)}" font-size="${f(size)}" font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" text-anchor="middle" dominant-baseline="central" stroke="none" fill="${fill}">${label}</text>`,
+      `<text x="${f(x)}" y="${f(y)}" font-size="${f(size)}" ${fontAttributes(font)} text-anchor="middle" dominant-baseline="central" stroke="none" fill="${fill}">${label}</text>`,
     );
   const tick = (r0: number, r1: number, level: number, width: number, color = ink) => {
     const [x0, y0] = at(r0, angleOf(level));

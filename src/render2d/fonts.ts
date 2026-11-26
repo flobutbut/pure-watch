@@ -113,6 +113,19 @@ export function fontDef(id: string | undefined): FontDef {
   return FONTS[id ?? 'sans'] ?? FONTS['sans']!;
 }
 
+/**
+ * Attributs SVG d'un texte du cadran. Les chiffres sont toujours alignés (`lnum`) : certaines
+ * polices (Playfair Display, Georgia) dessinent par défaut des chiffres elzéviriens, qui
+ * descendent ou montent selon le chiffre et font paraître ceux du bas plus grands.
+ */
+export function fontAttributes(font: {
+  family: string;
+  weight: number | string;
+  style?: string;
+}): string {
+  return `font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" style="font-variant-numeric:lining-nums"`;
+}
+
 const cache = new Map<string, Promise<string>>();
 
 /** Règle @font-face à embarquer dans le SVG (chaîne vide pour une police système). */

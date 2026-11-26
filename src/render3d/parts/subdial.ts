@@ -10,7 +10,7 @@ import { subdialCircle, type SubdialStyle } from '../../core/config/small-second
 import { chronoCounters, COUNTER_DISCS, type CounterKind } from '../../core/config/chronograph';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
-import { fontDef } from '../../render2d/fonts';
+import { fontAttributes, fontDef } from '../../render2d/fonts';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
 import { shade, walls } from './date';
@@ -96,7 +96,7 @@ export function subdialSvg(
   for (const n of labels) {
     const a = (n / scale.count) * Math.PI * 2;
     parts.push(
-      `<text x="${f(radius * Math.sin(a))}" y="${f(-radius * Math.cos(a))}" font-size="${f(size)}" font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" text-anchor="middle" dominant-baseline="central" stroke="none">${n}</text>`,
+      `<text x="${f(radius * Math.sin(a))}" y="${f(-radius * Math.cos(a))}" font-size="${f(size)}" ${fontAttributes(font)} text-anchor="middle" dominant-baseline="central" stroke="none">${n}</text>`,
     );
   }
   const half = r * 1.02;
