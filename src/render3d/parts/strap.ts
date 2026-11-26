@@ -7,7 +7,15 @@ import { shapeRadius } from '../../core/geometry/case-shape';
 import type { MaterialLibrary } from '../materials';
 import { StrapBuilder, roundedRect, roundHole } from './strap-geometry';
 import { strapHardware, strapSpringBar } from './strap-hardware';
+import {
+  METAL_FIRST_LINK,
+  metalBandEnd,
+  metalRootHinge,
+  metalTerminalAttachment,
+  meshRootAttachment,
+} from './strap-metal';
 import { strapSeat } from './lugs';
+import { caseStrapEye, buckleStrapEye, rolledStrapEnd } from './strap-attachments';
 
 const V = (x: number, s: number, z: number) => new THREE.Vector3(x, s, z);
 const ease = (value: number) => {
@@ -137,18 +145,23 @@ export function buildStrap(
     );
   };
 
-  function bandOutline(length: number, inset = 0): THREE.Shape {
+  const caseEye = !metal ? caseStrapEye(strap.type, BAR_S, BAR_Z) : null;
+  const buckleEye = !metal ? buckleStrapEye(strap.type, lengths[0]) : null;
+  const bodyStart = caseEye ? caseEye.s + caseEye.reach : 0;
+
+  function bandOutline(begin: number, end: number, pointed: boolean): THREE.Shape {
     const shape = new THREE.Shape();
-    const tip = Math.min(5, widthAt(length) * 0.34),
-      end = length - inset;
-    shape.moveTo(-widthAt(0) / 2 + inset, 0);
-    shape.lineTo(widthAt(0) / 2 - inset, 0);
-    for (let s = 2; s < Math.min(50, end - tip); s += 2) shape.lineTo(widthAt(s) / 2 - inset, s);
-    const w = widthAt(end) / 2 - inset;
+    const tip = pointed ? Math.min(5, widthAt(end) * 0.34) : 0;
+    shape.moveTo(-widthAt(begin) / 2, begin);
+    shape.lineTo(widthAt(begin) / 2, begin);
+    for (let s = begin + 2; s < Math.min(50, end - tip); s += 2) shape.lineTo(widthAt(s) / 2, s);
+    const w = widthAt(end) / 2;
     shape.lineTo(w, end - tip);
-    shape.quadraticCurveTo(w, end, 0, end);
-    shape.quadraticCurveTo(-w, end, -w, end - tip);
-    for (let s = Math.min(50, end - tip); s > 0; s -= 2) shape.lineTo(-widthAt(s) / 2 + inset, s);
+    if (pointed) {
+      shape.quadraticCurveTo(w, end, 0, end);
+      shape.quadraticCurveTo(-w, end, -w, end - tip);
+    } else shape.lineTo(-w, end);
+    for (let s = Math.min(50, end - tip); s > begin; s -= 2) shape.lineTo(-widthAt(s) / 2, s);
     shape.closePath();
     return shape;
   }
@@ -158,10 +171,33 @@ export function buildStrap(
     // Cornes intégrées : le brin vient contre le bloc, l'attache reste cachée.
     if (config.case.lugs !== 'integrated')
       strapSpringBar(builder, lib, config, d.lugWidth - 0.2, sign, BAR_S, BAR_Z);
+    if (caseEye)
+      rolledStrapEnd(
+        builder,
+        caseEye,
+        widthAt,
+        top,
+        face,
+        edge,
+        sign,
+        'strap-root-eye',
+        0,
+        leather ? -0.36 : 0,
+      );
+    const bodyEnd = metal
+      ? metalBandEnd(strap, length)
+      : half === 0 && buckleEye
+        ? buckleEye.s - buckleEye.reach
+        : length;
+    if (metal)
+      metalTerminalAttachment(builder, strap, length, widthAt(bodyEnd), sign, face, polished);
+    const pointed = half === 1 || metal;
     if (metal && strap.material !== 'mesh') {
       const five = strap.material === 'five-link',
         pitch = five ? 4.3 : 6.2;
       const fractions = five ? [0.22, 0.16, 0.24, 0.16, 0.22] : [0.3, 0.4, 0.3];
+      const centreFraction = five ? 0.24 : 0.4;
+      metalRootHinge(builder, widthAt(3.7), centreFraction, sign, face, polished);
       // A fitted solid end link follows the case outline instead of leaving a square gap.
       const endLink = new THREE.Shape(),
         halfWidth = widthAt(0) / 2;
@@ -190,23 +226,38 @@ export function buildStrap(
         if (i === 0) endLink.moveTo(x, lo);
         else endLink.lineTo(x, lo);
       }
-      endLink.lineTo(halfWidth, 3.6);
-      endLink.lineTo(-halfWidth, 3.6);
+      const tongue = halfWidth * centreFraction;
+      endLink.lineTo(halfWidth, 2.3);
+      endLink.lineTo(tongue, 2.3);
+      endLink.lineTo(tongue, 2.9);
+      endLink.lineTo(-tongue, 2.9);
+      endLink.lineTo(-tongue, 2.3);
+      endLink.lineTo(-halfWidth, 2.3);
       endLink.closePath();
       builder.extrude(endLink, 2.6, sign, face, 'strap-end-link', 0, 0.2, {
         edge: polished,
         detail: 1.8,
+        lift: (x, _s, z) => z + Math.max(0, z / 2.6) * Math.max(0, 1 - (x / halfWidth) ** 2) * 0.2,
       });
-      for (let s = 4; s < length - 1; s += pitch) {
+      for (let s = METAL_FIRST_LINK; s < bodyEnd - 0.4; s += pitch) {
         const w = widthAt(s);
         let left = -w / 2;
         for (const [col, fraction] of fractions.entries()) {
           const center = col > 0 && col < fractions.length - 1;
           const width = w * fraction - 0.25,
             x = left + (w * fraction) / 2;
-          const stagger = five && col % 2 === 1 ? pitch * 0.23 : center ? 0.35 : 0;
+          const first = s === METAL_FIRST_LINK;
+          const stagger = first
+            ? col === Math.floor(fractions.length / 2)
+              ? 0.35
+              : 0
+            : five && col % 2 === 1
+              ? pitch * 0.23
+              : center
+                ? 0.35
+                : 0;
           const start = s + stagger,
-            linkLength = Math.min(pitch - 0.4, length - start);
+            linkLength = Math.min(pitch - 0.4, bodyEnd - start);
           left += w * fraction;
           if (linkLength < 0.6) continue;
           const shape = roundedRect(x, start, width, linkLength, five ? 0.65 : 0.7);
@@ -257,7 +308,7 @@ export function buildStrap(
           }
       }
     } else {
-      const shape = bandOutline(length);
+      const shape = bandOutline(bodyStart, bodyEnd, pointed);
       const adjustmentStart = length - 48;
       if (strap.material === 'rally') {
         const end = half === 1 ? adjustmentStart - 5 : length - 28;
@@ -286,14 +337,14 @@ export function buildStrap(
         // A pressed seam channel, followed by individual arched stitches made of two strands.
         for (const side of [-1, 1]) {
           const seam: THREE.Vector3[] = [];
-          for (let s = 2; s < length - 6; s += 1.5) {
+          for (let s = bodyStart + 0.6; s < bodyEnd - (pointed ? 6 : 0.8); s += 1.5) {
             const x = side * (widthAt(s) / 2 - 1);
             seam.push(V(x, s, top(x, s) + 0.03));
           }
           if (strap.stitching) {
             builder.tube(seam, 0.075, sign, edge, 'strap-seam-channel', 5);
             const thread = lib.matte(strap.stitching);
-            for (let s = 3; s < length - 7; s += 2.2)
+            for (let s = bodyStart + 1; s < bodyEnd - (pointed ? 7 : 1.5); s += 2.2)
               for (const twist of [-1, 1]) {
                 const pts: THREE.Vector3[] = [];
                 for (let i = 0; i <= 5; i++) {
@@ -337,7 +388,7 @@ export function buildStrap(
           }
         for (const side of [-1, 1]) {
           const pts: THREE.Vector3[] = [];
-          for (let s = 3; s < length - 6; s += 1.5) {
+          for (let s = bodyStart + 0.5; s < bodyEnd - (pointed ? 6 : 0.8); s += 1.5) {
             const x = side * (widthAt(s) / 2 - 0.7);
             pts.push(V(x, s, top(x, s) + 0.05));
           }
@@ -356,8 +407,9 @@ export function buildStrap(
           );
       }
       if (metal) {
+        meshRootAttachment(builder, widthAt(0), BAR_S, BAR_Z, sign, face, polished);
         // Interlaced herringbone wires: both faces stay open, without a flat backing sheet.
-        for (let s = 2; s < length - 4; s += 0.95)
+        for (let s = 3.5; s < bodyEnd - 0.2; s += 0.95)
           for (const slope of [-1, 1]) {
             const points: THREE.Vector3[] = [],
               w = widthAt(s) - 0.7;
@@ -382,20 +434,9 @@ export function buildStrap(
               1.3,
             );
           }
-        for (const at of [0, length - 3])
-          builder.extrude(
-            roundedRect(0, at, widthAt(at) - 0.2, 2.5, 0.5),
-            1.35,
-            sign,
-            face,
-            'strap-mesh-end',
-            0,
-            0.15,
-            { edge: polished },
-          );
         for (const side of [-1, 1]) {
           const pts: THREE.Vector3[] = [];
-          for (let s = 1; s < length - 4; s += 2)
+          for (let s = 3.5; s < bodyEnd - 0.2; s += 2)
             pts.push(V(side * (widthAt(s) / 2 - 0.1), s, baseThickness * 0.75));
           builder.tube(pts, 0.24, sign, polished, 'strap-mesh-selvedge', 7);
         }
@@ -411,7 +452,7 @@ export function buildStrap(
         });
         // Dense woven normals carry the fine fibres; a few physical yarns catch grazing light.
         const yarnPitch = strap.material === 'ribbed' ? 1.3 : 1.2;
-        for (let s = 3; s < length - 5; s += yarnPitch) {
+        for (let s = bodyStart + 0.5; s < bodyEnd - (pointed ? 5 : 0.5); s += yarnPitch) {
           const w = widthAt(s) - 1;
           // The weave stops at each punched adjustment hole rather than bridging it.
           const nearHole = adjustmentHoles.some((at) => Math.abs(at - s) < 1.05);
@@ -443,10 +484,10 @@ export function buildStrap(
             // sink under the strap between their endpoints and hide the dyed stripes.
             const positions: number[] = [],
               indices: number[] = [];
-            const end = length - 5;
-            const rows = Math.ceil(end / 1.25);
+            const end = bodyEnd - (pointed ? 5 : 0);
+            const rows = Math.ceil((end - bodyStart) / 1.25);
             for (let i = 0; i <= rows; i++) {
-              const s = (end * i) / rows,
+              const s = bodyStart + ((end - bodyStart) * i) / rows,
                 x = side * widthAt(s) * 0.18;
               positions.push(
                 x - 0.65,
@@ -468,12 +509,12 @@ export function buildStrap(
           }
         for (const side of [-1, 1]) {
           const pts: THREE.Vector3[] = [];
-          for (let s = 2; s < length - 5; s += 1.5)
+          for (let s = bodyStart + 0.5; s < bodyEnd - (pointed ? 5 : 0.5); s += 1.5)
             pts.push(V(side * (widthAt(s) / 2 - 0.25), s, baseThickness - 0.05));
           builder.tube(pts, 0.16, sign, edge, 'strap-bound-edge', 6);
         }
         // Folded reinforcement near the spring bar and the buckle, sewn across the weave.
-        for (const at of [2, half === 0 ? length - 32 : length - 7]) {
+        for (const at of [bodyStart + 1, half === 0 ? bodyEnd - 1.8 : length - 7]) {
           builder.extrude(
             roundedRect(0, at, widthAt(at) - 0.7, 1.1, 0.3),
             0.12,

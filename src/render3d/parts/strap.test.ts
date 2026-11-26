@@ -39,7 +39,7 @@ describe('rendu du bracelet', () => {
     const position = band.geometry.attributes.position!;
     const normal = band.geometry.attributes.normal!;
     for (const sign of [-1, 1]) {
-      const near = (i: number) => sign * position.getY(i) > 21 && sign * position.getY(i) < 24;
+      const near = (i: number) => sign * position.getY(i) > 25 && sign * position.getY(i) < 29;
       let top = -Infinity;
       for (let i = 0; i < position.count; i++) if (near(i)) top = Math.max(top, position.getZ(i));
       let faces = 0;
@@ -133,6 +133,29 @@ describe('rendu du bracelet', () => {
     });
     lib.dispose();
   });
+  it.each(['leather', 'fabric', 'rubber'])(
+    '%s : attache arrondie avec boucle déployante',
+    (type) => {
+      const lib = new MaterialLibrary(),
+        config = defaultConfig();
+      config.strap = { ...config.strap, type, buckle: 'deployant' };
+      const root = buildStrap(config, watchDimensions(config), lib);
+      expect(root.getObjectByName('strap-clasp-mount')).toBeDefined();
+      root.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          expect(
+            Array.from(object.geometry.attributes.position!.array).every(Number.isFinite),
+          ).toBe(true);
+          expect(Array.from(object.geometry.attributes.normal!.array).every(Number.isFinite)).toBe(
+            true,
+          );
+          object.geometry.dispose();
+        }
+      });
+      expect(root.children.length).toBeLessThanOrEqual(28);
+      lib.dispose();
+    },
+  );
   it('les remontages partagent les matériaux mais possèdent leurs géométries', () => {
     const lib = new MaterialLibrary(),
       config = defaultConfig(),
