@@ -11,7 +11,9 @@
   import type { Refinement } from '../../render3d/refinement';
   import { ambienceFor, NIGHT_AMBIENCE } from '../../ui/ambience';
   import Button from '../../ui/kit/Button.svelte';
+  import Checkbox from '../../ui/kit/Checkbox.svelte';
   import SegmentedControl from '../../ui/kit/SegmentedControl.svelte';
+  import Sheet from '../../ui/sheet/Sheet.svelte';
   import {
     StudioBench,
     VIEWFINDER_MARGIN,
@@ -80,6 +82,10 @@
   });
   let exportState = $state<'idle' | 'busy' | 'saved' | 'failed'>('idle');
   let savedName = $state('');
+  /** Avertissement à l'arrivée : le rendu sollicite fortement la carte graphique. */
+  const WARNING_KEY = 'epure:studio-warning:v1';
+  let warningOpen = $state(false);
+  let hideWarning = $state(false);
   /** Taille de la scène : la miniature en reprend les proportions, donc le cadrage. */
   let stageWidth = $state(1);
   let stageHeight = $state(1);
@@ -104,6 +110,8 @@
         const [width, height] = status.exportSize ?? [0, 0];
         return `Export ${width} × ${height} px · ${status.samples} / ${status.target} · ${seconds(status.elapsedMs)}`;
       }
+      case 'idle':
+        return 'Rendu non lancé · aperçu en temps réel';
       case 'paused':
         return `En pause · ${status.samples} / ${status.target} échantillons · ${seconds(status.elapsedMs)}`;
       case 'done':
@@ -122,6 +130,11 @@
   });
 
   onMount(() => {
+    try {
+      warningOpen = localStorage.getItem(WARNING_KEY) !== 'hidden';
+    } catch {
+      warningOpen = true;
+    }
     bench = new StudioBench({
       raster: rasterCanvas,
       traced: tracedCanvas,
@@ -140,6 +153,16 @@
     void bench.start('quarter');
   });
   onDestroy(() => bench?.dispose());
+
+  /** Fermer l'avertissement retient « Ne plus afficher », quelle que soit la façon de fermer. */
+  function closeWarning() {
+    warningOpen = false;
+    try {
+      if (hideWarning) localStorage.setItem(WARNING_KEY, 'hidden');
+    } catch {
+      /* Navigation privée : l'avertissement reviendra, rien de plus. */
+    }
+  }
 
   function renderViewfinder() {
     bench?.renderViewfinder();
@@ -198,6 +221,11 @@
           <Button variant="primary" size="compact" disabled={!ready} onclick={renderViewfinder}>
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" /></svg>
             Rendre cette vue
+          </Button>
+        {:else if status.phase === 'idle'}
+          <Button variant="primary" size="compact" onclick={() => bench?.launch()}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" /></svg>
+            Lancer le rendu
           </Button>
         {:else if status.phase === 'rendering'}
           <Button size="compact" onclick={() => bench?.pause()}>
@@ -331,6 +359,38 @@
     </footer>
   </aside>
 </div>
+
+{#if warningOpen}
+  <Sheet
+    id="studio-warning-title"
+    eyebrow="RENDU STUDIO"
+    title="Un rendu gourmand"
+    closeLabel="Fermer l’avertissement"
+    placement="center"
+    modal
+    onclose={closeWarning}
+  >
+    <div class="warning">
+      <p>
+        Le rendu studio calcule la lumière rayon par rayon, directement dans votre navigateur.
+        Pendant le calcul, il sollicite fortement la carte graphique :
+      </p>
+      <ul>
+        <li>l’ordinateur peut chauffer et ses ventilateurs s’emballer ;</li>
+        <li>la batterie se vide plus vite : mieux vaut être branché ;</li>
+        <li>les autres onglets et applications peuvent ralentir.</li>
+      </ul>
+      <p>
+        Le rendu ne démarre donc pas tout seul : cadrez dans la miniature, puis «&nbsp;Lancer le
+        rendu&nbsp;». Vous pouvez le mettre en pause à tout moment.
+      </p>
+      <Checkbox bind:checked={hideWarning}>Ne plus afficher ce message</Checkbox>
+    </div>
+    {#snippet footer()}
+      <Button variant="primary" class="warning-ok" onclick={closeWarning}>Compris</Button>
+    {/snippet}
+  </Sheet>
+{/if}
 
 <style>
   /* Tons fixes des panneaux du site (Sheet), clair ou sombre selon le cadran : ils servent au
@@ -588,6 +648,28 @@
   }
   .status:empty {
     display: none;
+  }
+
+  /* Avertissement d'arrivée (Sheet centré). */
+  .warning {
+    display: grid;
+    gap: 12px;
+    font-size: var(--text-m);
+    line-height: 1.55;
+  }
+  .warning p,
+  .warning ul {
+    margin: 0;
+  }
+  .warning ul {
+    padding-left: 18px;
+    color: var(--ink-soft);
+  }
+  .warning li + li {
+    margin-top: 4px;
+  }
+  :global(.button.warning-ok) {
+    width: 100%;
   }
 
   /* Sous 760 px : la scène en haut, le panneau dessous, la page défile. */

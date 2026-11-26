@@ -77,6 +77,21 @@ Deux à quatre **modes exclusifs** aux libellés courts, côte à côte dans un 
 - Exemples : Automatique / Couleur libre, Arabes / Romains, Sans insert / Luminescent,
   Hériter / Personnaliser, jonction des cornes, repères accentués du réhaut.
 
+### `Checkbox`
+
+Une **option isolée** que l'on coche ou non, à côté d'un texte qui la nomme : « Ne plus afficher
+ce message ». La case native reste dans le flux (clavier, lecteurs d'écran, libellé cliquable) ;
+la case dessinée prend les tons de l'encre : contour à 40 % de `currentColor`, fond plein
+`--ink` et coche `--veil` une fois cochée, `--radius-xs`, 18 px, cible à `--control-height`.
+Anneau de focus à l'encre, désactivée à 0,45 comme `Button`.
+
+```svelte
+<Checkbox bind:checked={hideWarning}>Ne plus afficher ce message</Checkbox>
+```
+
+Deux à quatre modes exclusifs restent une `SegmentedControl`, et un choix parmi plusieurs
+options, un `ChoiceGroup`.
+
 ### `ChoiceGroup`
 
 Au-delà de quatre options, ou quand une option porte un aperçu (pastille de finition,
