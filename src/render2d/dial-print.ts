@@ -39,7 +39,7 @@ export interface DialPrintOptions {
   numeralBlur?: number;
 }
 
-import { fontDef } from './fonts';
+import { fontAttributes, fontDef } from './fonts';
 import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
 
 const f = (n: number) => n.toFixed(3);
@@ -171,7 +171,7 @@ function numeralsMarkup(
           ? Math.min(edge * fraction, standard)
           : standard + (limit - standard) * Math.min(1, reach);
       const label = roman ? ROMAN[h]! : String(h === 0 ? 12 : h);
-      return `<text x="${f(radius * Math.sin(a))}" y="${f(-radius * Math.cos(a))}" font-size="${f(size)}" font-family="${font.family}" font-weight="${font.weight}" font-style="${font.style ?? 'normal'}" text-anchor="middle" dominant-baseline="central">${label}</text>`;
+      return `<text x="${f(radius * Math.sin(a))}" y="${f(-radius * Math.cos(a))}" font-size="${f(size)}" ${fontAttributes(font)} text-anchor="middle" dominant-baseline="central">${label}</text>`;
     })
     .join('');
 }
