@@ -69,7 +69,9 @@ const lightingScene = (lighting: Lighting) =>
 
 export interface StudioStatus {
   /** building : montres ; preparing : structure du lancer de rayons ; puis le calcul. */
-  phase: 'building' | 'preparing' | 'rendering' | 'done' | 'exporting';
+  phase: 'building' | 'preparing' | 'rendering' | 'paused' | 'done' | 'exporting';
+  /** Le viseur (la miniature) a bougé : son point de vue n'est pas encore rendu. */
+  pending: boolean;
   samples: number;
   target: number;
   elapsedMs: number;
@@ -120,6 +122,9 @@ export class StudioBench {
   private ready = false;
   private exporting = false;
   private rasterDirty = true;
+  private pending = false;
+  private paused = false;
+  private pausedAt = 0;
   private started = performance.now();
   private finishedAt = 0;
   private frameHandle = 0;
@@ -143,17 +148,19 @@ export class StudioBench {
     // La structure d'accélération se construit dans un worker : la page reste fluide.
     this.tracer.setBVHWorker(this.worker);
 
-    for (const [index, pane] of this.panes.entries()) {
-      pane.controls.addEventListener('change', () => {
-        if (this.exporting) return;
-        const other = this.panes[1 - index]!;
-        other.camera.position.copy(pane.camera.position);
-        other.camera.quaternion.copy(pane.camera.quaternion);
-        other.controls.target.copy(pane.controls.target);
-        this.restart();
-      });
-      // Tournée à la main, la caméra quitte les vues prédéfinies.
-      pane.controls.addEventListener('start', () => options.onview(null));
+    // Seule la miniature se tourne : c'est le viseur. Le rendu studio garde son point de vue
+    // jusqu'à ce qu'on lui demande celui du viseur (renderViewfinder) : un calcul de plusieurs
+    // dizaines de secondes ne repart pas à chaque geste.
+    this.traced.controls.enabled = false;
+    this.raster.controls.addEventListener('change', () => {
+      this.rasterDirty = true;
+      if (this.pending) return;
+      this.pending = true;
+      this.emit();
+    });
+    // Tournée à la main, la caméra quitte les vues prédéfinies.
+    this.raster.controls.addEventListener('start', () => options.onview(null));
+    for (const pane of this.panes) {
       const observer = new ResizeObserver(() => this.fit(pane));
       observer.observe(pane.renderer.domElement);
       this.observers.push(observer);
@@ -191,8 +198,35 @@ export class StudioBench {
       pane.controls.target.set(0, 0, 0);
       pane.controls.update();
     }
+    // Une vue prédéfinie vaut pour les deux : le rendu studio part aussitôt.
+    this.pending = false;
     this.options.onview(view);
     this.restart();
+  }
+
+  /** Rend le point de vue du viseur : le rendu studio repart de zéro sous ce nouvel angle. */
+  renderViewfinder(): void {
+    if (this.exporting) return;
+    this.traced.camera.position.copy(this.raster.camera.position);
+    this.traced.camera.quaternion.copy(this.raster.camera.quaternion);
+    this.traced.controls.target.copy(this.raster.controls.target);
+    this.pending = false;
+    this.restart();
+  }
+
+  /** Met l'affinage en pause : l'image reste à l'écran, le temps de calcul s'arrête. */
+  pause(): void {
+    if (!this.ready || this.paused || this.tracer.samples >= this.target) return;
+    this.paused = true;
+    this.pausedAt = performance.now();
+    this.emit();
+  }
+
+  resume(): void {
+    if (!this.paused) return;
+    this.paused = false;
+    this.started += performance.now() - this.pausedAt;
+    this.emit();
   }
 
   setLighting(lighting: Lighting): void {
@@ -223,6 +257,7 @@ export class StudioBench {
   setTarget(samples: number): void {
     this.target = samples;
     this.finishedAt = 0;
+    this.emit();
   }
 
   /**
@@ -316,14 +351,15 @@ export class StudioBench {
       key.position.copy(KEY_POSITION);
       scene.add(key);
     }
-    // Table : la montre est posée cadran vers le haut, l'objectif au-dessus.
+    // Table : la montre est posée cadran vers le haut, l’objectif au-dessus. Assez grande pour
+    // qu’on n’en voie pas le bord, même en vue rasante.
     const table = new THREE.Mesh(
-      new THREE.PlaneGeometry(900, 900),
+      new THREE.PlaneGeometry(6000, 6000),
       new THREE.MeshPhysicalMaterial({ color: backdrop, roughness: 0.82, metalness: 0 }),
     );
     scene.add(table);
 
-    const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 2000);
+    const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 10000);
     const controls = new OrbitControls(camera, canvas);
     controls.enablePan = false;
     controls.minDistance = 60;
@@ -371,11 +407,27 @@ export class StudioBench {
     this.restart();
   }
 
+  /** Le rendu studio repart de zéro (nouveau point de vue, éclairage, fond…), sans pause. */
   private restart(): void {
     this.rasterDirty = true;
+    this.paused = false;
     this.started = performance.now();
     this.finishedAt = 0;
     if (this.ready) this.tracer.updateCamera();
+    this.emit();
+  }
+
+  /** État du calcul une fois la scène prête. */
+  private emit(): void {
+    if (!this.ready) return;
+    const phase = this.exporting
+      ? 'exporting'
+      : this.paused
+        ? 'paused'
+        : this.tracer.samples >= this.target
+          ? 'done'
+          : 'rendering';
+    this.status(phase, this.tracer.samples / this.target);
   }
 
   private status(
@@ -385,9 +437,11 @@ export class StudioBench {
   ): void {
     this.options.onstatus({
       phase,
+      pending: this.pending,
       samples: Math.min(Math.floor(this.tracer.samples), this.target),
       target: this.target,
-      elapsedMs: (this.finishedAt || performance.now()) - this.started,
+      elapsedMs:
+        (this.finishedAt || (this.paused ? this.pausedAt : performance.now())) - this.started,
       progress: Math.min(1, progress),
       exportSize,
     });
@@ -402,12 +456,13 @@ export class StudioBench {
       this.raster.renderer.render(this.raster.scene, this.raster.camera);
       this.options.onraster(performance.now() - start);
     }
+    if (this.paused) return;
     if (this.tracer.samples < this.target) {
       this.tracer.renderSample();
-      this.status('rendering', this.tracer.samples / this.target);
+      this.emit();
     } else if (!this.finishedAt) {
       this.finishedAt = performance.now();
-      this.status('done', 1);
+      this.emit();
     }
   };
 }

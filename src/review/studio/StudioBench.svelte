@@ -66,6 +66,7 @@
   let rasterMs = $state<number | null>(null);
   let status = $state<StudioStatus>({
     phase: 'building',
+    pending: false,
     samples: 0,
     target: 384,
     elapsedMs: 0,
@@ -94,6 +95,8 @@
         const [width, height] = status.exportSize ?? [0, 0];
         return `Export ${width} × ${height} px · ${status.samples} / ${status.target} · ${seconds(status.elapsedMs)}`;
       }
+      case 'paused':
+        return `En pause · ${status.samples} / ${status.target} échantillons · ${seconds(status.elapsedMs)}`;
       case 'done':
         return `${status.target} échantillons en ${seconds(status.elapsedMs)}`;
       default:
@@ -129,6 +132,11 @@
   });
   onDestroy(() => bench?.dispose());
 
+  function renderViewfinder() {
+    bench?.renderViewfinder();
+    view = null;
+  }
+
   function chooseBackdrop(value: string) {
     backdrop = value;
     bench?.setBackdrop(backdropColor);
@@ -158,17 +166,39 @@
       class="studio"
       bind:this={tracedCanvas}
       style:background={backdropColor}
-      aria-label="Montre en lancer de rayons ; glisser pour la faire tourner"
+      aria-label="Montre en lancer de rayons"
     ></canvas>
 
     <figure class="thumbnail" style:aspect-ratio="{stageWidth} / {stageHeight}">
       <canvas
         bind:this={rasterCanvas}
         style:background={backdropColor}
-        aria-label="Montre en temps réel, au même cadrage"
+        aria-label="Viseur en temps réel ; glisser pour cadrer"
       ></canvas>
-      <figcaption class="chip">
-        Temps réel{rasterMs === null ? '' : ` · ${decimal(rasterMs)} ms`}
+      <figcaption class="viewfinder-bar">
+        <span class="caption">
+          {status.pending ? 'Nouveau cadrage' : 'Temps réel'}{rasterMs === null || status.pending
+            ? ''
+            : ` · ${decimal(rasterMs)} ms`}
+        </span>
+        {#if status.pending}
+          <Button variant="primary" size="compact" disabled={!ready} onclick={renderViewfinder}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" /></svg>
+            Rendre cette vue
+          </Button>
+        {:else if status.phase === 'rendering'}
+          <Button size="compact" onclick={() => bench?.pause()}>
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M4.5 3h2.4v10H4.5zM9.1 3h2.4v10H9.1z" />
+            </svg>
+            Pause
+          </Button>
+        {:else if status.phase === 'paused'}
+          <Button size="compact" onclick={() => bench?.resume()}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" /></svg>
+            Reprendre
+          </Button>
+        {/if}
       </figcaption>
     </figure>
 
@@ -185,8 +215,13 @@
 
   <aside class="panel" aria-labelledby="studio-title">
     <header>
-      <p class="eyebrow">BANC DE RENDU</p>
-      <h1 id="studio-title">Rendu studio</h1>
+      <div class="title-row">
+        <div>
+          <p class="eyebrow">BANC DE RENDU</p>
+          <h1 id="studio-title">Rendu studio</h1>
+        </div>
+        <a class="close" href={configLink} aria-label="Fermer et revenir au configurateur">×</a>
+      </div>
       <p class="lede">
         Lancer de rayons, affiné image après image. En miniature, le temps réel du configurateur, au
         même cadrage.
@@ -202,7 +237,10 @@
           options={VIEWS}
           onchange={(next) => bench?.setView(next)}
         />
-        <p class="hint">Glisser sur une montre fait tourner les deux.</p>
+        <p class="hint">
+          Glisser sur la miniature pour cadrer, puis « Rendre cette vue » : le rendu studio garde
+          son point de vue jusque-là.
+        </p>
       </section>
 
       <section>
@@ -276,7 +314,6 @@
           L’export a échoué. Réessayer avec une définition plus petite.
         {/if}
       </p>
-      <a class="link" href={configLink}>Ouvrir cette montre dans le configurateur</a>
     </footer>
   </aside>
 </div>
@@ -336,7 +373,7 @@
     position: absolute;
     left: 20px;
     bottom: 20px;
-    width: clamp(150px, 24%, 300px);
+    width: clamp(210px, 24%, 300px);
     margin: 0;
     border-radius: var(--radius-m);
     overflow: hidden;
@@ -351,13 +388,38 @@
     touch-action: none;
     cursor: grab;
   }
-  .thumbnail figcaption {
+
+  /* Barre du viseur, au pied de la miniature : ce qu'elle montre et l'action du rendu. */
+  .viewfinder-bar {
     position: absolute;
-    left: 8px;
-    bottom: 8px;
-    padding: 3px 9px;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px 8px;
+    padding: 5px 5px 5px 10px;
+    border-radius: var(--radius-s);
+    background: color-mix(in srgb, var(--veil) 88%, transparent);
+    backdrop-filter: blur(10px);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
+  }
+  .caption {
     font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+  .viewfinder-bar :global(.button) {
+    min-height: 30px;
+    padding: 5px 10px;
+  }
+  .viewfinder-bar svg {
+    width: 11px;
+    height: 11px;
+    fill: currentColor;
   }
 
   .progress-chip {
@@ -401,6 +463,34 @@
     flex-shrink: 0;
     padding: 24px 24px 20px;
   }
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  /* Même croix que les panneaux du site (Sheet) : ici, elle ramène au configurateur. */
+  .close {
+    display: grid;
+    place-items: center;
+    min-width: 36px;
+    min-height: var(--control-height);
+    margin: -6px -8px 0 0;
+    border-radius: var(--radius-s);
+    color: inherit;
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 1;
+    text-decoration: none;
+  }
+  .close:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .close:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+  }
   .eyebrow {
     margin: 0 0 4px;
     font-size: var(--text-2xs);
@@ -408,7 +498,7 @@
     color: var(--ink-soft);
   }
   h1 {
-    margin: 0 0 8px;
+    margin: 0;
     font-size: var(--text-title);
     font-weight: 500;
     line-height: 1.2;
@@ -478,19 +568,6 @@
   .status:empty {
     display: none;
   }
-  .link {
-    font-size: var(--text-s);
-    color: var(--ink-soft);
-    text-underline-offset: 3px;
-  }
-  .link:hover {
-    color: var(--ink);
-  }
-  .link:focus-visible {
-    outline: 2px solid var(--ink);
-    outline-offset: 3px;
-    border-radius: var(--radius-xs);
-  }
 
   /* Sous 760 px : la scène en haut, le panneau dessous, la page défile. */
   @media (max-width: 759px) {
@@ -511,7 +588,7 @@
     .thumbnail {
       left: 12px;
       bottom: 12px;
-      width: 30%;
+      width: 46%;
     }
     .progress-chip {
       right: 12px;

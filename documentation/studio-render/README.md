@@ -14,7 +14,9 @@ http://127.0.0.1:5173/studio.html#v1.…
 
 La page reste hors du build publié, comme `review.html`. Elle suit le [design system](../design-system.md) du configurateur. Le **rendu studio occupe toute la scène** ; le **rendu en temps réel** s’y pose **en miniature**, en bas à gauche, au même cadrage (elle reprend les proportions de la scène), et l’avancement du calcul s’affiche en bas à droite. Les réglages tiennent dans un **panneau latéral fixe** à droite, aux tons des panneaux du site (clair ou sombre selon le cadran) : mêmes tokens `--ink`, `--ink-soft`, `--veil`, mêmes libellés et pastilles que `Sheet`. Sous 760 px, la scène passe en haut et le panneau dessous.
 
-- **Vue** (`SegmentedControl`) : Face, Trois quarts, Rasant. La caméra est commune aux deux vues ; tournée à la souris, elle quitte la vue prédéfinie. L’objectif reste du côté du cadran, la table ne passe jamais devant.
+- **Miniature = viseur** : c’est elle qu’on fait tourner à la souris. Le rendu studio garde son point de vue pendant qu’on cadre, sans repartir de zéro à chaque geste. La barre au pied de la miniature affiche alors « Nouveau cadrage » et le bouton **Rendre cette vue** (`primary`), qui relance le calcul sous ce nouvel angle. Pendant le calcul, **Pause** l’arrête (l’image et le chrono restent figés), **Reprendre** le poursuit. L’objectif reste du côté du cadran, la table ne passe jamais devant.
+- **Vue** (`SegmentedControl`) : Face, Trois quarts, Rasant. Une vue prédéfinie s’applique aux deux rendus et relance aussitôt le calcul.
+- **Croix** en haut du panneau : ferme le banc et revient au configurateur, sur la même montre.
 - **Éclairage** (`SegmentedControl`) : *Photo produit* (par défaut), réglé pour le lancer de rayons, ou *Configurateur*, le studio du site tel quel.
 - **Fond** (boutons `compact` à pastille, `aria-pressed`) : l’ambiance du cadran, ou ardoise, papier, lin.
 - **Finesse** (`SegmentedControl`) : Rapide, Net, Sans grain, soit 128, 384 ou 1 024 échantillons par pixel, à l’écran comme à l’export.
