@@ -16,7 +16,7 @@ async function numeralsRow(page: Page) {
 }
 const parameters = (page: Page) =>
   page.getByRole('button', {
-    name: 'Paramètres des chiffres : taille, position et couleur',
+    name: 'Repères horaires',
     exact: true,
   });
 
@@ -68,7 +68,7 @@ test('XII seul, XII et VI, puis tous : mêmes positions et index disponibles en 
   await page.keyboard.press('ArrowRight');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-six-twelve');
   expect(payload(page)).toMatchObject({ D: 5, ao: 2 });
-  await expect(page.getByRole('row', { name: 'Index', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('row', { name: 'Index', exact: true })).toHaveCount(0);
   await parameters(page).click();
   await expect(page.getByRole('radio', { name: 'Romains', exact: true })).toHaveAttribute(
     'aria-checked',
@@ -98,6 +98,6 @@ test('XII seul, XII et VI, puis tous : mêmes positions et index disponibles en 
   await page.keyboard.press('Home');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-none');
   expect(payload(page).ao).toBe(2);
-  await expect(parameters(page)).toHaveCount(0);
+  await expect(parameters(page)).toHaveCount(1);
   expect(errors).toEqual([]);
 });

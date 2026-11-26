@@ -6,6 +6,7 @@ import { dialSurface, indexAt } from '../../core/config/details';
 import { indexColor } from '../../core/config/colors';
 import { hasIntrinsicColor } from '../../core/config/dial';
 import { isDialPatternFinish } from '../../render3d/dial-patterns';
+import { SCALE_LABELS } from '../colors/scale-labels';
 import { DETAIL_SETTINGS } from '../colors/detail-settings';
 import type { Locale } from '../../core/i18n/locale';
 import type { Trait } from './identity';
@@ -35,6 +36,26 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
       label: locale === 'fr' ? 'Taille des points' : 'Dot size',
       value: percent(d.chapterRing.dotSize),
     });
+  }
+  if (row === 'chapter-ring' && config.dial.chapterRing !== 'none' && d.chapterRing) {
+    const labels = SCALE_LABELS[locale];
+    for (const [key, label] of [
+      ['length', labels.length],
+      ['lineWidth', labels.width],
+      ['radius', labels.radius],
+    ] as const)
+      if (
+        d.chapterRing[key] !== undefined &&
+        (config.dial.chapterRing !== 'dots' || key === 'radius')
+      )
+        traits.push({ label, value: percent(d.chapterRing[key]!) });
+    if (d.chapterRing.accentAt && d.chapterRing.accentAt !== 'none') {
+      traits.push({
+        label: labels.accents,
+        value: d.chapterRing.accentAt === 'zero' ? labels.zero : labels.quarters,
+      });
+      color(labels.accent, d.chapterRing.accent);
+    }
   }
   if (
     ((row === 'small-seconds' && smallSeconds(config)) ||
@@ -74,8 +95,23 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
     }
     if (d.rehaut.labelSize !== undefined)
       traits.push({ label: m.labelSize, value: percent(d.rehaut.labelSize) });
+    if (d.rehaut.tickLength !== undefined)
+      traits.push({ label: SCALE_LABELS[locale].length, value: percent(d.rehaut.tickLength) });
     if (d.rehaut.lineWidth !== undefined)
       traits.push({ label: m.lineWidth, value: percent(d.rehaut.lineWidth) });
+  }
+  if (row === 'numerals' && d.hourMarkers) {
+    const names =
+      locale === 'fr'
+        ? { numeral: 'Chiffre', index: 'Index', none: 'Aucun' }
+        : { numeral: 'Numeral', index: 'Index', none: 'None' };
+    for (const [hour, kind] of Object.entries(d.hourMarkers).sort(
+      ([a], [b]) => (Number(a) % 12) - (Number(b) % 12),
+    ))
+      traits.push({
+        label: `${locale === 'fr' ? 'Repère' : 'Marker'} · ${hour} h`,
+        value: names[kind],
+      });
   }
   if (row === 'indices' && d.indices) {
     for (const hour of Object.keys(d.indices).sort((a, b) => (Number(a) % 12) - (Number(b) % 12))) {

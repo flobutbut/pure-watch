@@ -5,10 +5,17 @@ test.setTimeout(60_000);
 async function row(page: Page, id: string) {
   const grid = page.getByRole('grid');
   await grid.focus();
-  for (let i = 0; i < 6; i++) await page.keyboard.press('PageUp');
+  for (let i = 0; i < 6; i++) {
+    const active = await grid.getAttribute('aria-activedescendant');
+    if (active?.startsWith('cell-case-shape-')) break;
+    await page.keyboard.press('PageUp');
+    await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
+  }
   for (let i = 0; i < 40; i++) {
     if ((await grid.getAttribute('aria-activedescendant'))?.startsWith(`cell-${id}-`)) break;
+    const active = await grid.getAttribute('aria-activedescendant');
     await page.keyboard.press('ArrowDown');
+    await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
   }
   await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`^cell-${id}-`));
 }
@@ -42,14 +49,12 @@ test('chaque panneau se ferme d’un clic dans le vide, pas d’un clic dedans n
   const grid = page.getByRole('grid');
 
   // Paramètres des index : le clic ne fait que refermer, la grille ne bouge pas.
-  await row(page, 'indices');
+  await row(page, 'numerals');
   const active = await grid.getAttribute('aria-activedescendant');
-  await page
-    .getByRole('button', { name: 'Paramètres des index : longueur, largeur et position' })
-    .click();
-  const indices = page.getByRole('dialog', { name: 'Index', exact: true });
+  await page.getByRole('button', { name: 'Repères horaires' }).click();
+  const indices = page.getByRole('dialog', { name: 'Repères horaires', exact: true });
   await expect(indices).toBeVisible();
-  await indices.getByRole('heading', { name: 'Index' }).click();
+  await indices.getByRole('heading', { name: 'Repères horaires' }).click();
   await expect(indices).toBeVisible();
   await clickOutside(page, indices);
   await expect(indices).toBeHidden();
@@ -117,11 +122,9 @@ test('la croix reste atteignable dans une petite fenêtre', async ({ page }, inf
   await expect(page.locator('#boot')).toBeHidden({ timeout: 15_000 });
 
   // Un panneau plus haut que la fenêtre : l'en-tête reste visible, seul le corps défile.
-  await row(page, 'indices');
-  await page
-    .getByRole('button', { name: 'Paramètres des index : longueur, largeur et position' })
-    .click();
-  const indices = page.getByRole('dialog', { name: 'Index', exact: true });
+  await row(page, 'numerals');
+  await page.getByRole('button', { name: 'Repères horaires' }).click();
+  const indices = page.getByRole('dialog', { name: 'Repères horaires', exact: true });
   const closeIndices = indices.getByRole('button', { name: 'Fermer les couleurs', exact: true });
   await closeReachable(page, closeIndices);
   await closeIndices.click();

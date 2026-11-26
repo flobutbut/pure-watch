@@ -1481,7 +1481,7 @@
       "looping": true,
       "priority": "P0",
       "i18n": {
-        "name": "Chiffres"
+        "name": "Repères horaires"
       },
       "variants": [
         {
@@ -1489,7 +1489,7 @@
           "value": "none",
           "preview": "numerals/none.svg",
           "i18n": {
-            "name": "Aucun"
+            "name": "Index seuls"
           }
         },
         {
@@ -1525,11 +1525,19 @@
           }
         },
         {
+          "id": "even",
+          "value": "even",
+          "preview": "numerals/even.svg",
+          "i18n": {
+            "name": "Heures paires"
+          }
+        },
+        {
           "id": "all",
           "value": "all",
           "preview": "numerals/all.svg",
           "i18n": {
-            "name": "Tous"
+            "name": "Tous les chiffres"
           }
         }
       ]

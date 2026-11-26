@@ -157,3 +157,95 @@ describe('couleur des chiffres', () => {
     expect(dialPrintSvg(base)).toMatch(/<g fill="#000000"><text[^>]*>12</);
   });
 });
+
+it('imprime les heures paires et laisse la place à la petite seconde à 6 h', () => {
+  expect(labels(dialPrintSvg({ ...base, numerals: 'even', omitHours: [6] }))).toEqual([
+    '12',
+    '2',
+    '4',
+    '8',
+    '10',
+  ]);
+  expect(
+    labels(
+      dialPrintSvg({
+        ...base,
+        numerals: 'even',
+        numeralSystem: 'roman',
+        hourMarkers: { '2': 'index', '3': 'numeral', '12': 'none' },
+        omitHours: [6],
+      }),
+    ),
+  ).toEqual(['III', 'IIII', 'VIII', 'X']);
+  expect(
+    labels(dialPrintSvg({ ...base, numerals: 'none', hourMarkers: { '7': 'numeral' } })),
+  ).toEqual(['7']);
+});
+
+it('borne la taille de quelques chiffres voisins dans une disposition personnalisée', () => {
+  const svg = dialPrintSvg({
+    ...base,
+    numerals: 'none',
+    hourMarkers: { '10': 'numeral', '11': 'numeral', '12': 'numeral' },
+    numeralSize: 1.75,
+    numeralRadius: 0.6,
+  });
+  const sizes = [...svg.matchAll(/<text[^>]*font-size="([\d.]+)"/g)].map((m) => Number(m[1]));
+  expect(sizes).toHaveLength(3);
+  const available = (2 * 10 * 0.74 * 0.6 * Math.sin(Math.PI / 12)) / 1.25;
+  expect(sizes.every((size) => size <= available + 0.001)).toBe(true);
+});
+
+it('conserve exactement les anciens tracés avec les nouveaux réglages à leur valeur de référence', () => {
+  for (const chapterRing of ['none', 'railroad', 'ticks', 'dots', 'five-minute']) {
+    const original = dialPrintSvg({ ...base, chapterRing });
+    expect(
+      dialPrintSvg({
+        ...base,
+        chapterRing,
+        chapterRingDetails: {
+          lineWidth: 1,
+          length: 1,
+          radius: 1,
+          dotSize: 1,
+          accentAt: 'none',
+          accent: 'auto',
+        },
+      }),
+    ).toBe(original);
+  }
+});
+it('règle la longueur, la position et l’épaisseur de la piste indépendamment des chiffres', () => {
+  const original = dialPrintSvg({ ...base, chapterRing: 'ticks' });
+  const svg = dialPrintSvg({
+    ...base,
+    chapterRing: 'ticks',
+    chapterRingDetails: {
+      length: 1.4,
+      lineWidth: 1.5,
+      radius: 0.8,
+      accentAt: 'quarters',
+      accent: '#D7262E',
+    },
+  });
+  expect(svg.match(/<line /g)).toHaveLength(60);
+  expect(svg.match(/stroke="#D7262E"/g)).toHaveLength(4);
+  const first = svg.match(
+    /<line x1="([\d.-]+)" y1="([\d.-]+)" x2="([\d.-]+)" y2="([\d.-]+)" stroke-width="([\d.]+)"/,
+  )!;
+  expect(Number(first[2])).toBeCloseTo(-6.928, 3);
+  expect(Number(first[4])).toBeCloseTo(-7.88, 3);
+  expect(Number(first[5])).toBeCloseTo(0.24, 3);
+  expect(labels(svg)).toEqual(labels(original));
+});
+it('accentue un point de départ sans colorer les autres points ni les chiffres', () => {
+  const svg = dialPrintSvg({
+    ...base,
+    chapterRing: 'dots',
+    chapterRingDetails: { dotSize: 0.5, accentAt: 'zero', accent: '#D7262E' },
+  });
+  expect(svg.match(/stroke="#D7262E"/g)).toHaveLength(1);
+  expect(svg.match(/<circle cx=/g)).toHaveLength(60);
+  expect(svg).toContain('r="0.080"');
+  expect(labels(svg)).toEqual(['12', '3', '6', '9']);
+});

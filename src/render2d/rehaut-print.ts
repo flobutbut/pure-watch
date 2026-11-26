@@ -31,7 +31,10 @@ export function rehautPrintSvg(config: WatchConfig, d: WatchDimensions): string 
   };
   const line = (minute: number, major: boolean) => {
     const [x1, y1] = point(minute, 0.09);
-    const [x2, y2] = point(minute, major ? 0.36 : 0.24);
+    const [x2, y2] = point(
+      minute,
+      0.09 + ((major ? 0.36 : 0.24) - 0.09) * (settings?.tickLength ?? 1),
+    );
     return `<line x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" stroke-width="${f(stroke * (major ? 1.5 : 1))}"${isAccent(minute) ? ` stroke="${accent}"` : ''}/>`;
   };
   const label = (minute: number, value: number, small = false) => {

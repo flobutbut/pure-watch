@@ -10,7 +10,7 @@ const handsPanel = (page: Page) =>
   page.getByRole('button', { name: 'Paramètres des aiguilles', exact: true });
 const indicesPanel = (page: Page) =>
   page.getByRole('button', {
-    name: 'Paramètres des index : longueur, largeur et position',
+    name: 'Repères horaires',
     exact: true,
   });
 const closePanel = (page: Page) =>
@@ -43,7 +43,7 @@ test('les pigments associent jour et nuit, se rétablissent et se retrouvent dan
   const grid = page.getByRole('grid');
   await grid.focus();
   await page.keyboard.press('ArrowUp');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-dive');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-none');
   await indicesPanel(page).click();
   await page.getByRole('button', { name: 'Or', exact: true }).click();
   await page.getByRole('radio', { name: 'Luminescent', exact: true }).click();

@@ -10,15 +10,12 @@ test('la grille démarre sur la ligne Aiguilles et répond aux flèches', async 
   await page.keyboard.press('ArrowRight');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-leaf');
   await page.keyboard.press('ArrowUp');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-baton');
-  await page.keyboard.press('ArrowUp');
   await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-none');
-  // Choisir des chiffres fait apparaître la ligne Typographie juste en dessous.
   await page.keyboard.press('ArrowRight');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-cardinal');
+  // Les styles sont dans le panneau commun ; la ligne suivante reste Aiguilles.
   await page.keyboard.press('ArrowDown');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numeral-font-sans');
-  await page.keyboard.press('ArrowDown');
-  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-indices-baton');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-hands-leaf');
 });
 
 test('Entrée ouvre la vue 3D, Échap la referme', async ({ page }) => {

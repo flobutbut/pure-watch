@@ -1,4 +1,4 @@
-import { chapterRingColor, effectiveDialColor, numeralColor } from './dial';
+import { chapterRingColor, effectiveDialColor, numeralColor, printInk } from './dial';
 import { rehautColor } from './rehaut';
 import { normalizeNumerals, numeralSystem, type NumeralSystem } from './numerals';
 import { lumeChoice, withLume, type LumeChoice } from './lume';
@@ -19,14 +19,19 @@ export type ColorTarget =
   | 'rehaut'
   | 'bezel'
   | 'numerals'
+  | 'markers'
   | 'indices'
   | 'powerReserve'
   | 'subdials'
   | 'date'
   | 'ring'
   | 'lugs'
-  | 'chapterRing';
+  | 'chapterRing'
+  | 'rehautScale';
 export interface ColorChoice {
+  graduationStyle?: string;
+  rehautProfile?: string;
+  markers?: WatchConfig['dial']['indices'];
   strap?: StrapConfig;
   details?: WatchDetails;
   complications?: WatchConfig['complications'];
@@ -99,6 +104,7 @@ export function colorChoice(config: WatchConfig, target: ColorTarget): ColorChoi
 }
 
 function baseColorChoice(config: WatchConfig, target: ColorTarget): ColorChoice {
+  if (target === 'markers') return { color: 'match', finish: '', markers: config.dial.indices };
   if (target === 'strap')
     return { color: config.strap.color, finish: '', strap: strapSettings(config) };
   // La date n'a pas de couleur propre : son panneau règle le guichet et le disque.
@@ -108,12 +114,25 @@ function baseColorChoice(config: WatchConfig, target: ColorTarget): ColorChoice 
   if (target === 'powerReserve')
     return { color: config.details?.reserve?.color ?? 'match', finish: '' };
   if (target === 'ring') return { color: config.details?.ring?.color ?? 'match', finish: '' };
-  if (target === 'chapterRing') return { color: config.dial.chapterRingColor, finish: 'print' };
+  if (target === 'chapterRing')
+    return {
+      color: config.dial.chapterRingColor,
+      finish: 'print',
+      graduationStyle: config.dial.chapterRing,
+    };
+  if (target === 'rehautScale')
+    return { color: 'match', finish: '', graduationStyle: config.rehaut.scale };
   if (target === 'lugs')
     return { color: targetColor(config, target) as HexColor, finish: '', lugJoin: lugJoin(config) };
   if (target === 'bezel')
     return { color: config.bezel.color, finish: 'ceramic', bezelLayout: bezelLayout(config) };
-  if (target === 'rehaut') return { color: config.rehaut.color, finish: config.rehaut.finish };
+  if (target === 'rehaut')
+    return {
+      color: config.rehaut.color,
+      finish: config.rehaut.finish,
+      graduationStyle: config.rehaut.scale,
+      rehautProfile: config.rehaut.profile,
+    };
   if (target === 'indices')
     return {
       color: config.dial.indices.color,
@@ -188,6 +207,8 @@ function withBaseColorChoice(
   target: ColorTarget,
   choice: ColorChoice,
 ): WatchConfig {
+  if (target === 'markers')
+    return { ...config, dial: { ...config.dial, indices: choice.markers ?? config.dial.indices } };
   if (target === 'strap') return { ...config, strap: choice.strap ?? config.strap };
   if (target === 'date')
     return choice.cyclops === undefined
@@ -195,7 +216,19 @@ function withBaseColorChoice(
       : { ...config, crystal: { ...config.crystal, cyclops: choice.cyclops } };
   if (target === 'powerReserve' || target === 'subdials' || target === 'ring') return config;
   if (target === 'chapterRing')
-    return { ...config, dial: { ...config.dial, chapterRingColor: choice.color } };
+    return {
+      ...config,
+      dial: {
+        ...config.dial,
+        chapterRing: choice.graduationStyle ?? config.dial.chapterRing,
+        chapterRingColor: choice.color,
+      },
+    };
+  if (target === 'rehautScale')
+    return {
+      ...config,
+      rehaut: { ...config.rehaut, scale: choice.graduationStyle ?? config.rehaut.scale },
+    };
   if (target === 'lugs')
     return { ...config, case: { ...config.case, lugJoin: choice.lugJoin ?? lugJoin(config) } };
   if (target === 'numerals') config = normalizeNumerals(config);
@@ -211,6 +244,8 @@ function withBaseColorChoice(
       ...config,
       rehaut: {
         ...config.rehaut,
+        profile: choice.rehautProfile ?? config.rehaut.profile,
+        scale: choice.graduationStyle ?? config.rehaut.scale,
         finish: choice.finish,
         color: choice.color === 'match' ? config.rehaut.color : choice.color,
       },
@@ -277,12 +312,17 @@ export function targetColor(config: WatchConfig, target: ColorTarget): string {
   }
   if (target === 'powerReserve') return reserveAppearance(config).color;
   if (target === 'ring') return ringAppearance(config).color;
+  if (target === 'rehautScale')
+    return config.details?.rehaut?.ink && config.details.rehaut.ink !== 'auto'
+      ? config.details.rehaut.ink
+      : printInk(rehautColor(config));
   if (target === 'chapterRing') return chapterRingColor(config.dial);
   if (target === 'lugs')
     return rehautColor({ ...config, rehaut: { ...config.rehaut, finish: 'metal' } });
   if (target === 'bezel') return config.bezel.color;
   if (target === 'rehaut') return rehautColor(config);
   if (target === 'dial' || target === 'date') return effectiveDialColor(config.dial);
+  if (target === 'markers') return indexColor(config);
   if (target === 'numerals') return numeralColor(config.dial);
   if (target === 'indices') return indexColor(config);
   if (target === 'hands' || config.hands.second.color === 'match') return handColor(config);

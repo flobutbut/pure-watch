@@ -21,34 +21,21 @@ describe('visibilité des lignes', () => {
     expect(config.dial.shape).toBe('square');
   });
 
-  it('la typographie des chiffres n’apparaît que s’il y a des chiffres', () => {
-    const config = defaultConfig();
-    expect(visibleRows(catalog.rows, config).some((r) => r.id === 'numeral-font')).toBe(false);
-    const withNumerals = setAtPath(config, 'dial.indices.numerals', 'cardinal');
-    expect(visibleRows(catalog.rows, withNumerals).some((r) => r.id === 'numeral-font')).toBe(true);
-  });
-
-  it.each([
-    ['none', true],
-    ['cardinal', true],
-    ['explorer', true],
-    ['twelve', true],
-    ['six-twelve', true],
-    ['all', false],
-    ['roman', false],
-  ] as const)('les index avec les chiffres %s : visibilité %s', (numerals, expected) => {
-    const config = defaultConfig();
-    config.dial.indices.style = 'baguettes';
-    config.dial.indices.numerals = numerals;
-    expect(visibleRows(catalog.rows, config).some((row) => row.id === 'indices')).toBe(expected);
-    expect(config.dial.indices.style).toBe('baguettes');
-  });
-
-  it('le choix Aucun ne masque pas la ligne Index : il doit être possible d’en remettre', () => {
-    const config = defaultConfig();
-    config.dial.indices.style = 'none';
-    expect(visibleRows(catalog.rows, config).some((row) => row.id === 'indices')).toBe(true);
-  });
+  it.each(['none', 'cardinal', 'explorer', 'twelve', 'six-twelve', 'even', 'all', 'roman'])(
+    'regroupe les chiffres %s et les index dans une seule ligne sans perdre les choix',
+    (numerals) => {
+      const config = defaultConfig();
+      config.dial.indices.style = 'baguettes';
+      config.dial.indices.numerals = numerals;
+      const rows = visibleRows(catalog.rows, config);
+      expect(rows.some((r) => r.id === 'numerals')).toBe(true);
+      expect(rows.some((r) => r.id === 'numeral-font' || r.id === 'indices')).toBe(false);
+      expect(config.dial.indices.style).toBe('baguettes');
+      expect(
+        catalog.rows.find((r) => r.id === 'indices')!.variants.some((v) => v.id === 'baguettes'),
+      ).toBe(true);
+    },
+  );
 
   it('les palettes restent des préréglages du catalogue et quittent la navigation', () => {
     const config = defaultConfig();

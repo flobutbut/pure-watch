@@ -7,20 +7,22 @@ import { colorChoice, withColorChoice } from './colors';
 import { defaultConfig } from './defaults';
 import { decodeConfigHash, encodeConfigHash } from './url';
 
+import { hourMarkerAt, numeralHours } from './numerals';
+import { detailsSchema } from './details';
+
 const catalog = parseCatalog(rawCatalog);
 const hash = (payload: object) => '#v1.' + btoa(JSON.stringify(payload)).replace(/=+$/, '');
 
 describe('écriture et disposition indépendantes', () => {
-  it.each(['none', 'twelve', 'six-twelve', 'cardinal', 'explorer', 'all'] as const)(
+  it.each(['none', 'twelve', 'six-twelve', 'cardinal', 'explorer', 'even', 'all'] as const)(
     '%s conserve l’écriture dans le lien et la disponibilité des index',
     (layout) => {
       const config = defaultConfig();
       config.dial.indices.numerals = layout;
       config.dial.indices.numeralSystem = 'roman';
       expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
-      expect(visibleRows(catalog.rows, config).some((r) => r.id === 'indices')).toBe(
-        layout !== 'all',
-      );
+      expect(visibleRows(catalog.rows, config).some((r) => r.id === 'indices')).toBe(false);
+      expect(visibleRows(catalog.rows, config).some((r) => r.id === 'numerals')).toBe(true);
     },
   );
 
@@ -77,4 +79,53 @@ describe('écriture et disposition indépendantes', () => {
       numeralSystem: 'arabic',
     });
   });
+});
+
+it('les exceptions choisissent chiffre, index ou rien et se retrouvent dans les liens', () => {
+  const config = defaultConfig();
+  config.dial.indices.numerals = 'even';
+  config.details = {
+    hourMarkers: { '12': 'none', '1': 'numeral', '2': 'index' },
+    indices: { '2': { style: 'dots' } },
+  };
+  expect(numeralHours('even', config.details.hourMarkers)).toEqual([1, 4, 6, 8, 10]);
+  expect([0, 1, 2, 3].map((h) => hourMarkerAt(config, h))).toEqual([
+    'none',
+    'numeral',
+    'index',
+    'index',
+  ]);
+  expect(decodeConfigHash(encodeConfigHash(config), catalog)).toEqual({ config, notice: '' });
+  const row = catalog.rows.find((r) => r.id === 'numerals')!;
+  const preset = applyVariant(
+    config,
+    row,
+    row.variants.findIndex((v) => v.id === 'cardinal'),
+  );
+  expect(preset.details?.hourMarkers).toBeUndefined();
+  expect(preset.details?.indices).toEqual(config.details.indices);
+  expect(preset.dial.indices.numeralFont).toBe(config.dial.indices.numeralFont);
+});
+
+it('refuse les heures et types de repères invalides dans les liens', () => {
+  for (const hourMarkers of [{ '0': 'index' }, { '13': 'numeral' }, { '1': 'baton' }])
+    expect(detailsSchema.safeParse({ hourMarkers }).success).toBe(false);
+});
+
+it('enregistre tout le panneau sans changer les autres pièces et rétablit exactement l’état initial', () => {
+  const config = defaultConfig();
+  const initial = colorChoice(config, 'markers');
+  expect(encodeConfigHash(withColorChoice(config, 'markers', initial))).toBe('#2');
+  const modified = withColorChoice(config, 'markers', {
+    ...initial,
+    markers: { ...config.dial.indices, numerals: 'even', style: 'dots', numeralFont: 'art-deco' },
+    details: { hourMarkers: { '3': 'numeral' } },
+  });
+  expect(modified.hands).toBe(config.hands);
+  expect(modified.dial.indices).toMatchObject({
+    numerals: 'even',
+    style: 'dots',
+    numeralFont: 'art-deco',
+  });
+  expect(withColorChoice(config, 'markers', initial)).toEqual(config);
 });

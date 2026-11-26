@@ -5,7 +5,7 @@ import { dialRadiusAt } from '../../core/geometry/dial-shape';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
 import { chapterRingColor, effectiveDialColor, numeralColor } from '../../core/config/dial';
-import { numeralSystem } from '../../core/config/numerals';
+import { hourMarkerAt, numeralSystem } from '../../core/config/numerals';
 import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
@@ -87,16 +87,18 @@ export function buildDial(
         radiusAt: d.dialShape === 'round' ? undefined : (angle) => dialRadiusAt(d, angle),
         chapterRing: config.dial.chapterRing,
         chapterRingDotSize: config.details?.chapterRing?.dotSize,
+        chapterRingDetails: config.details?.chapterRing,
         brand: config.dial.text.brand,
         line2: config.dial.text.line2,
         numerals: config.dial.indices.numerals,
+        hourMarkers: config.details?.hourMarkers,
         numeralSystem: numeralSystem(config.dial.indices),
         numeralFont: config.dial.indices.numeralFont,
         numeralSize: config.dial.indices.numeralSize,
         numeralRadius: config.dial.indices.numeralRadius,
         omitHours: complicationHours(config),
         ...inks,
-        ...(flatNumerals ? {} : { numerals: 'none' }),
+        ...(flatNumerals ? {} : { numerals: 'none', hourMarkers: undefined }),
         ...layer,
       }),
     );
@@ -109,6 +111,7 @@ export function buildDial(
         brand: '',
         line2: '',
         numerals: config.dial.indices.numerals,
+        hourMarkers: config.details?.hourMarkers,
         ...layer,
       },
     );
@@ -219,7 +222,10 @@ export function buildDial(
   print.add(printMesh);
 
   const waits: Promise<void>[] = [];
-  if (!flatNumerals && numeralHours(config.dial.indices.numerals).length) {
+  if (
+    !flatNumerals &&
+    numeralHours(config.dial.indices.numerals, config.details?.hourMarkers).length
+  ) {
     const glyphs = svgTexture(numeralLayer({}), options.printSize);
     const relief =
       numerals.kind === 'metal' && numerals.effect === 'brushed'
@@ -424,7 +430,7 @@ export function buildIndices(
   }
   // Each composition resolves to existing geometries, shared across its hours.
   const skip = new Set([
-    ...numeralHours(config.dial.indices.numerals),
+    ...numeralHours(config.dial.indices.numerals, config.details?.hourMarkers),
     ...complicationHours(config),
   ]);
   // Longueur dans l'axe du rayon (Y de la forme), largeur en travers (X).
@@ -444,8 +450,11 @@ export function buildIndices(
   const inserts: THREE.BufferGeometry[] = [];
   for (let hour = 0; hour < 12; hour++) {
     if (hours && !hours.includes(hour)) continue;
-    if (skip.has(hour)) continue;
-    const style = config.dial.indices.style;
+    if (skip.has(hour) || hourMarkerAt(config, hour) === 'none') continue;
+    const style =
+      config.dial.indices.style === 'none' && hourMarkerAt(config, hour) === 'index'
+        ? 'baton'
+        : config.dial.indices.style;
     const resolved =
       style === 'dive'
         ? hour === 0
