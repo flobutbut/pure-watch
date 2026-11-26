@@ -42,7 +42,7 @@ interface CameraGoal {
 }
 
 /** Demi-champ fixe de la caméra en direct (mm) : toutes les tailles tiennent, à la même échelle. */
-const FRAME_RADIUS_MM = 35;
+const FRAME_RADIUS_MM = 62;
 const DEG = Math.PI / 180;
 const VIEWS: Record<LiveMode, CameraGoal> = {
   grid: { az: 0, el: 0 },
@@ -127,6 +127,11 @@ function outlinePoints(model: WatchModel): THREE.Vector3[] {
       points.push(new THREE.Vector3((x * d.lugWidth) / 2, (y * d.lugToLug) / 2, d.z.back));
     }
   }
+  const strapBox = new THREE.Box3().setFromObject(model.layers.strap);
+  if (!strapBox.isEmpty())
+    for (const x of [strapBox.min.x, strapBox.max.x])
+      for (const y of [strapBox.min.y, strapBox.max.y])
+        for (const z of [strapBox.min.z, strapBox.max.z]) points.push(new THREE.Vector3(x, y, z));
   points.push(new THREE.Vector3(d.caseRadius + d.crown.length + 1, 0, d.z.back / 2));
   return points;
 }

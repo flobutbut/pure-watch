@@ -337,7 +337,7 @@
   @media (max-width: 759px) {
     dialog,
     dialog.stage {
-      --sheet-max: 66dvh;
+      --sheet-max: 60dvh;
       inset: auto 0 0;
       translate: none;
       width: 100%;

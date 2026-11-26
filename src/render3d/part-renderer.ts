@@ -21,6 +21,7 @@ const LAYER_DEPENDENCIES: Record<
   Layer,
   readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size')[]
 > = {
+  strap: ['strap', 'case', 'crystal', 'bezel'],
   case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
   rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut', 'bezel', 'details'],
   lugs: ['case', 'crystal', 'bezel'],
@@ -138,6 +139,7 @@ const reserveFrame = (config: WatchConfig) => {
 
 /** Quelles pièces montrer, et comment cadrer, pour chaque ligne (règles R1 à R4). */
 const PREVIEWS: Record<string, PreviewSpec> = {
+  strap: { layers: ['strap'], frame: () => ({ x: 0, y: 0, half: 60 }) },
   'case-shape': {
     layers: ['case', 'rehaut', 'lugs', 'crown', 'dial'],
     context: neutralDial,
@@ -162,7 +164,10 @@ const PREVIEWS: Record<string, PreviewSpec> = {
     frame: quarterFrame,
   },
   // R4 : échelle commune à toute la ligne, pour comparer les tailles.
-  'case-size': { layers: null, frame: () => ({ x: 0, y: 0, half: 29 }) },
+  'case-size': {
+    layers: LAYERS.filter((layer) => layer !== 'strap'),
+    frame: () => ({ x: 0, y: 0, half: 29 }),
+  },
   // La courbure des cornes ne se lit que de profil.
   lugs: {
     layers: ['case', 'lugs'],

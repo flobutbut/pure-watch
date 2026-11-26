@@ -18,12 +18,14 @@ import { buildCrystal, crystalSurface } from './parts/crystal';
 import { HANDS_ORDER } from './parts/date';
 import { buildDial } from './parts/dial';
 import { buildHands } from './parts/hands';
+import { buildStrap } from './parts/strap';
 import { buildLugs } from './parts/lugs';
 import { decorateRehaut } from './parts/rehaut';
 import { buildGraduatedBezel } from './parts/rotating-bezel';
 import { buildIndependentBezel } from './parts/independent-bezel';
 
 export const LAYERS = [
+  'strap',
   'case',
   'rehaut',
   'lugs',
@@ -123,6 +125,7 @@ export function buildWatch(
   );
 
   const layers: Record<Layer, THREE.Object3D> = {
+    strap: wanted('strap') ? buildStrap(config, d, lib) : empty('strap'),
     case: caseParts && wanted('case') ? caseParts.case : empty('case'),
     rehaut: caseParts && wanted('rehaut') ? caseParts.rehaut : empty('rehaut'),
     lugs: wanted('lugs') ? buildLugs(config, d, lib, refined) : empty('lugs'),

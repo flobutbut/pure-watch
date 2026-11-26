@@ -223,6 +223,9 @@ export interface StrapConfig {
   stitching: HexColor | null;
   widthMm: number;
   buckle: string;
+  length?: 'short' | 'standard' | 'long';
+  taperMm?: number;
+  buckleFinish?: 'case' | 'steel' | 'gold-yellow' | 'gold-rose' | 'black';
 }
 
 export interface ViewConfig {

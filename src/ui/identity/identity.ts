@@ -8,6 +8,8 @@ import { handAdjustment, handStyle } from '../../core/config/hands';
 import { PART_SETTINGS } from '../colors/part-settings';
 import { detailTraits } from './detail-traits';
 import { lugJoin } from '../../core/config/lugs';
+import { STRAP_LABELS } from '../colors/strap-settings';
+import { strapSettings } from '../../core/config/strap';
 import { LUG_SETTINGS } from '../colors/lug-settings';
 import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
 import { hasLume, lumeChoice, lumePigment } from '../../core/config/lume';
@@ -54,7 +56,7 @@ export interface TraitSection {
   traits: Trait[];
 }
 
-const GROUP_TITLES = ['case', 'face', 'hands', 'complications'] as const;
+const GROUP_TITLES = ['case', 'face', 'hands', 'complications', 'strap'] as const;
 const groupTitle = (group: string, m: Messages['identity']) =>
   GROUP_TITLES.find((id) => id === group) ? m[group as (typeof GROUP_TITLES)[number]] : m.others;
 
@@ -351,6 +353,32 @@ export function identitySections(
             : (rows.find((r) => r.id === 'dial-finish')?.variants.find((v) => v.value === finish)
                 ?.i18n.name ?? finish),
       });
+    }
+    if (row.id === 'strap') {
+      const strap = strapSettings(config);
+      const labels = STRAP_LABELS[locale];
+      section.traits.push(
+        { label: labels.shape, value: labels.styles[strap.material]! },
+        { label: labels.length, value: labels.sizes[strap.length ?? 'standard'] },
+        { label: labels.taper, value: len(strap.taperMm ?? 4) },
+        {
+          label: labels.color,
+          value: strap.color,
+          swatch: strap.color,
+          metal: strap.type === 'metal',
+        },
+        {
+          label: labels.buckle,
+          value: strap.buckle === 'deployant' ? labels.deployant : labels.tang,
+        },
+        { label: labels.finish, value: labels.finishes[strap.buckleFinish ?? 'case'] },
+      );
+      if (strap.type === 'leather')
+        section.traits.push({
+          label: labels.stitching,
+          value: strap.stitching ?? labels.none,
+          ...(strap.stitching ? { swatch: strap.stitching } : {}),
+        });
     }
     section.traits.push(...detailTraits(row.id, config, locale));
     if (row.id === 'lugs' && config.case.lugs !== 'none')

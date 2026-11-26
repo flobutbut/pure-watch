@@ -3,6 +3,8 @@
  * (montre centrale, instantanés) et mis en cache par clé ; seule la bibliothèque les libère.
  */
 import * as THREE from 'three';
+import { strapTextureMaps } from './strap-textures';
+import type { StrapConfig } from '../core/config/types';
 import { effectiveDialShape } from '../core/geometry/dial-shape';
 import { watchDimensions } from '../core/geometry/dimensions';
 import { DIAL_PATTERN_SETTINGS, isDialPatternFinish } from './dial-patterns';
@@ -196,6 +198,56 @@ export class MaterialLibrary {
       }
       return new THREE.MeshPhysicalMaterial(params);
     });
+  }
+
+  private readonly strapMaps = new Map<string, ReturnType<typeof strapTextureMaps>>();
+
+  /** Physical grain, woven fibres and brushed metal share maps across all colours. */
+  strap(
+    strap: StrapConfig,
+    polished = false,
+    surface: 'face' | 'edge' | 'lining' = 'face',
+  ): THREE.MeshPhysicalMaterial {
+    return this.cached(
+      `strap:${strap.type}:${strap.material}:${strap.color}:${polished}:${surface}`,
+      () => {
+        const metal = strap.type === 'metal';
+        const leather = strap.type === 'leather';
+        const cloth = strap.type === 'fabric';
+        const key = `${strap.type}:${strap.material}`;
+        let maps = this.strapMaps.get(key);
+        if (!maps) {
+          maps = strapTextureMaps(strap.type, strap.material);
+          this.keep(maps.normal);
+          this.keep(maps.roughness);
+          this.keep(maps.color);
+          this.strapMaps.set(key, maps);
+        }
+        const color = new THREE.Color(strap.color);
+        if (surface === 'lining' && leather) color.set('#B49A79');
+        else if (surface === 'edge') color.multiplyScalar(metal ? 0.8 : leather ? 0.47 : 0.72);
+        else if (surface === 'lining') color.multiplyScalar(0.72);
+        return new THREE.MeshPhysicalMaterial({
+          color,
+          metalness: metal ? 1 : 0,
+          map: surface !== 'edge' && (cloth || leather) ? maps.color : null,
+          roughness: metal ? (polished ? 0.17 : 0.65) : surface === 'edge' && leather ? 0.4 : 1,
+          roughnessMap: polished || surface === 'edge' ? null : maps.roughness,
+          normalMap: surface === 'edge' || (metal && polished) ? null : maps.normal,
+          normalScale: new THREE.Vector2(
+            surface === 'lining' ? 0.45 : 1,
+            surface === 'lining' ? 0.45 : 1,
+          ),
+          anisotropy: metal && !polished ? 0.65 : 0,
+          anisotropyRotation: Math.PI / 2,
+          sheen: cloth ? 0.42 : leather ? 0.1 : 0,
+          sheenColor: color,
+          sheenRoughness: 0.88,
+          clearcoat: leather && surface !== 'lining' ? (surface === 'edge' ? 0.5 : 0.24) : 0,
+          clearcoatRoughness: surface === 'edge' ? 0.24 : 0.4,
+        });
+      },
+    );
   }
 
   private carbonTexture: THREE.Texture | null = null;
