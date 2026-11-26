@@ -2,7 +2,7 @@
 
 Prototype d’un rendu « photo » de la montre, calculé dans le navigateur avec [three-gpu-pathtracer](https://github.com/gkjohnson/three-gpu-pathtracer) sur la scène Three.js du configurateur. Il ne demande ni serveur ni fichier à télécharger : le modèle, les matières et le studio sont ceux du site.
 
-![Temps réel à gauche, lancer de rayons à droite, réglages dans le panneau](banc-design-system.jpg)
+![Le rendu studio en plein cadre, le temps réel en miniature, les réglages dans le panneau latéral](banc-design-system.jpg)
 
 ## Ouvrir le banc
 
@@ -12,14 +12,14 @@ Avec `npm run dev`, ouvrir [`/studio.html`](http://127.0.0.1:5173/studio.html). 
 http://127.0.0.1:5173/studio.html#v1.…
 ```
 
-La page reste hors du build publié, comme `review.html`. Elle suit le [design system](../design-system.md) du configurateur : le fond reprend l’ambiance du cadran (`Ambience`, mêmes teintes `--ink`, `--ink-soft`, `--veil`), et les réglages vivent dans un panneau `Sheet` à droite, qui devient une feuille en bas d’écran sous 760 px. On le ferme par la croix, Échap ou Espace, et le bouton **Réglages** le rouvre.
+La page reste hors du build publié, comme `review.html`. Elle suit le [design system](../design-system.md) du configurateur. Le **rendu studio occupe toute la scène** ; le **rendu en temps réel** s’y pose **en miniature**, en bas à gauche, au même cadrage (elle reprend les proportions de la scène), et l’avancement du calcul s’affiche en bas à droite. Les réglages tiennent dans un **panneau latéral fixe** à droite, aux tons des panneaux du site (clair ou sombre selon le cadran) : mêmes tokens `--ink`, `--ink-soft`, `--veil`, mêmes libellés et pastilles que `Sheet`. Sous 760 px, la scène passe en haut et le panneau dessous.
 
 - **Vue** (`SegmentedControl`) : Face, Trois quarts, Rasant. La caméra est commune aux deux vues ; tournée à la souris, elle quitte la vue prédéfinie. L’objectif reste du côté du cadran, la table ne passe jamais devant.
 - **Éclairage** (`SegmentedControl`) : *Photo produit* (par défaut), réglé pour le lancer de rayons, ou *Configurateur*, le studio du site tel quel.
 - **Fond** (boutons `compact` à pastille, `aria-pressed`) : l’ambiance du cadran, ou ardoise, papier, lin.
 - **Finesse** (`SegmentedControl`) : Rapide, Net, Sans grain, soit 128, 384 ou 1 024 échantillons par pixel, à l’écran comme à l’export.
-- **Définition de l’export** (`SegmentedControl`) : 1024, 2048 ou 4096 px.
-- **Exporter le rendu studio** (bouton `primary`, `aria-busy` pendant le calcul) : recalcule l’image à la définition choisie et télécharge un PNG. L’affichage ne change pas de taille pendant le calcul ; l’avancement s’affiche sous l’image studio.
+- **Définition de l’export** (`SegmentedControl`) : 1024, 2048 ou 4096 px pour le plus grand côté ; l’autre suit le cadrage de la scène (une scène de 1080 × 900 donne 1024 × 853 px).
+- **Exporter le rendu studio** (bouton `primary`, `aria-busy` pendant le calcul) : recalcule l’image à la définition choisie et télécharge un PNG. L’affichage ne change pas de taille pendant le calcul.
 
 Paramètres d’adresse pour les essais : `?tex=1024` réduit la taille des textures regroupées par le moteur (2048 par défaut, l’impression du cadran y perd en netteté) ; `?key=1.5` règle la lumière principale.
 

@@ -22,7 +22,10 @@ import { buildWatch, type WatchModel } from '../../render3d/watch';
 import { prepareForPathTracer, studioEquirect } from './tracer-fixes';
 
 const DEG = Math.PI / 180;
-const DISTANCE = 118;
+/** Recul de la caméra (mm) : la montre respire dans une scène plein cadre. */
+const DISTANCE = 136;
+/** Champ vertical de la caméra du configurateur (degrés). */
+const FOV = 28;
 
 export const STUDIO_VIEWS = {
   front: [0, 0],
@@ -72,8 +75,8 @@ export interface StudioStatus {
   elapsedMs: number;
   /** Avancement de la phase en cours, de 0 à 1. */
   progress: number;
-  /** Côté de l'image en cours d'export (px). */
-  exportSize?: number;
+  /** Largeur et hauteur de l'image en cours d'export (px). */
+  exportSize?: readonly [number, number];
 }
 
 export interface StudioOptions {
@@ -223,19 +226,25 @@ export class StudioBench {
   }
 
   /**
-   * Export à une définition plus haute que l'écran : le canvas est agrandi (son affichage CSS
-   * ne change pas), l'image s'affine jusqu'au nombre d'échantillons visé, puis revient à
-   * l'écran.
+   * Export à une définition plus haute que l'écran, au cadrage affiché : le plus grand côté
+   * de l'image vaut `size`, l'autre suit les proportions de la vue. Le canvas est agrandi (son
+   * affichage CSS ne change pas), l'image s'affine jusqu'au nombre d'échantillons visé, puis
+   * revient à l'écran.
    */
   async exportPng(size: number): Promise<Blob> {
     if (!this.ready || this.exporting) throw new Error('Le rendu n’est pas prêt');
     this.exporting = true;
     const renderer = this.traced.renderer;
     const ratio = renderer.getPixelRatio();
-    const display = renderer.domElement.clientWidth;
+    const display = renderer.getSize(new THREE.Vector2());
+    const aspect = this.traced.camera.aspect;
+    const exportSize = [
+      Math.round(aspect >= 1 ? size : size * aspect),
+      Math.round(aspect >= 1 ? size / aspect : size),
+    ] as const;
     try {
       renderer.setPixelRatio(1);
-      renderer.setSize(size, size, false);
+      renderer.setSize(exportSize[0], exportSize[1], false);
       // Plus de tuiles en grand : chaque appel reste court, la page répond.
       const tiles = Math.ceil(size / 1024) * 2;
       this.tracer.tiles.set(tiles, tiles);
@@ -244,7 +253,7 @@ export class StudioBench {
       while (this.tracer.samples < this.target && !this.disposed) {
         await nextFrame();
         this.tracer.renderSample();
-        this.status('exporting', this.tracer.samples / this.target, size);
+        this.status('exporting', this.tracer.samples / this.target, exportSize);
       }
       const blob = await new Promise<Blob | null>((resolve) =>
         renderer.domElement.toBlob(resolve, 'image/png'),
@@ -253,7 +262,7 @@ export class StudioBench {
       return blob;
     } finally {
       renderer.setPixelRatio(ratio);
-      renderer.setSize(display, display, false);
+      renderer.setSize(display.x, display.y, false);
       this.tracer.tiles.set(2, 2);
       this.exporting = false;
       this.restart();
@@ -314,7 +323,7 @@ export class StudioBench {
     );
     scene.add(table);
 
-    const camera = new THREE.PerspectiveCamera(28, 1, 1, 2000);
+    const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 2000);
     const controls = new OrbitControls(camera, canvas);
     controls.enablePan = false;
     controls.minDistance = 60;
@@ -342,13 +351,22 @@ export class StudioBench {
     else pane.scene.add(fakeShadow(model, bottom));
   }
 
-  /** Canvas carré à sa taille affichée ; seul un vrai changement relance le calcul. */
+  /**
+   * Canvas à sa taille affichée, carrée ou non ; seul un vrai changement relance le calcul.
+   * En largeur, le champ vertical reste celui du configurateur ; en hauteur (téléphone), il
+   * s'ouvre pour que la largeur de la montre tienne toujours.
+   */
   private fit(pane: Pane): void {
     if (this.exporting) return;
-    const size = pane.renderer.domElement.clientWidth;
-    if (size === 0 || size === pane.renderer.getSize(new THREE.Vector2()).x) return;
-    pane.renderer.setSize(size, size, false);
-    pane.camera.aspect = 1;
+    const { clientWidth: width, clientHeight: height } = pane.renderer.domElement;
+    const current = pane.renderer.getSize(new THREE.Vector2());
+    if (width === 0 || height === 0 || (width === current.x && height === current.y)) return;
+    pane.renderer.setSize(width, height, false);
+    pane.camera.aspect = width / height;
+    pane.camera.fov =
+      pane.camera.aspect >= 1
+        ? FOV
+        : (2 * Math.atan(Math.tan((FOV * DEG) / 2) / pane.camera.aspect)) / DEG;
     pane.camera.updateProjectionMatrix();
     this.restart();
   }
@@ -360,7 +378,11 @@ export class StudioBench {
     if (this.ready) this.tracer.updateCamera();
   }
 
-  private status(phase: StudioStatus['phase'], progress: number, exportSize?: number): void {
+  private status(
+    phase: StudioStatus['phase'],
+    progress: number,
+    exportSize?: StudioStatus['exportSize'],
+  ): void {
     this.options.onstatus({
       phase,
       samples: Math.min(Math.floor(this.tracer.samples), this.target),

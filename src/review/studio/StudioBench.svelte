@@ -1,17 +1,17 @@
 <script lang="ts">
   /**
-   * Banc de rendu studio, avec le design system (documentation/design-system.md) : fond
-   * d'ambiance déduit du cadran, réglages dans un panneau Sheet, modes en SegmentedControl,
-   * fonds en boutons à pastille, export en bouton primary.
+   * Banc de rendu studio, avec le design system (documentation/design-system.md).
+   * Le rendu studio occupe toute la scène ; le rendu en temps réel du configurateur s'y pose en
+   * miniature, au même cadrage. Les réglages tiennent dans un panneau latéral fixe, aux tons
+   * des panneaux du site (suivant le cadran) : modes en SegmentedControl, fonds en boutons à
+   * pastille, export en bouton primary.
    */
   import { onDestroy, onMount } from 'svelte';
   import type { WatchConfig } from '../../core/config/types';
   import type { Refinement } from '../../render3d/refinement';
-  import Ambience from '../../ui/Ambience.svelte';
   import { ambienceFor, NIGHT_AMBIENCE } from '../../ui/ambience';
   import Button from '../../ui/kit/Button.svelte';
   import SegmentedControl from '../../ui/kit/SegmentedControl.svelte';
-  import Sheet from '../../ui/sheet/Sheet.svelte';
   import { StudioBench, type Lighting, type StudioStatus, type StudioView } from './engine';
 
   interface Props {
@@ -63,7 +63,6 @@
   let backdrop = $state('ambience');
   let fineness = $state<Fineness>('384');
   let size = $state<Size>('2048');
-  let panelOpen = $state(true);
   let rasterMs = $state<number | null>(null);
   let status = $state<StudioStatus>({
     phase: 'building',
@@ -74,6 +73,9 @@
   });
   let exportState = $state<'idle' | 'busy' | 'saved' | 'failed'>('idle');
   let savedName = $state('');
+  /** Taille de la scène : la miniature en reprend les proportions, donc le cadrage. */
+  let stageWidth = $state(1);
+  let stageHeight = $state(1);
 
   const backdropColor = $derived(BACKDROPS.find((b) => b.value === backdrop)!.color);
   const ready = $derived(status.phase !== 'building' && status.phase !== 'preparing');
@@ -88,8 +90,10 @@
         return 'Construction des montres…';
       case 'preparing':
         return `Préparation du lancer de rayons · ${Math.round(status.progress * 100)} %`;
-      case 'exporting':
-        return `Export ${status.exportSize} px · ${status.samples} / ${status.target} échantillons · ${seconds(status.elapsedMs)}`;
+      case 'exporting': {
+        const [width, height] = status.exportSize ?? [0, 0];
+        return `Export ${width} × ${height} px · ${status.samples} / ${status.target} · ${seconds(status.elapsedMs)}`;
+      }
       case 'done':
         return `${status.target} échantillons en ${seconds(status.elapsedMs)}`;
       default:
@@ -97,11 +101,10 @@
     }
   });
 
-  // L'interface prend le ton du cadran, comme le configurateur : le panneau suit
-  // :root[data-tone] pour ses deux tons fixes.
+  // Les tons du panneau suivent le cadran, comme les panneaux du configurateur
+  // (:root[data-tone]).
   $effect(() => {
     const root = document.documentElement;
-    root.style.backgroundColor = ambience.base;
     root.style.colorScheme = ambience.tone;
     root.dataset.tone = ambience.tone;
   });
@@ -149,64 +152,48 @@
   }
 </script>
 
-<Ambience {ambience} />
+<div class="bench">
+  <main class="stage" bind:clientWidth={stageWidth} bind:clientHeight={stageHeight}>
+    <canvas
+      class="studio"
+      bind:this={tracedCanvas}
+      style:background={backdropColor}
+      aria-label="Montre en lancer de rayons ; glisser pour la faire tourner"
+    ></canvas>
 
-<div
-  class="bench"
-  style:--ink={ambience.ink}
-  style:--ink-soft={ambience.inkSoft}
-  style:--ink-faint={ambience.inkFaint}
-  style:--veil={ambience.veil}
-  class:panel-open={panelOpen}
->
-  <header class="intro">
-    <p class="eyebrow">BANC DE RENDU</p>
-    <h1>Rendu studio</h1>
-    <p class="lede">
-      La même montre, la même caméra et le même studio. À gauche, le temps réel du configurateur ; à
-      droite, le lancer de rayons, qui s’affine image après image.
-    </p>
-  </header>
-
-  <main class="views">
-    <figure>
-      <canvas bind:this={rasterCanvas} aria-label="Montre en temps réel"></canvas>
-      <figcaption>
-        <span class="name">Temps réel</span>
-        <span class="meta">{rasterMs === null ? '…' : `Une image · ${decimal(rasterMs)} ms`}</span>
+    <figure class="thumbnail" style:aspect-ratio="{stageWidth} / {stageHeight}">
+      <canvas
+        bind:this={rasterCanvas}
+        style:background={backdropColor}
+        aria-label="Montre en temps réel, au même cadrage"
+      ></canvas>
+      <figcaption class="chip">
+        Temps réel{rasterMs === null ? '' : ` · ${decimal(rasterMs)} ms`}
       </figcaption>
     </figure>
-    <figure>
-      <canvas bind:this={tracedCanvas} aria-label="Montre en lancer de rayons"></canvas>
-      <div
+
+    <div class="chip progress-chip" role="status">
+      <span>{statusText}</span>
+      <span
         class="progress"
         class:finished={status.phase === 'done'}
         style:--progress={status.progress}
         aria-hidden="true"
-      ></div>
-      <figcaption>
-        <span class="name">Studio · lancer de rayons</span>
-        <span class="meta">{statusText}</span>
-      </figcaption>
-    </figure>
+      ></span>
+    </div>
   </main>
 
-  {#if !panelOpen}
-    <div class="reopen">
-      <Button onclick={() => (panelOpen = true)}>Réglages</Button>
-    </div>
-  {/if}
-</div>
+  <aside class="panel" aria-labelledby="studio-title">
+    <header>
+      <p class="eyebrow">BANC DE RENDU</p>
+      <h1 id="studio-title">Rendu studio</h1>
+      <p class="lede">
+        Lancer de rayons, affiné image après image. En miniature, le temps réel du configurateur, au
+        même cadrage.
+      </p>
+    </header>
 
-{#if panelOpen}
-  <Sheet
-    id="studio-settings"
-    eyebrow="RENDU STUDIO"
-    title="Réglages"
-    closeLabel="Fermer les réglages"
-    onclose={() => (panelOpen = false)}
-  >
-    <div class="settings">
+    <div class="body">
       <section>
         <p class="section-label">Vue</p>
         <SegmentedControl
@@ -269,107 +256,121 @@
           options={SIZES}
           onchange={(next) => (size = next)}
         />
+        <p class="hint">Le plus grand côté de l’image ; l’autre suit le cadrage de la scène.</p>
       </section>
     </div>
 
-    {#snippet footer()}
-      <div class="export">
-        <Button
-          variant="primary"
-          disabled={!ready}
-          aria-busy={exportState === 'busy'}
-          onclick={exportImage}
-        >
-          {exportState === 'busy' ? 'Export en cours…' : 'Exporter le rendu studio'}
-        </Button>
-        <p class="status" role="status">
-          {#if exportState === 'saved'}
-            Image enregistrée : {savedName}
-          {:else if exportState === 'failed'}
-            L’export a échoué. Réessayer avec une définition plus petite.
-          {/if}
-        </p>
-        <a class="link" href={configLink}>Ouvrir cette montre dans le configurateur</a>
-      </div>
-    {/snippet}
-  </Sheet>
-{/if}
+    <footer>
+      <Button
+        variant="primary"
+        disabled={!ready}
+        aria-busy={exportState === 'busy'}
+        onclick={exportImage}
+      >
+        {exportState === 'busy' ? 'Export en cours…' : 'Exporter le rendu studio'}
+      </Button>
+      <p class="status" role="status">
+        {#if exportState === 'saved'}
+          Image enregistrée : {savedName}
+        {:else if exportState === 'failed'}
+          L’export a échoué. Réessayer avec une définition plus petite.
+        {/if}
+      </p>
+      <a class="link" href={configLink}>Ouvrir cette montre dans le configurateur</a>
+    </footer>
+  </aside>
+</div>
 
 <style>
-  /* Sous le panneau des réglages (340 px à 24 px du bord), les deux vues gardent leur place. */
+  /* Tons fixes des panneaux du site (Sheet), clair ou sombre selon le cadran : ils servent au
+     panneau latéral comme aux pastilles posées sur la scène, quel que soit le fond choisi. */
   .bench {
-    --panel-room: 388px;
+    --ink: #20242b;
+    --veil: #faf9f6;
+    --ink-soft: color-mix(in srgb, var(--ink) 66%, var(--veil));
+    --panel-width: 360px;
     position: fixed;
     inset: 0;
-    overflow-y: auto;
-    padding: 32px 32px 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--panel-width);
+    background: var(--veil);
     color: var(--ink);
   }
-  .bench.panel-open {
-    padding-right: var(--panel-room);
+  :global(:root[data-tone='dark']) .bench {
+    --ink: #f4f3ef;
+    --veil: #25282c;
   }
-  .intro {
-    max-width: 64ch;
-    margin-bottom: 24px;
-  }
-  .eyebrow {
-    margin: 0 0 6px;
-    font-size: var(--text-2xs);
-    letter-spacing: 0.16em;
-    color: var(--ink-soft);
-  }
-  h1 {
-    margin: 0 0 8px;
-    font-size: var(--text-title);
-    font-weight: 500;
-    line-height: 1.2;
-  }
-  .lede {
-    margin: 0;
-    font-size: var(--text-m);
-    line-height: 1.5;
-    color: var(--ink-soft);
-  }
-  .views {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-    /* Les deux carrés tiennent dans la fenêtre sous l'en-tête. */
-    max-width: calc((100dvh - 200px) * 2 + 16px);
-  }
-  figure {
+
+  .stage {
     position: relative;
-    margin: 0;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
   }
-  canvas {
+  .studio {
     display: block;
     width: 100%;
-    aspect-ratio: 1;
-    border-radius: var(--radius-l);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+    height: 100%;
     touch-action: none;
     cursor: grab;
   }
   canvas:active {
     cursor: grabbing;
   }
-  figcaption {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 4px 12px;
-    padding: 10px 4px 0;
+
+  /* Pastilles posées sur la scène : voile du panneau, lisibles sur tous les fonds. */
+  .chip {
+    margin: 0;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--veil) 86%, transparent);
+    backdrop-filter: blur(10px);
+    color: var(--ink);
     font-size: var(--text-s);
-  }
-  .meta {
-    color: var(--ink-soft);
     font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent);
   }
-  /* Avancement du calcul, posé sur le bas de l'image : un trait à l'encre, effacé une fois fini. */
+
+  .thumbnail {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    width: clamp(150px, 24%, 300px);
+    margin: 0;
+    border-radius: var(--radius-m);
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent),
+      0 12px 40px #0004;
+  }
+  .thumbnail canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: grab;
+  }
+  .thumbnail figcaption {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 3px 9px;
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  .progress-chip {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    display: grid;
+    gap: 6px;
+    max-width: calc(100% - 40px);
+  }
+  /* Avancement du calcul : un trait à l'encre, effacé une fois l'image finie. */
   .progress {
     position: relative;
-    margin: -12px 18px 10px;
     height: 2px;
     border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--ink) 18%, transparent);
@@ -387,18 +388,75 @@
   .progress.finished {
     opacity: 0;
   }
-  .reopen {
-    position: fixed;
-    top: 24px;
-    right: 24px;
-  }
 
-  .settings {
+  /* Panneau latéral : en-tête, corps défilant, pied, comme Sheet, mais posé à côté de la scène. */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    background: var(--veil);
+  }
+  header {
+    flex-shrink: 0;
+    padding: 24px 24px 20px;
+  }
+  .eyebrow {
+    margin: 0 0 4px;
+    font-size: var(--text-2xs);
+    letter-spacing: 0.16em;
+    color: var(--ink-soft);
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: var(--text-title);
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .lede {
+    margin: 0;
+    font-size: var(--text-m);
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: grid;
+    align-content: start;
     gap: 20px;
+    padding: 4px 24px 8px;
+    scrollbar-width: thin;
   }
   section {
     min-width: 0;
+  }
+  footer {
+    flex-shrink: 0;
+    display: grid;
+    gap: 10px;
+    padding: 20px 24px 24px;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  }
+
+  /* Vocabulaire commun des panneaux (Sheet) : libellés, pastilles, anneau de focus. */
+  .panel :global(.section-label) {
+    margin: 0 0 8px;
+    font-size: var(--text-s);
+    color: var(--ink-soft);
+  }
+  .panel :global(.dot) {
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px #8885;
+  }
+  .panel :global(button:focus-visible) {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
   }
   .choices {
     display: flex;
@@ -411,13 +469,7 @@
     line-height: 1.4;
     color: var(--ink-soft);
   }
-  .export {
-    display: grid;
-    gap: 10px;
-    width: 100%;
-  }
   .status {
-    min-height: 1.4em;
     margin: 0;
     font-size: var(--text-s);
     color: var(--ink-soft);
@@ -440,18 +492,32 @@
     border-radius: var(--radius-xs);
   }
 
-  /* Sous 760 px, le panneau devient une feuille en bas d'écran : les vues s'empilent. */
+  /* Sous 760 px : la scène en haut, le panneau dessous, la page défile. */
   @media (max-width: 759px) {
-    .bench,
-    .bench.panel-open {
-      padding: 20px 16px 40px;
+    .bench {
+      display: block;
+      overflow-y: auto;
     }
-    .bench.panel-open {
-      padding-bottom: calc(60dvh + 24px);
+    .stage {
+      height: 62dvh;
     }
-    .views {
-      grid-template-columns: minmax(0, 1fr);
-      max-width: none;
+    .panel {
+      border-left: 0;
+      border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    }
+    .body {
+      overflow: visible;
+    }
+    .thumbnail {
+      left: 12px;
+      bottom: 12px;
+      width: 30%;
+    }
+    .progress-chip {
+      right: 12px;
+      top: 12px;
+      bottom: auto;
+      max-width: calc(100% - 24px);
     }
   }
   @media (prefers-reduced-motion: reduce) {
