@@ -73,10 +73,10 @@ export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: num
   if (row.id === 'dial-ring') {
     const details = { ...next.details };
     if (details.ring) {
-      // Une forme d'anneau repart de ses proportions ; matière et couleur sont gardées.
+      // L'anneau repart de ses proportions d'origine ; matière et couleur sont gardées.
       const ring = { ...details.ring };
-      delete ring.diameter;
-      delete ring.width;
+      delete ring.inner;
+      delete ring.outer;
       next = { ...next, details: { ...details, ring } };
     } else {
       // Sans anneau : la section disparaît, la montre redevient celle d'avant.

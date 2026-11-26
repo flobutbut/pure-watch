@@ -5,7 +5,13 @@ import { isDialFinish, type DialFinish } from './dial-finishes';
 import { SUBDIAL_HAND_STYLES } from './subdial-hand';
 import { SUBDIAL_STYLES, type SubdialStyle } from './subdial-style';
 import { materialSchema } from './material';
-import { RING_DIAMETER_RANGE, RING_RELIEFS, RING_SHAPES, RING_WIDTH_RANGE } from './dial-ring';
+import {
+  legacyRingEdges,
+  RING_EDGE_RANGE,
+  RING_RELIEFS,
+  RING_SHAPE,
+  RING_SHAPES,
+} from './dial-ring';
 
 const hex = z
   .string()
@@ -27,6 +33,22 @@ function normalizeMiniStyle<T extends { subdialStyle?: string; finish?: string }
       : {}),
     ...(style ? { subdialStyle: style === 'sunken' ? 'sunken' : 'flat' } : {}),
   } as Omit<T, 'subdialStyle'> & { subdialStyle?: SubdialStyle };
+}
+/** Les trois formes types d'avant deviennent l'anneau unique, aux mêmes bords. */
+function normalizeRing<T extends { shape: string; diameter?: number; width?: number }>(
+  value: T,
+): Omit<T, 'shape' | 'diameter' | 'width'> & {
+  shape: typeof RING_SHAPE;
+  inner?: number;
+  outer?: number;
+} {
+  const { shape, diameter, width, ...rest } = value;
+  if (shape === RING_SHAPE) return { ...rest, shape: RING_SHAPE };
+  return {
+    ...rest,
+    shape: RING_SHAPE,
+    ...legacyRingEdges(shape as 'hours' | 'outer' | 'center', diameter, width),
+  };
 }
 export const INDEX_DESIGNS = [
   'baton',
@@ -122,8 +144,12 @@ export const detailsSchema = z
     ring: z
       .object({
         shape: z.enum(RING_SHAPES),
-        diameter: factor(RING_DIAMETER_RANGE.min, RING_DIAMETER_RANGE.max).optional(),
-        width: factor(RING_WIDTH_RANGE.min, RING_WIDTH_RANGE.max).optional(),
+        /** Bords intérieur et extérieur, en part du rayon utile (0 : centre, 1 : rehaut). */
+        inner: factor(RING_EDGE_RANGE.min, RING_EDGE_RANGE.max).optional(),
+        outer: factor(RING_EDGE_RANGE.min, RING_EDGE_RANGE.max).optional(),
+        // Anciens liens : diamètre extérieur et largeur d'une des trois formes types.
+        diameter: factor(0.2, 1).optional(),
+        width: factor(0.04, 1).optional(),
         relief: z.enum(RING_RELIEFS).optional(),
         finish: z.union([z.literal('original'), z.custom<DialFinish>(isDialFinish)]).optional(),
         color: z.union([hex, z.literal('match')]).optional(),
@@ -131,6 +157,7 @@ export const detailsSchema = z
         ink: ink.optional(),
       })
       .strict()
+      .transform(normalizeRing)
       .nullable()
       .optional(),
     reserve: z
