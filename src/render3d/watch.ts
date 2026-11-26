@@ -125,7 +125,7 @@ export function buildWatch(
   );
 
   const layers: Record<Layer, THREE.Object3D> = {
-    strap: wanted('strap') ? buildStrap(config, d, lib) : empty('strap'),
+    strap: wanted('strap') ? buildStrap(config, d, lib, refined) : empty('strap'),
     case: caseParts && wanted('case') ? caseParts.case : empty('case'),
     rehaut: caseParts && wanted('rehaut') ? caseParts.rehaut : empty('rehaut'),
     lugs: wanted('lugs') ? buildLugs(config, d, lib, refined) : empty('lugs'),

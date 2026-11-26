@@ -7,6 +7,7 @@ import { shapeRadius } from '../../core/geometry/case-shape';
 import type { MaterialLibrary } from '../materials';
 import { StrapBuilder, roundedRect, roundHole } from './strap-geometry';
 import { strapHardware, strapSpringBar } from './strap-hardware';
+import { strapSeat } from './lugs';
 
 const V = (x: number, s: number, z: number) => new THREE.Vector3(x, s, z);
 const ease = (value: number) => {
@@ -28,22 +29,31 @@ function disposeTemplate(root: THREE.Group): void {
   });
 }
 
+/** Position de la barrette dans le repère du brin : avance (s) et hauteur (z), en mm. */
+const BAR_S = 0.6,
+  BAR_Z = 1.25;
+/** Longueur (mm) sur laquelle l'écart de hauteur du départ incliné se résorbe. */
+const TILT_FADE = 30;
+
 export function buildStrap(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
+  refined = config.case.shape === 'cushion',
 ): THREE.Group {
   const strap = strapSettings(config),
     metal = strap.type === 'metal',
     leather = strap.type === 'leather',
     cloth = strap.type === 'fabric';
-  const anchor =
-    config.case.lugs === 'none'
-      ? d.caseRadius * shapeRadius(config.case.shape, Math.PI / 2) - 0.8
-      : Math.max(
-          d.caseRadius * shapeRadius(config.case.shape, Math.PI / 2) - 1.2,
-          d.lugToLug / 2 - 1.6,
-        );
+  // La barrette (s = BAR_S, z = BAR_Z dans le repère du brin) se loge dans la corne ; le brin
+  // part dans l'inclinaison de la corne puis rejoint la présentation courbée.
+  const caseEdge = d.caseRadius * shapeRadius(config.case.shape, Math.PI / 2);
+  const seat = strapSeat(config, d, refined);
+  const tilt = seat?.tilt ?? 0,
+    ty = Math.cos(tilt),
+    tz = -Math.sin(tilt);
+  const anchor = seat ? Math.max(caseEdge - 1.2, seat.y - BAR_S * ty + BAR_Z * tz) : caseEdge - 0.8;
+  const baseZ = seat ? seat.z - BAR_S * tz - BAR_Z * ty : d.z.back + d.caseThickness * 0.28;
   const key = JSON.stringify([
     strap,
     config.case.shape,
@@ -51,10 +61,10 @@ export function buildStrap(
     config.case.material,
     config.case.finish,
     d.caseRadius,
-    d.lugToLug,
     d.lugWidth,
-    d.caseThickness,
-    d.z.back,
+    anchor,
+    baseZ,
+    tilt,
   ]);
   const cache = templates.get(lib) ?? new Map<string, THREE.Group>();
   templates.set(lib, cache);
@@ -64,17 +74,39 @@ export function buildStrap(
     cache.set(key, cached);
     return cloneStrap(cached);
   }
-  const baseZ = d.z.back + d.caseThickness * 0.28;
+  // Ligne médiane du brin : un départ droit dans l'axe de la corne, jusqu'au point où
+  // l'ellipse de présentation prend la même pente (tangentes continues, la courbure ne
+  // change jamais de sens), puis l'ellipse ; l'écart de hauteur se résorbe sur TILT_FADE mm.
+  const ellipse = (s: number) => {
+    const a = s / 38;
+    return { y: anchor * Math.cos(a) + 32 * Math.sin(a), z: baseZ - 31 * (1 - Math.cos(a)) };
+  };
+  let s0 = 0;
+  if (tilt > 0) {
+    let hi = 19 * Math.PI;
+    for (let i = 0; i < 28; i++) {
+      const mid = (s0 + hi) / 2,
+        a = mid / 38;
+      if (Math.atan2(31 * Math.sin(a), 32 * Math.cos(a) - anchor * Math.sin(a)) < tilt) s0 = mid;
+      else hi = mid;
+    }
+  }
+  const e0 = ellipse(s0);
+  const speed = s0 > 0 ? (e0.y - anchor) / (s0 * ty) : 1,
+    drop = baseZ + s0 * speed * tz - e0.z;
+  const centre = (s: number) => {
+    if (s < s0) return { y: anchor + s * speed * ty, z: baseZ + s * speed * tz };
+    const e = ellipse(s);
+    return { y: e.y, z: e.z + drop * (1 - ease((s - s0) / TILT_FADE)) };
+  };
   const builder = new StrapBuilder((x, s, z, sign) => {
-    const a = s / 38,
-      dy = -anchor * Math.sin(a) + 32 * Math.cos(a),
-      dz = -31 * Math.sin(a),
+    const p = centre(s),
+      q = centre(s + 0.05),
+      o = centre(s - 0.05),
+      dy = q.y - o.y,
+      dz = q.z - o.z,
       norm = Math.hypot(dy, dz);
-    return V(
-      x * sign,
-      sign * (anchor * Math.cos(a) + 32 * Math.sin(a) - (z * dz) / norm),
-      baseZ - 31 * (1 - Math.cos(a)) + (z * dy) / norm,
-    );
+    return V(x * sign, sign * (p.y - (z * dz) / norm), p.z + (z * dy) / norm);
   });
   const face = lib.strap(strap),
     edge = lib.strap(strap, false, 'edge'),
@@ -123,7 +155,9 @@ export function buildStrap(
 
   for (const [half, length] of lengths.entries()) {
     const sign = half === 0 ? 1 : -1;
-    strapSpringBar(builder, lib, config, d.lugWidth - 0.2, sign);
+    // Cornes intégrées : le brin vient contre le bloc, l'attache reste cachée.
+    if (config.case.lugs !== 'integrated')
+      strapSpringBar(builder, lib, config, d.lugWidth - 0.2, sign, BAR_S, BAR_Z);
     if (metal && strap.material !== 'mesh') {
       const five = strap.material === 'five-link',
         pitch = five ? 4.3 : 6.2;
@@ -149,7 +183,7 @@ export function buildStrap(
           hi = 0;
         for (let j = 0; j < 24; j++) {
           const s = (lo + hi) / 2,
-            y = anchor * Math.cos(s / 38) + 32 * Math.sin(s / 38);
+            y = centre(s).y;
           if (y < contact) lo = s;
           else hi = s;
         }
