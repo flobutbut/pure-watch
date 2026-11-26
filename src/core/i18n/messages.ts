@@ -397,6 +397,27 @@ const fr = {
     custom: 'Couleur libre',
   } as Record<string, string>,
   tint: { custom: 'Teinte personnalisée' },
+  material: {
+    title: 'Matière',
+    numerals: 'Matière des chiffres',
+    followIndices: 'Comme les index',
+    custom: 'Personnalisée',
+    kind: 'Matière',
+    kinds: { ink: 'Encre', metal: 'Métal', lume: 'Lumineux' } as Record<string, string>,
+    effect: 'Effet',
+    effects: {
+      matte: 'Mat',
+      varnished: 'Vernis en relief',
+      polished: 'Poli',
+      brushed: 'Brossé',
+    } as Record<string, string>,
+    metal: 'Teinte du métal',
+    pigment: 'Pigment',
+    inkColor: 'Couleur de l’encre',
+    varnish: 'Vernis',
+    /** Libellé court d'un métal, sur la ligne de la grille. */
+    metalLabel: (tint: string, effect: string) => `${tint} ${effect.toLowerCase()}`,
+  },
 };
 
 export type Messages = typeof fr;
@@ -787,6 +808,26 @@ const en: Messages = {
     custom: 'Free color',
   },
   tint: { custom: 'Custom tone' },
+  material: {
+    title: 'Material',
+    numerals: 'Numeral material',
+    followIndices: 'Like the indices',
+    custom: 'Custom',
+    kind: 'Material',
+    kinds: { ink: 'Ink', metal: 'Metal', lume: 'Luminous' },
+    effect: 'Effect',
+    effects: {
+      matte: 'Matte',
+      varnished: 'Raised varnish',
+      polished: 'Polished',
+      brushed: 'Brushed',
+    },
+    metal: 'Metal tone',
+    pigment: 'Pigment',
+    inkColor: 'Ink color',
+    varnish: 'Varnish',
+    metalLabel: (tint: string, effect: string) => `${effect} ${tint.toLowerCase()}`,
+  },
 };
 
 export const MESSAGES: Record<Locale, Messages> = { fr, en };

@@ -61,6 +61,8 @@ export interface DialRingParts {
   print: THREE.Group;
   /** Masque à poser sur l'impression du cadran : elle s'efface sur la bande. */
   printMask: THREE.Texture | null;
+  /** Calque posé sur la bande, découpé par son contour (chiffres en matière). */
+  overlay: (material: THREE.MeshStandardMaterial) => THREE.Mesh;
   ready: Promise<void>;
   owned: { dispose(): void }[];
 }
@@ -139,5 +141,18 @@ export function buildDialRing(
     waits.push(printed.ready, inverse.ready);
   }
 
-  return { surface, print, printMask, ready: Promise.all(waits).then(() => {}), owned };
+  const overlay = (material: THREE.MeshStandardMaterial) => {
+    material.alphaMap = mask.texture;
+    const mesh = new THREE.Mesh(ringGeometry(d, inner, outer), material);
+    mesh.position.z = top + 0.016;
+    return mesh;
+  };
+  return {
+    surface,
+    print,
+    printMask,
+    overlay,
+    ready: Promise.all(waits).then(() => {}),
+    owned,
+  };
 }

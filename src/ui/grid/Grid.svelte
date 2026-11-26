@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { metalTint, numeralMaterial } from '../../core/config/material';
+  import { lumePigment } from '../../core/config/lume';
   import type { RowDef } from '../../core/catalog/types';
   import type { WatchConfig } from '../../core/config/types';
   import { targetColor, type ColorTarget } from '../../core/config/colors';
@@ -440,13 +442,25 @@
     pixelSnap(width / 2 + watchX, height / 2 + watchY, openSize, watchScale, dpr),
   );
 
+  /** Numerals in a material other than matte ink are named by it. */
+  const numeralLabel = () => {
+    const material = numeralMaterial(config);
+    if (material.kind === 'lume') return lumePigment(material.pigment)?.name ?? '';
+    if (material.kind === 'metal')
+      return t().material.metalLabel(
+        t().handFinish[metalTint(material.metal).label]!,
+        t().material.effects[material.effect]!,
+      );
+    return material.effect === 'varnished' ? t().material.varnish : null;
+  };
   /** Metal hands are named by their material; painted surfaces by their tint. */
   const colorLabel = (target: ColorTarget) =>
     target === 'lugs'
       ? t().grid.lugsSettings
       : target === 'hands' && config.hands.finish !== 'lacquer'
         ? (t().handFinish[config.hands.finish] ?? '')
-        : tint(targetColor(config, target), i18n.locale).name;
+        : ((target === 'numerals' ? numeralLabel() : null) ??
+          tint(targetColor(config, target), i18n.locale).name);
 
   const colorForRow = (id: string) => rowColor(id, config);
 
@@ -652,10 +666,13 @@
                         : t().grid.dialMatch
                       : target === 'seconds' && config.hands.second.color === 'match'
                         ? t().grid.handsMatch
-                        : (target === 'numerals' && config.dial.indices.numeralColor === 'match') ||
-                            (target === 'chapterRing' && config.dial.chapterRingColor === 'match')
-                          ? t().grid.ink
-                          : colorLabel(target)}
+                        : target === 'numerals' && numeralLabel()
+                          ? numeralLabel()
+                          : (target === 'numerals' &&
+                                config.dial.indices.numeralColor === 'match') ||
+                              (target === 'chapterRing' && config.dial.chapterRingColor === 'match')
+                            ? t().grid.ink
+                            : colorLabel(target)}
                   </span>{/if}
               </span>
             </button>

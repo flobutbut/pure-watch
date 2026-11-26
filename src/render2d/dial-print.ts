@@ -33,6 +33,10 @@ export interface DialPrintOptions {
   line2?: string;
   /** Taille du rendu en pixels (attributs width/height du SVG). */
   sizePx?: number;
+  /** Fond opaque (carte de relief : le noir est le niveau du cadran). */
+  background?: string;
+  /** Flou des chiffres en mm : leurs bords s'arrondissent en relief. */
+  numeralBlur?: number;
 }
 
 import { fontDef } from './fonts';
@@ -195,9 +199,15 @@ export function dialPrintSvg(options: DialPrintOptions): string {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${f(-extent)} ${f(-extent)} ${f(2 * extent)} ${f(2 * extent)}">` +
     (options.fontCss ? `<style>${options.fontCss}</style>` : '') +
+    (options.background
+      ? `<rect x="${f(-extent)}" y="${f(-extent)}" width="${f(2 * extent)}" height="${f(2 * extent)}" fill="${options.background}"/>`
+      : '') +
+    (options.numeralBlur
+      ? `<defs><filter id="numeral-blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${f(options.numeralBlur)}"/></filter></defs>`
+      : '') +
     `<g stroke="${options.chapterRingInk ?? options.ink}" fill="${options.chapterRingInk ?? options.ink}" stroke-linecap="butt">${chapterRingMarkup(R, options.chapterRing, options.radiusAt, options.chapterRingDotSize)}</g>` +
     `<g fill="${options.ink}">${text.join('')}</g>` +
-    `<g fill="${options.numeralInk ?? options.ink}">${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem)}</g>` +
+    `<g fill="${options.numeralInk ?? options.ink}"${options.numeralBlur ? ' filter="url(#numeral-blur)"' : ''}>${numeralsMarkup(R, options.numerals, options.numeralFont, options.radiusAt, options.omitHours, options.numeralSize, options.numeralRadius, options.numeralSystem)}</g>` +
     `</svg>`
   );
 }
