@@ -75,7 +75,8 @@ const lightingScene = (lighting: Lighting) =>
 
 export interface StudioStatus {
   /** building : montres ; preparing : structure du lancer de rayons ; puis le calcul. */
-  phase: 'building' | 'preparing' | 'rendering' | 'paused' | 'done' | 'exporting';
+  /** idle : scène prête, rendu pas encore lancé (aperçu rastérisé seulement). */
+  phase: 'building' | 'preparing' | 'idle' | 'rendering' | 'paused' | 'done' | 'exporting';
   /** Le viseur (la miniature) a bougé : son point de vue n'est pas encore rendu. */
   pending: boolean;
   samples: number;
@@ -100,6 +101,11 @@ export interface StudioOptions {
   textureSize?: number;
   /** Multiplie la lumière principale du lancer de rayons (essais). */
   keyScale?: number;
+  /**
+   * Lance le lancer de rayons dès la scène prête. Par défaut non : le calcul sollicite fortement
+   * la carte graphique, il attend que l'on clique sur « Lancer le rendu » (launch).
+   */
+  autoRender?: boolean;
   onstatus: (status: StudioStatus) => void;
   onraster: (ms: number) => void;
   /** Vue prédéfinie en cours, ou null quand la caméra a été tournée à la main. */
@@ -131,6 +137,10 @@ export class StudioBench {
   private pending = false;
   private paused = false;
   private pausedAt = 0;
+  /** Rendu pas encore lancé : la scène studio n'est dessinée qu'en aperçu rastérisé. */
+  private idle: boolean;
+  /** L'aperçu rastérisé de la scène studio est à redessiner (mode idle). */
+  private tracedDirty = true;
   private started = performance.now();
   private finishedAt = 0;
   private frameHandle = 0;
@@ -138,6 +148,7 @@ export class StudioBench {
 
   constructor(private readonly options: StudioOptions) {
     this.target = options.target;
+    this.idle = !options.autoRender;
     this.raster = this.makePane(options.raster, false);
     this.traced = this.makePane(options.traced, true);
 
@@ -177,7 +188,7 @@ export class StudioBench {
     return [this.raster, this.traced];
   }
 
-  /** Construit les deux montres, prépare le lancer de rayons, puis lance l'affinage. */
+  /** Construit les deux montres et prépare le lancer de rayons ; l'affinage attend launch(), sauf autoRender. */
   async start(view: StudioView = 'quarter'): Promise<void> {
     this.setView(view);
     this.status('building', 0);
@@ -188,6 +199,8 @@ export class StudioBench {
       onProgress: (progress) => this.status('preparing', progress),
     });
     if (this.disposed) return;
+    // En attente du lancement, le moteur ne dessine que son aperçu rastérisé, sans calcul.
+    this.tracer.pausePathTracing = this.idle;
     this.ready = true;
     this.restart();
     this.frameHandle = requestAnimationFrame(this.frame);
@@ -204,7 +217,7 @@ export class StudioBench {
       pane.controls.target.set(0, 0, 0);
       pane.controls.update();
     }
-    // Une vue prédéfinie vaut pour les deux : le rendu studio part aussitôt.
+    // Une vue prédéfinie vaut pour les deux : le rendu studio repart aussitôt, s’il est lancé.
     this.pending = false;
     this.options.onview(view);
     this.restart();
@@ -217,12 +230,21 @@ export class StudioBench {
     this.traced.camera.quaternion.copy(this.raster.camera.quaternion);
     this.traced.controls.target.copy(this.raster.controls.target);
     this.pending = false;
+    if (this.idle) this.launch();
+    else this.restart();
+  }
+
+  /** Lance le lancer de rayons sur le point de vue en cours (premier rendu de la page). */
+  launch(): void {
+    if (!this.ready || !this.idle || this.exporting) return;
+    this.idle = false;
+    this.tracer.pausePathTracing = false;
     this.restart();
   }
 
   /** Met l'affinage en pause : l'image reste à l'écran, le temps de calcul s'arrête. */
   pause(): void {
-    if (!this.ready || this.paused || this.tracer.samples >= this.target) return;
+    if (!this.ready || this.idle || this.paused || this.tracer.samples >= this.target) return;
     this.paused = true;
     this.pausedAt = performance.now();
     this.emit();
@@ -286,6 +308,8 @@ export class StudioBench {
     try {
       renderer.setPixelRatio(1);
       renderer.setSize(exportSize[0], exportSize[1], false);
+      // Exporter calcule l'image, même si le rendu n'a pas encore été lancé à l'écran.
+      this.tracer.pausePathTracing = false;
       // Plus de tuiles en grand : chaque appel reste court, la page répond.
       const tiles = Math.ceil(size / 1024) * 2;
       this.tracer.tiles.set(tiles, tiles);
@@ -305,6 +329,7 @@ export class StudioBench {
       renderer.setPixelRatio(ratio);
       renderer.setSize(display.x, display.y, false);
       this.tracer.tiles.set(2, 2);
+      this.tracer.pausePathTracing = this.idle;
       this.exporting = false;
       this.restart();
     }
@@ -422,6 +447,7 @@ export class StudioBench {
   /** Le rendu studio repart de zéro (nouveau point de vue, éclairage, fond…), sans pause. */
   private restart(): void {
     this.rasterDirty = true;
+    this.tracedDirty = true;
     this.paused = false;
     this.started = performance.now();
     this.finishedAt = 0;
@@ -434,11 +460,13 @@ export class StudioBench {
     if (!this.ready) return;
     const phase = this.exporting
       ? 'exporting'
-      : this.paused
-        ? 'paused'
-        : this.tracer.samples >= this.target
-          ? 'done'
-          : 'rendering';
+      : this.idle
+        ? 'idle'
+        : this.paused
+          ? 'paused'
+          : this.tracer.samples >= this.target
+            ? 'done'
+            : 'rendering';
     this.status(phase, this.tracer.samples / this.target);
   }
 
@@ -467,6 +495,14 @@ export class StudioBench {
       const start = performance.now();
       this.raster.renderer.render(this.raster.scene, this.raster.camera);
       this.options.onraster(performance.now() - start);
+    }
+    if (this.idle) {
+      // Aperçu rastérisé de la scène studio, redessiné seulement quand elle change.
+      if (this.tracedDirty) {
+        this.tracedDirty = false;
+        this.tracer.renderSample();
+      }
+      return;
     }
     if (this.paused) return;
     if (this.tracer.samples < this.target) {
