@@ -266,7 +266,15 @@
   }
 
   // Replace the current entry: option browsing must not fill the Back history.
-  $effect(() => syncConfigUrl(config));
+  // The address follows the watch as shown, an open panel's change included, so a link copied
+  // from the address bar keeps it. Panel changes arrive up to ten times a second while a slider
+  // moves: they are grouped, which keeps clear of the browsers' history rate limits.
+  $effect(() => {
+    const shown = previewConfig;
+    if (!shown) return syncConfigUrl(config);
+    const timer = setTimeout(() => syncConfigUrl(shown), 300);
+    return () => clearTimeout(timer);
+  });
 
   function followConfigUrl() {
     if (location.href === lastConfigUrl) return;
