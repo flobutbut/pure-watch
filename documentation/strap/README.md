@@ -13,6 +13,8 @@ Trois longueurs de brins : court **65 / 105 mm**, standard **75 / 115 mm**, long
 
 Le métal dispose de quatre teintes ; les autres matières ont une couleur libre. La boucle suit par défaut la matière et la finition du boîtier. En mode personnalisé, elle peut être en acier, or jaune, or rose ou noir. Les bracelets souples proposent une boucle ardillon ou déployante ; le métal utilise une déployante.
 
+La barrette se loge dans la corne choisie, au même endroit que les trous des cornes percées : près de la pointe, à mi-hauteur du profil réel de la corne, selon le raccord. Le brin part dans la pente de la corne (au plus 20°), puis rejoint la courbe de présentation sans se redresser. Avec des cornes intégrées, le brin vient contre le bloc et la barrette reste cachée.
+
 Le rendu est une présentation courbée des deux brins autour d’une ellipse, avec épaisseur, perforations, passants et fermoir. Les maillons et surpiqûres sont regroupés par matériau pour limiter les appels de dessin. Les dimensions sont des paramètres du prototype, pas une validation de fabrication ou de tour de poignet.
 
 Les aperçus utilisent le même modèle que la montre assemblée. La fiche d’identité et le prompt de génération incluent le bracelet. Les liens existants restent lisibles ; les nouveaux réglages utilisent les identifiants ajoutés `bg` (longueur), `bh` (effilement), `bi` (finition de boucle), sans modifier les identifiants précédents ni les valeurs historiques.

@@ -5,9 +5,10 @@ import { parseCatalog } from '../../core/catalog/load';
 import { defaultConfig } from '../../core/config/defaults';
 import { applyVariant } from '../../core/nav/selection';
 import { STRAP_TYPES, STRAP_STYLES } from '../../core/config/strap';
-import { watchDimensions } from '../../core/geometry/dimensions';
+import { proportionsForDiameter, watchDimensions } from '../../core/geometry/dimensions';
 import { PartRenderer3D } from '../part-renderer';
 import { buildStrap } from './strap';
+import { buildLugs, LUG_STYLES } from './lugs';
 import { MaterialLibrary } from '../materials';
 const catalog = parseCatalog(rawCatalog);
 const row = catalog.rows.find((r) => r.id === 'strap')!;
@@ -34,20 +35,16 @@ describe('rendu du bracelet', () => {
     config.case.material = 'gold-yellow';
     const d = watchDimensions(config);
     const group = buildStrap(config, d, lib);
-    const top = d.z.back + d.caseThickness * 0.28 + 2.6;
     const band = group.children.find((child) => child.name === 'strap-band') as THREE.Mesh;
     const position = band.geometry.attributes.position!;
     const normal = band.geometry.attributes.normal!;
     for (const sign of [-1, 1]) {
+      const near = (i: number) => sign * position.getY(i) > 21 && sign * position.getY(i) < 24;
+      let top = -Infinity;
+      for (let i = 0; i < position.count; i++) if (near(i)) top = Math.max(top, position.getZ(i));
       let faces = 0;
       for (let i = 0; i < position.count; i++) {
-        if (
-          sign * position.getY(i) > 21 &&
-          sign * position.getY(i) < 24 &&
-          position.getZ(i) > top - 0.2 &&
-          normal.getZ(i) > 0.8
-        )
-          faces++;
+        if (near(i) && position.getZ(i) > top - 0.2 && normal.getZ(i) > 0.8) faces++;
       }
       expect(faces).toBeGreaterThan(0);
     }
@@ -105,13 +102,16 @@ describe('rendu du bracelet', () => {
     config.strap.material = 'rally';
     const group = buildStrap(config, watchDimensions(config), lib);
     group.updateMatrixWorld(true);
-    const distance = (x: number) =>
-      new THREE.Raycaster(
-        new THREE.Vector3(x, 31.5, 5),
-        new THREE.Vector3(0, 0, -1),
-      ).intersectObject(group, true)[0]?.distance ?? Infinity;
-    expect(distance(0)).toBeGreaterThan(15);
-    expect(distance(4)).toBeLessThan(12);
+    const distance = (x: number, y: number) =>
+      new THREE.Raycaster(new THREE.Vector3(x, y, 5), new THREE.Vector3(0, 0, -1)).intersectObject(
+        group,
+        true,
+      )[0]?.distance ?? Infinity;
+    // Première perforation du brin : le rayon central traverse cuir et doublure.
+    let y = 25;
+    while (y < 36 && distance(0, y) < 15) y += 0.25;
+    expect(y).toBeLessThan(36);
+    expect(distance(4, y)).toBeLessThan(12);
     group.traverse((child) => {
       if (child instanceof THREE.Mesh) child.geometry.dispose();
     });
@@ -149,6 +149,64 @@ describe('rendu du bracelet', () => {
       root.traverse((child) => {
         if (child instanceof THREE.Mesh) child.geometry.dispose();
       });
+    lib.dispose();
+  });
+  // La barrette se loge dans chaque style de corne : avant la pointe et dans son épaisseur,
+  // y compris quand la corne plonge (courbe, pointue) ou que le raccord la remonte.
+  it.each(
+    LUG_STYLES.filter((style) => style !== 'none' && style !== 'integrated').flatMap((style) =>
+      (['detached', 'flush', 'blended'] as const).flatMap((join) =>
+        [36, 44].map((diameter) => ({ style, join, diameter })),
+      ),
+    ),
+  )('barrette dans la corne $style ($join, $diameter mm)', ({ style, join, diameter }) => {
+    const lib = new MaterialLibrary();
+    const config = defaultConfig();
+    config.case.lugs = style;
+    config.case.lugJoin = join;
+    Object.assign(config.case, proportionsForDiameter(diameter));
+    const d = watchDimensions(config);
+    const strap = buildStrap(config, d, lib),
+      lugs = buildLugs(config, d, lib);
+    const bar = strap.getObjectByName('strap-spring-bar') as THREE.Mesh;
+    const box = new THREE.Box3();
+    const points = bar.geometry.attributes.position!;
+    for (let i = 0; i < points.count; i++)
+      if (points.getY(i) > 0) box.expandByPoint(new THREE.Vector3().fromBufferAttribute(points, i));
+    const y = (box.min.y + box.max.y) / 2;
+    let tip = -Infinity,
+      bottom = Infinity,
+      top = -Infinity;
+    lugs.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const p = child.geometry.attributes.position!;
+      for (let i = 0; i < p.count; i++) {
+        if (p.getY(i) <= 0) continue;
+        tip = Math.max(tip, p.getY(i));
+        if (Math.abs(p.getY(i) - y) < 0.3 && Math.abs(p.getX(i)) > d.lugWidth / 2 - 0.05) {
+          bottom = Math.min(bottom, p.getZ(i));
+          top = Math.max(top, p.getZ(i));
+        }
+      }
+    });
+    expect(box.max.y).toBeLessThan(tip - 0.3);
+    expect(box.min.z).toBeGreaterThan(bottom);
+    expect(box.max.z).toBeLessThan(top);
+    for (const root of [strap, lugs])
+      root.traverse((child) => {
+        if (child instanceof THREE.Mesh) child.geometry.dispose();
+      });
+    lib.dispose();
+  });
+  it('les cornes intégrées cachent la barrette', () => {
+    const lib = new MaterialLibrary();
+    const config = defaultConfig();
+    config.case.lugs = 'integrated';
+    const strap = buildStrap(config, watchDimensions(config), lib);
+    expect(strap.getObjectByName('strap-spring-bar')).toBeUndefined();
+    strap.traverse((child) => {
+      if (child instanceof THREE.Mesh) child.geometry.dispose();
+    });
     lib.dispose();
   });
 });

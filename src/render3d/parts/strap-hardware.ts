@@ -152,19 +152,12 @@ export function strapSpringBar(
   config: WatchConfig,
   width: number,
   sign: number,
+  s: number,
+  z: number,
 ): void {
   const face = lib.caseMetal(config, 'satin'),
     polish = lib.caseMetal(config, 'jewel');
-  builder.pin(0, 0.6, 1.25, width + 0.35, 0.52, sign, face, 'strap-spring-bar');
+  builder.pin(0, s, z, width + 0.35, 0.52, sign, face, 'strap-spring-bar');
   for (const side of [-1, 1])
-    builder.pin(
-      side * (width / 2 + 0.2),
-      0.6,
-      1.25,
-      0.65,
-      0.3,
-      sign,
-      polish,
-      'strap-spring-bar-tip',
-    );
+    builder.pin(side * (width / 2 + 0.2), s, z, 0.65, 0.3, sign, polish, 'strap-spring-bar-tip');
 }

@@ -470,16 +470,8 @@ const STYLES: Record<string, LugStyle> = {
 
 export const LUG_STYLES = [...Object.keys(STYLES), 'none'];
 
-export function buildLugs(
-  config: WatchConfig,
-  d: WatchDimensions,
-  lib: MaterialLibrary,
-  refined = false,
-): THREE.Group {
-  const group = new THREE.Group();
-  group.name = 'lugs';
-  if (config.case.lugs === 'none') return group; // boîtier sans corne
-
+/** Géométrie partagée des cornes : profil, pointe et raccord, pour les cornes et le bracelet. */
+function lugLayout(config: WatchConfig, d: WatchDimensions, refined: boolean) {
   const { R, T, c } = caseLevels(d);
   const joined = continuousLugs(config),
     blended = lugJoin(config) === 'blended';
@@ -505,13 +497,6 @@ export function buildLugs(
       ? shoulder
       : (theta: number) => Math.min(shoulder(theta) - 0.025, buried(theta))
     : buried;
-  const aperture = joined
-    ? (theta: number) =>
-        Math.max(
-          (d.openingRadius + 0.3) * d.dialScale * shapeRadius(d.dialShape, theta),
-          shoulder!(theta) - 0.15,
-        )
-    : undefined;
   const yFlank = surfaceY(d.lugWidth / 2 + thickness, surface);
   const roundFlank = surfaceY(d.lugWidth / 2 + thickness, () => R - c * 0.6 - 0.05);
   const yJunction = R * 0.9 + (yFlank - roundFlank);
@@ -530,11 +515,100 @@ export function buildLugs(
   };
 
   const aIn = style.integrated ? -(d.lugWidth / 2 + thickness) : d.lugWidth / 2;
-  const aOut = d.lugWidth / 2 + thickness;
   // L'arrondi d'arête ne doit jamais dépasser la moitié de la largeur ni le rayon de la
   // pointe : sinon le contour intérieur du biseau se retourne.
   const bevel = clamp(thickness * style.bevel, 0.15, Math.min(0.9, thickness * 0.44));
   const tipRadius = Math.max((style.tipRadius ?? 0.38) * thickness, bevel * 1.1);
+  // Trou de barrette : près de la pointe, à mi-hauteur du flanc de la corne.
+  const barRadius = clamp(thickness * 0.2, 0.32, 0.5);
+  const barY = yTip - tipRadius - Math.max(0.9, barRadius * 2.4);
+  const barZ = (y: number) => {
+    const { top, bottom } = profile(y);
+    return bottom + (top - bottom) * 0.45;
+  };
+  return {
+    R,
+    T,
+    c,
+    joined,
+    blended,
+    machined,
+    style,
+    root,
+    thickness,
+    shoulder,
+    surface,
+    yTip,
+    profileStart,
+    profile,
+    aIn,
+    bevel,
+    tipRadius,
+    barRadius,
+    barY,
+    barZ,
+  };
+}
+
+/** Inclinaison maximale du départ du bracelet (rad) : au-delà, le brin devrait se redresser. */
+const MAX_STRAP_TILT = 0.35;
+
+/**
+ * Logement de la barrette du bracelet : position (y, z) dans le plan de la corne et
+ * inclinaison (rad, positive vers le poignet) de la ligne médiane de la corne à cet endroit.
+ * `null` pour un boîtier sans corne.
+ */
+export function strapSeat(
+  config: WatchConfig,
+  d: WatchDimensions,
+  refined = config.case.shape === 'cushion',
+): { y: number; z: number; tilt: number } | null {
+  if (config.case.lugs === 'none') return null;
+  const lug = lugLayout(config, d, refined);
+  const step = 0.4;
+  const slope = (lug.barZ(lug.barY + step) - lug.barZ(lug.barY - step)) / (2 * step);
+  return { y: lug.barY, z: lug.barZ(lug.barY), tilt: clamp(-Math.atan(slope), 0, MAX_STRAP_TILT) };
+}
+
+export function buildLugs(
+  config: WatchConfig,
+  d: WatchDimensions,
+  lib: MaterialLibrary,
+  refined = false,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'lugs';
+  if (config.case.lugs === 'none') return group; // boîtier sans corne
+
+  const {
+    R,
+    c,
+    joined,
+    blended,
+    machined,
+    style,
+    root,
+    thickness,
+    shoulder,
+    surface,
+    yTip,
+    profileStart,
+    profile,
+    aIn,
+    bevel,
+    tipRadius,
+    barRadius,
+    barY,
+    barZ,
+  } = lugLayout(config, d, refined);
+  const aperture = joined
+    ? (theta: number) =>
+        Math.max(
+          (d.openingRadius + 0.3) * d.dialScale * shapeRadius(d.dialShape, theta),
+          shoulder!(theta) - 0.15,
+        )
+    : undefined;
+  const aOut = d.lugWidth / 2 + thickness;
 
   // Satiné : la corne n'a pas de coordonnées de texture pour orienter un brossage.
   const material = machined
@@ -583,17 +657,13 @@ export function buildLugs(
 
   // Trous de barrette : petits puits sombres qui traversent chaque corne.
   if (style.drilled) {
-    const radius = clamp(thickness * 0.2, 0.32, 0.5);
-    const hole = new THREE.CylinderGeometry(radius, radius, thickness + 0.02, 24);
+    const hole = new THREE.CylinderGeometry(barRadius, barRadius, thickness + 0.02, 24);
     hole.rotateZ(Math.PI / 2); // axe le long de x
     const dark = lib.matte('#0b0c0e');
-    // Près de la pointe, à mi-hauteur du flanc de la corne.
-    const y = yTip - tipRadius - Math.max(0.9, radius * 2.4);
-    const { top, bottom } = profile(y);
     for (const sx of [1, -1]) {
       for (const sy of [1, -1]) {
         const mesh = new THREE.Mesh(hole, dark);
-        mesh.position.set(sx * (aIn + thickness / 2), sy * y, bottom + (top - bottom) * 0.45);
+        mesh.position.set(sx * (aIn + thickness / 2), sy * barY, barZ(barY));
         group.add(mesh);
       }
     }
