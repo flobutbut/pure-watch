@@ -17,6 +17,51 @@ export function caseDeckTop(d: WatchDimensions): number {
   return caseLevels(d).seat - 0.2 * d.caseThickness * (d.bezelHeight - 1) - 0.12;
 }
 
+/** Reveal between the bezel and the start of the case shoulder (mm). */
+const BEZEL_REVEAL = 0.05;
+const outlines = new Map<string, number>();
+
+/**
+ * Bezel set back from the case edge: it stops where the shoulder starts rolling (and
+ * where the top curvature begins), so that shoulder stays visible around it instead of
+ * dipping into a void beneath it. It sits on the flat deck. The dial is unchanged: the
+ * ring gives up that width, down to `minRing` mm, below which it overhangs again.
+ */
+export function bezelOutline(
+  d: WatchDimensions,
+  caseShape: string,
+  bezelShape: string,
+  inner: (theta: number) => number,
+  minRing: number,
+) {
+  const { R, c } = caseLevels(d);
+  const setback = c * 1.5 + BEZEL_REVEAL;
+  const landing = (theta: number) => R * shapeRadius(caseShape, theta) - setback;
+  // A bezel of another shape is the largest one inscribed in the landing.
+  let scale = 1;
+  if (bezelShape !== caseShape) {
+    const key = `${caseShape}:${bezelShape}:${R}:${setback}`;
+    let cached = outlines.get(key);
+    if (cached === undefined) {
+      cached = Infinity;
+      for (let i = 0; i < 1024; i++) {
+        const theta = (i * Math.PI * 2) / 1024;
+        cached = Math.min(cached, landing(theta) / shapeRadius(bezelShape, theta));
+      }
+      cached *= 0.998;
+      if (outlines.size >= 128) outlines.delete(outlines.keys().next().value!);
+      outlines.set(key, cached);
+    }
+    scale = cached;
+  }
+  const perimeter = (theta: number) =>
+    Math.max(
+      bezelShape === caseShape ? landing(theta) : scale * shapeRadius(bezelShape, theta),
+      inner(theta) + minRing,
+    );
+  return { perimeter, bottom: caseDeckTop(d) + 0.01 };
+}
+
 /**
  * Rayon (minimal) du flanc dans la direction θ, forme du boîtier comprise : c'est là que
  * cornes et ailettes se raccordent.

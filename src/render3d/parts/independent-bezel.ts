@@ -6,7 +6,7 @@ import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { buildRuns, type P2, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
 import { machineBezel } from './bezel';
-import { caseLevels, metricLatheUV, smoothLatheTangents } from './levels';
+import { bezelOutline, caseLevels, metricLatheUV, smoothLatheTangents } from './levels';
 
 /** Independent exterior contour with a separate aperture; never deforms the midcase. */
 export function buildIndependentBezel(
@@ -18,10 +18,19 @@ export function buildIndependentBezel(
   group.name = 'independent-bezel';
   const type = bezelTypeForConfig(config),
     shape = bezelShape(config);
-  const { c, seat } = caseLevels(d);
-  const outer = d.bezelRadius - 0.08;
+  const { c } = caseLevels(d);
   const inner = d.openingRadius + 0.285;
-  const bottom = seat - 0.2 * d.caseThickness * (d.bezelHeight - 1) + 0.035;
+  const aperture = (angle: number) => inner * d.dialScale * shapeRadius(d.dialShape, angle);
+  // Set back from the case edge and seated on the deck (see bezelOutline).
+  const outline = bezelOutline(d, config.case.shape, shape, aperture, 0.6);
+  // The profile is drawn at the ring's narrowest width, then stretched to the outline.
+  let narrowest = Infinity;
+  for (let i = 0; i < 256; i++) {
+    const angle = (i * Math.PI) / 128;
+    narrowest = Math.min(narrowest, outline.perimeter(angle) - aperture(angle));
+  }
+  const outer = inner + narrowest;
+  const bottom = outline.bottom;
   const top = d.z.bezelTop - 0.045;
   const bevel = Math.min(c * 0.3, (outer - inner) * 0.15);
   const left: P2 = [outer - bevel, top - bevel];
@@ -84,9 +93,8 @@ export function buildIndependentBezel(
         y = p.getY(i),
         r = Math.hypot(x, y),
         angle = Math.atan2(y, x);
-      const aperture = inner * d.dialScale * shapeRadius(d.dialShape, angle);
-      const perimeter = outer * shapeRadius(shape, angle);
-      const radius = aperture + ((r - inner) / (outer - inner)) * (perimeter - aperture);
+      const from = aperture(angle);
+      const radius = from + ((r - inner) / (outer - inner)) * (outline.perimeter(angle) - from);
       p.setXY(i, (x * radius) / r, (y * radius) / r);
     }
     p.needsUpdate = true;

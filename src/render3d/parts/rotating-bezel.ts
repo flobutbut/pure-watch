@@ -1,27 +1,30 @@
 import * as THREE from 'three';
 import type { WatchConfig } from '../../core/config/types';
 import { bezelAngle, bezelMetalConfig } from '../../core/config/bezel';
-import { contourExtents } from '../../core/geometry/dial-shape';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { bezelPrintSvg } from '../../render2d/bezel-print';
 import { buildRuns, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
 import { sharpPrint, svgTexture } from '../textures';
-import { caseLevels, metricLatheUV } from './levels';
+import { bezelOutline, caseLevels, metricLatheUV } from './levels';
 
 export function rotatingBezelDimensions(config: WatchConfig, d: WatchDimensions) {
-  const { c, seat } = caseLevels(d);
-  const outer = Math.min(
-    d.caseRadius * contourExtents(config.case.shape).min - 0.15,
-    d.openingRadius + d.bezelWidth - 0.15,
-  );
+  const { c } = caseLevels(d);
+  // The glass shell extends 0.25 mm beyond the visible aperture.
+  const inner = d.openingRadius + 0.285;
+  // A graduated insert keeps at least 0.9 mm of print, even on small cases.
+  const minRing = c * 0.18 + 0.9 + c * 0.36;
+  // Set back from the case edge like every bezel: a circle inscribed in the landing.
+  const outline = bezelOutline(d, config.case.shape, 'round', () => inner, minRing);
+  let circle = Infinity;
+  for (let i = 0; i < 256; i++) circle = Math.min(circle, outline.perimeter((i * Math.PI) / 128));
+  const outer = Math.max(Math.min(circle, d.openingRadius + d.bezelWidth - 0.15), inner + minRing);
   return {
     outer,
-    // The glass shell extends 0.25 mm beyond the visible aperture.
-    inner: d.openingRadius + 0.285,
+    inner,
     insertOuter: outer - c * 0.36,
-    insertInner: d.openingRadius + 0.285 + c * 0.18,
-    bottom: seat - 0.2 * d.caseThickness * (d.bezelHeight - 1) + 0.035,
+    insertInner: inner + c * 0.18,
+    bottom: outline.bottom,
     top: d.z.bezelTop - 0.045,
   };
 }
