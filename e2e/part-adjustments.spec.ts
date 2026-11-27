@@ -43,7 +43,8 @@ test('les heures et minutes se règlent séparément, se rétablissent et se par
   );
   await page.getByRole('slider', { name: 'Longueur des heures', exact: true }).press('End');
   await page.getByRole('slider', { name: 'Largeur des minutes', exact: true }).press('End');
-  expect(page.url()).toBe(saved);
+  // The address follows the watch as shown, panel still open (see config-url.spec).
+  await expect.poll(() => page.url()).not.toBe(saved);
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
   await expect(handChoice(page, 'heures', 'Suivre le jeu choisi')).toHaveAttribute(
     'aria-checked',
@@ -52,6 +53,8 @@ test('les heures et minutes se règlent séparément, se rétablissent et se par
   await expect(page.getByRole('slider', { name: 'Longueur des heures', exact: true })).toHaveValue(
     '1',
   );
+  // Restoring brings the address back to the link as it was.
+  await expect.poll(() => page.url()).toBe(saved);
   await handChoice(page, 'heures', 'Trois branches').click();
   await handChoice(page, 'minutes', 'Crayon').click();
   await page
@@ -106,7 +109,8 @@ test('la lunette garde ses paramètres indépendants et masque la forme pendant 
     .getByRole('group', { name: 'Finition de la lunette', exact: true })
     .getByRole('button', { name: 'Polie', exact: true })
     .click();
-  expect(page.url()).toBe(saved);
+  // The address follows the watch as shown, panel still open (see config-url.spec).
+  await expect.poll(() => page.url()).not.toBe(saved);
   await page.getByRole('button', { name: 'Rétablir', exact: true }).click();
   await expect(
     page
@@ -116,6 +120,8 @@ test('la lunette garde ses paramètres indépendants et masque la forme pendant 
   await expect(
     page.getByRole('slider', { name: 'Largeur de la lunette', exact: true }),
   ).toHaveValue('1');
+  // Restoring brings the address back to the link as it was.
+  await expect.poll(() => page.url()).toBe(saved);
   await page
     .getByRole('group', { name: 'Forme de la lunette', exact: true })
     .getByRole('button', { name: 'Ronde', exact: true })
