@@ -60,26 +60,8 @@ export const CATALOG_EN: Record<string, RowNames> = {
     name: 'Strap',
     variants: { metal: 'Metal', rubber: 'Rubber', leather: 'Leather', fabric: 'Fabric' },
   },
-  'case-shape': { name: 'Case shape', variants: SHAPES },
-  'case-profile': {
-    name: 'Case profile',
-    hint: 'Side silhouette of the case band',
-    variants: { straight: 'Straight', curved: 'Curved', faceted: 'Faceted', stepped: 'Stepped' },
-  },
+  'case-shape': { name: 'Case', variants: SHAPES },
   'case-size': { name: 'Size', hint: 'Case diameter, excluding the crown' },
-  lugs: {
-    name: 'Lugs',
-    variants: {
-      straight: 'Straight',
-      curved: 'Curved',
-      pointed: 'Pointed',
-      faceted: 'Chamfered',
-      teardrop: 'Teardrop',
-      drilled: 'Drilled',
-      integrated: 'Integrated',
-      none: 'None',
-    },
-  },
   'case-material': {
     name: 'Case material',
     variants: {
@@ -112,7 +94,6 @@ export const CATALOG_EN: Record<string, RowNames> = {
       pointed: 'Pointed',
       square: 'Square',
       pump: 'Pump',
-      guarded: 'With crown guard',
     },
   },
   'crown-position': {

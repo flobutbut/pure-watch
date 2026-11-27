@@ -1,8 +1,16 @@
 <script lang="ts">
+  import CaseSettings from './CaseSettings.svelte';
+  import SegmentedControl from '../kit/SegmentedControl.svelte';
+  import {
+    caseDraft,
+    caseDrawing,
+    caseConstruction,
+    type CaseDraft,
+  } from '../../core/config/case-construction';
   import { untrack } from 'svelte';
   import {
+    withCaseDraft,
     CASE_DIMENSIONS,
-    caseDimensions,
     caseDimensionsError,
     STRAP_WIDTHS_MM,
     type CaseDimensions,
@@ -20,14 +28,16 @@
     onpreview,
     onclose,
     companion = false,
+    initialTab = 'attachments',
   }: {
     config: WatchConfig;
     /** Values of the size chosen in the grid: the sliders' magnetic marks. */
     defaults: { name: string; values: CaseDimensions };
-    onpreview: (values: CaseDimensions) => void;
-    onclose: (values: CaseDimensions) => void;
+    onpreview: (values: CaseDraft) => void;
+    onclose: (values: CaseDraft) => void;
     /** Beside the 3D preview: the view keeps the keyboard (arrows browse the rows). */
     companion?: boolean;
+    initialTab?: 'dimensions' | 'attachments' | 'profile' | 'finish';
   } = $props();
   const stopsFor = (key: keyof CaseDimensions) => (key === 'lugWidthMm' ? STRAP_WIDTHS_MM : []);
   function valuetext(key: keyof CaseDimensions, value: number): string {
@@ -38,11 +48,24 @@
     ].filter(Boolean);
     return `${display(value)} mm${notes.length ? ` (${notes.join(', ')})` : ''}`;
   }
-  const initial = untrack(() => caseDimensions(config));
+  const initial = untrack(() => caseDraft(config));
+  let tab = $state(untrack(() => initialTab));
   let values = $state({ ...initial });
   let lastValid = { ...initial };
-  const error = $derived(caseDimensionsError(config, values, i18n.locale));
-  const changed = $derived(CASE_DIMENSIONS.some(({ key }) => values[key] !== initial[key]));
+  const draftConfig = $derived(withCaseDraft(config, values));
+  const error = $derived(
+    caseDimensionsError(
+      { ...config, case: { ...config.case, shape: values.shape } },
+      values,
+      i18n.locale,
+    ),
+  );
+  function dimensionsPatch(key: keyof CaseDimensions, value: number) {
+    const next = { ...values, [key]: value };
+    const construction = caseConstruction({ ...config, case: { ...config.case, ...next } });
+    values = { ...next, construction };
+  }
+  const changed = $derived(JSON.stringify(values) !== JSON.stringify(initial));
   let timer: ReturnType<typeof setTimeout> | undefined;
   let pending = initial;
   $effect(() => {
@@ -79,45 +102,75 @@
   placement={companion ? 'stage' : 'side'}
   onclose={close}
 >
-  <p class="intro">
-    {t().dimensions.intro}
-    {t().dimensions.defaultsHint(defaults.name)}
-  </p>
-  <div class="dimensions">
-    {#each CASE_DIMENSIONS as field (field.key)}
-      {@const label =
-        field.key === 'diameterMm' && config.case.shape !== 'round'
-          ? t().dimensions.nominal
-          : t().dimensions[field.key]}
-      <div class="dimension">
-        <label for="dimension-{field.key}">{label}</label>
-        <div class="value">
-          <input
-            id="dimension-{field.key}"
-            type="number"
+  {#snippet toolbar()}
+    <SegmentedControl
+      label={i18n.locale === 'fr' ? 'Paramètres du boîtier' : 'Case settings'}
+      value={tab}
+      options={[
+        { value: 'dimensions', label: i18n.locale === 'fr' ? 'Taille' : 'Size' },
+        { value: 'attachments', label: i18n.locale === 'fr' ? 'Dessus' : 'Top' },
+        { value: 'profile', label: i18n.locale === 'fr' ? 'Profil' : 'Profile' },
+        { value: 'finish', label: i18n.locale === 'fr' ? 'Détails' : 'Details' },
+      ]}
+      onchange={(value) => (tab = value)}
+    />
+  {/snippet}
+  {#if tab !== 'dimensions'}
+    <CaseSettings
+      mode={tab}
+      config={draftConfig}
+      ondrawing={(lugs) =>
+        (values = {
+          ...values,
+          lugs,
+          construction: caseDrawing(values.construction, values.diameterMm, lugs),
+        })}
+      value={values.construction}
+      guard={values.crownGuard}
+      onchange={(construction) => (values = { ...values, construction })}
+      onguard={(crownGuard) => (values = { ...values, crownGuard })}
+    />
+  {:else}
+    <p class="intro">
+      {t().dimensions.intro}
+      {t().dimensions.defaultsHint(defaults.name)}
+    </p>
+    <div class="dimensions">
+      {#each CASE_DIMENSIONS as field (field.key)}
+        {@const label =
+          field.key === 'diameterMm' && values.shape !== 'round'
+            ? t().dimensions.nominal
+            : t().dimensions[field.key]}
+        <div class="dimension">
+          <label for="dimension-{field.key}">{label}</label>
+          <div class="value">
+            <input
+              id="dimension-{field.key}"
+              type="number"
+              min={field.min}
+              max={field.max}
+              step="any"
+              inputmode="decimal"
+              value={values[field.key]}
+              oninput={(e) => dimensionsPatch(field.key, e.currentTarget.valueAsNumber)}
+            />
+            <span>mm</span>
+          </div>
+          <MagneticRange
+            label={t().dimensions.adjust(label)}
             min={field.min}
             max={field.max}
-            step="any"
-            inputmode="decimal"
-            value={values[field.key]}
-            oninput={(e) => (values[field.key] = e.currentTarget.valueAsNumber)}
+            step={field.step}
+            value={Number.isFinite(values[field.key]) ? values[field.key] : initial[field.key]}
+            defaultValue={defaults.values[field.key]}
+            stops={stopsFor(field.key)}
+            valuetext={valuetext(field.key, values[field.key])}
+            oninput={(value) => dimensionsPatch(field.key, value)}
           />
-          <span>mm</span>
         </div>
-        <MagneticRange
-          label={t().dimensions.adjust(label)}
-          min={field.min}
-          max={field.max}
-          step={field.step}
-          value={Number.isFinite(values[field.key]) ? values[field.key] : initial[field.key]}
-          defaultValue={defaults.values[field.key]}
-          stops={stopsFor(field.key)}
-          valuetext={valuetext(field.key, values[field.key])}
-          oninput={(value) => (values[field.key] = value)}
-        />
-      </div>
-    {/each}
-  </div>
+      {/each}
+    </div>
+  {/if}
   {#if error}<p class="error" role="alert">
       {error}
       {t().dimensions.lastValid}

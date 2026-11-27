@@ -23,6 +23,7 @@ import { buildLugs } from './parts/lugs';
 import { decorateRehaut } from './parts/rehaut';
 import { buildGraduatedBezel } from './parts/rotating-bezel';
 import { buildIndependentBezel } from './parts/independent-bezel';
+import { buildCaseEnvelope, type EnvelopeData } from './parts/case-envelope';
 
 export const LAYERS = [
   'strap',
@@ -61,6 +62,10 @@ export interface BuildOptions {
   layers?: readonly Layer[] | null;
   /** Résolution de la texture d'impression du cadran. */
   printSize?: number;
+  /** Enveloppe du boîtier déjà calculée (par un worker) : il ne reste qu'à l'assembler. */
+  envelope?: EnvelopeData | null;
+  /** La montre en direct garde ses gabarits à part, à l'abri des instantanés de la grille. */
+  live?: boolean;
 }
 
 const empty = (name: string) => Object.assign(new THREE.Group(), { name });
@@ -87,15 +92,24 @@ export function buildWatch(
   options: BuildOptions,
 ): WatchModel {
   const d = watchDimensions(config);
+  const unifiedCase = options.refinement !== 'legacy';
   const refined = config.case.shape === 'cushion' && options.refinement !== 'legacy';
   const instrument = isBlackTonneau(config) && options.refinement !== 'legacy';
   const wanted = (layer: Layer) => !options.layers || options.layers.includes(layer);
   const caseParts =
     wanted('case') || wanted('rehaut')
       ? refined
-        ? buildCushionCase(config, d, lib)
-        : buildCase(config, d, lib, instrument)
+        ? buildCushionCase(config, d, lib, !unifiedCase)
+        : buildCase(config, d, lib, instrument, !unifiedCase)
       : null;
+  const envelope =
+    unifiedCase && (wanted('case') || wanted('lugs'))
+      ? buildCaseEnvelope(config, d, lib, options.envelope)
+      : null;
+  if (envelope && caseParts) {
+    disposeGeometries(caseParts.case);
+    caseParts.case = envelope.case;
+  }
   const crystalRefined = refined || d.dialShape !== 'round';
   const dialParts =
     wanted('dial') || wanted('print') || wanted('indices')
@@ -125,12 +139,20 @@ export function buildWatch(
   );
 
   const layers: Record<Layer, THREE.Object3D> = {
-    strap: wanted('strap') ? buildStrap(config, d, lib, refined) : empty('strap'),
+    strap: wanted('strap')
+      ? buildStrap(config, d, lib, refined, options.live ? 'live' : 'shared')
+      : empty('strap'),
     case: caseParts && wanted('case') ? caseParts.case : empty('case'),
     rehaut: caseParts && wanted('rehaut') ? caseParts.rehaut : empty('rehaut'),
-    lugs: wanted('lugs') ? buildLugs(config, d, lib, refined) : empty('lugs'),
+    lugs: wanted('lugs') ? (envelope?.lugs ?? buildLugs(config, d, lib, refined)) : empty('lugs'),
     crown: wanted('crown')
-      ? withPushers(buildCrown(config, d, lib, refined), config, d, lib, refined)
+      ? withPushers(
+          buildCrown(config, d, lib, refined, options.refinement === 'legacy'),
+          config,
+          d,
+          lib,
+          refined,
+        )
       : empty('crown'),
     dial: dialParts?.dial ?? empty('dial'),
     print: dialParts?.print ?? empty('print'),
@@ -150,6 +172,8 @@ export function buildWatch(
 
   // Pièces construites mais non retenues : libérées tout de suite.
   const discarded = [
+    envelope && !wanted('case') && envelope.case,
+    envelope && !wanted('lugs') && envelope.lugs,
     !wanted('hands') && hands.group,
     !wanted('seconds') && hands.seconds,
     caseParts && !wanted('case') && caseParts.case,

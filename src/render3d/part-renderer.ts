@@ -22,9 +22,9 @@ const LAYER_DEPENDENCIES: Record<
   readonly (keyof WatchConfig | 'dial.shape' | 'bezel.type' | 'rehaut.profile' | 'dial.size')[]
 > = {
   strap: ['strap', 'case', 'crystal', 'bezel'],
-  case: ['case', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
+  case: ['case', 'crown', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
   rehaut: ['case', 'crystal', 'dial', 'dial.shape', 'rehaut', 'bezel', 'details'],
-  lugs: ['case', 'crystal', 'bezel'],
+  lugs: ['case', 'crown', 'crystal', 'dial.shape', 'bezel', 'dial.size'],
   crown: ['crown', 'case', 'crystal', 'complications', 'bezel'],
   dial: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel', 'details'],
   print: ['dial', 'case', 'dial.shape', 'rehaut.profile', 'complications', 'bezel', 'details'],

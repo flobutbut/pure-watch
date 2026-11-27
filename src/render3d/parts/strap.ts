@@ -14,7 +14,7 @@ import {
   metalTerminalAttachment,
   meshRootAttachment,
 } from './strap-metal';
-import { strapSeat } from './lugs';
+import { strapPocket, strapSeat } from './lugs';
 import { caseStrapEye, buckleStrapEye, rolledStrapEnd } from './strap-attachments';
 
 const V = (x: number, s: number, z: number) => new THREE.Vector3(x, s, z);
@@ -23,7 +23,15 @@ const ease = (value: number) => {
   return t * t * (3 - 2 * t);
 };
 
-const templates = new WeakMap<MaterialLibrary, Map<string, THREE.Group>>();
+/**
+ * Strap templates per material library and scope. The live watch has a cache of its
+ * own: the thumbnails of a grid row build a dozen other straps, which would otherwise
+ * evict it and cost the live preview a 200 ms rebuild at every slider step. A strap
+ * weighs 2 to 3.4 MB, hence small limits.
+ */
+export type StrapCacheScope = 'live' | 'shared';
+const LIMITS: Record<StrapCacheScope, number> = { live: 2, shared: 6 };
+const templates = new WeakMap<MaterialLibrary, Record<StrapCacheScope, Map<string, THREE.Group>>>();
 function cloneStrap(template: THREE.Group): THREE.Group {
   const root = template.clone(true);
   root.traverse((object) => {
@@ -48,6 +56,7 @@ export function buildStrap(
   d: WatchDimensions,
   lib: MaterialLibrary,
   refined = config.case.shape === 'cushion',
+  scope: StrapCacheScope = 'shared',
 ): THREE.Group {
   const strap = strapSettings(config),
     metal = strap.type === 'metal',
@@ -56,12 +65,36 @@ export function buildStrap(
   // La barrette (s = BAR_S, z = BAR_Z dans le repère du brin) se loge dans la corne ; le brin
   // part dans l'inclinaison de la corne puis rejoint la présentation courbée.
   const caseEdge = d.caseRadius * shapeRadius(config.case.shape, Math.PI / 2);
-  const seat = strapSeat(config, d, refined);
+  const baseThickness = metal
+    ? strap.material === 'mesh'
+      ? 1.5
+      : 2.8
+    : cloth
+      ? 1.25
+      : leather
+        ? 2.45
+        : 2.65;
+  // Sans cornes, l'extrémité se glisse dans la poche creusée sous la carrure : le dessous
+  // affleure le fond, et descend un peu si le bracelet est plus épais que la poche.
+  const pocket = strapPocket(config, d);
+  const seat = pocket ? null : strapSeat(config, d, refined);
   const tilt = seat?.tilt ?? 0,
     ty = Math.cos(tilt),
     tz = -Math.sin(tilt);
-  const anchor = seat ? Math.max(caseEdge - 1.2, seat.y - BAR_S * ty + BAR_Z * tz) : caseEdge - 0.8;
-  const baseZ = seat ? seat.z - BAR_S * tz - BAR_Z * ty : d.z.back + d.caseThickness * 0.28;
+  const thickest = baseThickness + (leather ? 0.8 : 0);
+  // In a pocket the strap ends as a plain band: a rolled loop and its spring bar are
+  // some 5 mm long and would show beyond the case edge on narrowing shapes.
+  const caseEye = !metal && !pocket ? caseStrapEye(strap.type, BAR_S, BAR_Z) : null;
+  const anchor = pocket
+    ? pocket.strapEnd
+    : seat
+      ? Math.max(caseEdge - 1.2, seat.y - BAR_S * ty + BAR_Z * tz)
+      : caseEdge - 0.8;
+  const baseZ = pocket
+    ? d.z.back + Math.min(0.1, pocket.height - 0.15 - thickest)
+    : seat
+      ? seat.z - BAR_S * tz - BAR_Z * ty
+      : d.z.back + d.caseThickness * 0.28;
   const key = JSON.stringify([
     strap,
     config.case.shape,
@@ -74,8 +107,9 @@ export function buildStrap(
     baseZ,
     tilt,
   ]);
-  const cache = templates.get(lib) ?? new Map<string, THREE.Group>();
-  templates.set(lib, cache);
+  const caches = templates.get(lib) ?? { live: new Map(), shared: new Map() };
+  templates.set(lib, caches);
+  const cache = caches[scope];
   const cached = cache.get(key);
   if (cached) {
     cache.delete(key);
@@ -123,15 +157,6 @@ export function buildStrap(
     shadow = lib.matte(new THREE.Color(strap.color).multiplyScalar(0.34).getStyle());
   const lengths = STRAP_LENGTHS[strap.length ?? 'standard'];
   const widthAt = (s: number) => d.lugWidth - 0.3 - (strap.taperMm ?? 4) * ease((s - 3) / 45);
-  const baseThickness = metal
-    ? strap.material === 'mesh'
-      ? 1.5
-      : 2.8
-    : cloth
-      ? 1.25
-      : leather
-        ? 2.45
-        : 2.65;
   const top = (x: number, s: number) => {
     const padding = leather
       ? 0.8 *
@@ -145,7 +170,6 @@ export function buildStrap(
     );
   };
 
-  const caseEye = !metal ? caseStrapEye(strap.type, BAR_S, BAR_Z) : null;
   const buckleEye = !metal ? buckleStrapEye(strap.type, lengths[0]) : null;
   const bodyStart = caseEye ? caseEye.s + caseEye.reach : 0;
 
@@ -169,7 +193,7 @@ export function buildStrap(
   for (const [half, length] of lengths.entries()) {
     const sign = half === 0 ? 1 : -1;
     // Cornes intégrées : le brin vient contre le bloc, l'attache reste cachée.
-    if (config.case.lugs !== 'integrated')
+    if (config.case.lugs !== 'integrated' && !pocket)
       strapSpringBar(builder, lib, config, d.lugWidth - 0.2, sign, BAR_S, BAR_Z);
     if (caseEye)
       rolledStrapEnd(
@@ -214,6 +238,12 @@ export function buildStrap(
       };
       for (let i = 0; i <= 16; i++) {
         const x = -halfWidth + (2 * halfWidth * i) / 16;
+        // In a pocket the end link starts square at the anchor, hidden under the case.
+        if (pocket) {
+          if (i === 0) endLink.moveTo(-halfWidth, 0);
+          else if (i === 16) endLink.lineTo(halfWidth, 0);
+          continue;
+        }
         const contact = surfaceY(x) - 0.35;
         let lo = -16,
           hi = 0;
@@ -540,7 +570,7 @@ export function buildStrap(
   strapHardware(builder, config, strap, lib, lengths[0], widthAt, top);
   const model = builder.finish();
   cache.set(key, model);
-  while (cache.size > 6) {
+  while (cache.size > LIMITS[scope]) {
     const oldest = cache.keys().next().value!;
     disposeTemplate(cache.get(oldest)!);
     cache.delete(oldest);

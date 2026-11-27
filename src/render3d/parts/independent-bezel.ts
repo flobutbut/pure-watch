@@ -6,7 +6,7 @@ import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { buildRuns, type P2, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
 import { machineBezel } from './bezel';
-import { caseLevels, metricLatheUV } from './levels';
+import { caseLevels, metricLatheUV, smoothLatheTangents } from './levels';
 
 /** Independent exterior contour with a separate aperture; never deforms the midcase. */
 export function buildIndependentBezel(
@@ -92,6 +92,7 @@ export function buildIndependentBezel(
     p.needsUpdate = true;
     mesh.geometry.computeVertexNormals();
     metricLatheUV(mesh.geometry, outer);
+    smoothLatheTangents(mesh.geometry, segments);
     group.add(mesh);
   }
   return group;

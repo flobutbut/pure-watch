@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { LUG_JOINS, type LugJoin } from '../../core/config/lugs';
+  import { LUG_CONNECTIONS, type LugJoin } from '../../core/config/lugs';
   import SegmentedControl from '../kit/SegmentedControl.svelte';
   import { i18n } from '../i18n.svelte';
   import { LUG_SETTINGS } from './lug-settings';
@@ -11,8 +11,8 @@
 <h3>{m.label}</h3>
 <SegmentedControl
   label={m.label}
-  {value}
-  options={LUG_JOINS.map((join) => ({ value: join, label: m.names[join] }))}
+  value={value === 'flush' ? 'blended' : value}
+  options={LUG_CONNECTIONS.map((join) => ({ value: join, label: m.names[join] }))}
   {onchange}
 />
 <p class="description">{m.descriptions[value]}</p>

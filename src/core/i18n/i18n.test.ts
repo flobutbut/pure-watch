@@ -56,7 +56,7 @@ describe('English catalogue', () => {
     const english = localizeCatalog(catalog, 'en');
     expect(english.rows.map((r) => r.id)).toEqual(catalog.rows.map((r) => r.id));
     expect(english.rows[0]!.variants[0]!.value).toEqual(catalog.rows[0]!.variants[0]!.value);
-    expect(english.rows.find((r) => r.id === 'case-shape')!.i18n.name).toBe('Case shape');
+    expect(english.rows.find((r) => r.id === 'case-shape')!.i18n.name).toBe('Case');
     expect(localizeCatalog(catalog, 'fr')).toBe(catalog);
   });
 });

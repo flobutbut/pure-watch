@@ -110,6 +110,36 @@ export function metricLatheUV(geometry: THREE.BufferGeometry, radius: number): v
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
 
+/** Circumferential tangents for a shaped lathe. Shader-derived tangents vary per
+ * triangle and leave radial bands in broad brushed surfaces, especially bezels. */
+export function smoothLatheTangents(geometry: THREE.BufferGeometry, segments: number): void {
+  const p = geometry.getAttribute('position');
+  const n = geometry.getAttribute('normal');
+  const rows = p.count / (segments + 1);
+  const tangent = new Float32Array(p.count * 4);
+  const a = new THREE.Vector3(),
+    b = new THREE.Vector3(),
+    normal = new THREE.Vector3();
+  const bitangent = new THREE.Vector3(),
+    increasingV = new THREE.Vector3();
+  for (let i = 0; i <= segments; i++)
+    for (let j = 0; j < rows; j++) {
+      const index = i * rows + j;
+      a.fromBufferAttribute(p, ((i + 1) % segments) * rows + j);
+      b.fromBufferAttribute(p, ((i + segments - 1) % segments) * rows + j);
+      normal.fromBufferAttribute(n, index);
+      a.sub(b);
+      if (a.lengthSq() < 1e-10)
+        a.set(Math.cos((i / segments) * Math.PI * 2), Math.sin((i / segments) * Math.PI * 2), 0);
+      a.addScaledVector(normal, -a.dot(normal)).normalize();
+      increasingV.set(p.getX(index), p.getY(index), 0).normalize();
+      increasingV.z = 1;
+      bitangent.crossVectors(normal, a);
+      tangent.set([a.x, a.y, a.z, bitangent.dot(increasingV) >= 0 ? 1 : -1], index * 4);
+    }
+  geometry.setAttribute('tangent', new THREE.BufferAttribute(tangent, 4));
+}
+
 /** Apply the common aperture contour to a dial, rehaut, crystal or gasket. */
 export function shapeAperture(geometry: THREE.BufferGeometry, d: WatchDimensions): void {
   if (d.dialShape === 'round') return;

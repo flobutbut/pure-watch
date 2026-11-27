@@ -101,7 +101,7 @@ test('les dimensions indépendantes se ferment avec Échap et reviennent depuis 
   });
   await page.getByLabel('Épaisseur', { exact: true }).fill('');
   await expect(page.getByRole('alert')).toBeVisible();
-  await page.getByRole('button', { name: 'Fermer les dimensions', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les paramètres du boîtier', exact: true }).click();
   expect(page.url()).toBe(saved);
 });
 

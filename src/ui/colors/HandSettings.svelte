@@ -3,6 +3,7 @@
   import type { HandAdjustment } from '../../core/config/types';
   import { PART_SETTINGS } from './part-settings';
   import { i18n } from '../i18n.svelte';
+  import RangeField from '../kit/RangeField.svelte';
   import HandCarousel from './HandCarousel.svelte';
   let {
     value,
@@ -26,30 +27,22 @@
         label={key === 'hour' ? m.hourDesign : m.minuteDesign}
         onchange={(style) => change(key, { style })}
       />
-      <label>
-        {m.length} <output>{Math.round(value[key].length * 100)} %</output>
-        <input
-          type="range"
-          aria-label={key === 'hour' ? m.hourLength : m.minuteLength}
-          min={HAND_LENGTH[key].min}
-          max={HAND_LENGTH[key].max}
-          step="0.01"
-          value={value[key].length}
-          oninput={(e) => change(key, { length: Number(e.currentTarget.value) })}
-        />
-      </label>
-      <label>
-        {m.width} <output>{Math.round(value[key].width * 100)} %</output>
-        <input
-          type="range"
-          aria-label={key === 'hour' ? m.hourWidth : m.minuteWidth}
-          min={HAND_WIDTH.min}
-          max={HAND_WIDTH.max}
-          step="0.01"
-          value={value[key].width}
-          oninput={(e) => change(key, { width: Number(e.currentTarget.value) })}
-        />
-      </label>
+      <RangeField
+        label={m.length}
+        ariaLabel={key === 'hour' ? m.hourLength : m.minuteLength}
+        min={HAND_LENGTH[key].min}
+        max={HAND_LENGTH[key].max}
+        value={value[key].length}
+        onchange={(length) => change(key, { length })}
+      />
+      <RangeField
+        label={m.width}
+        ariaLabel={key === 'hour' ? m.hourWidth : m.minuteWidth}
+        min={HAND_WIDTH.min}
+        max={HAND_WIDTH.max}
+        value={value[key].width}
+        onchange={(width) => change(key, { width })}
+      />
     </section>
   {/each}
   <p>{m.common}</p>
@@ -80,21 +73,6 @@
     padding-top: 20px;
     margin-top: 4px;
   }
-  label {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    font-size: var(--text-m);
-  }
-  input {
-    grid-column: 1/-1;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  input {
-    accent-color: var(--ink);
-  }
-  output,
   p {
     color: var(--ink-soft);
     font-size: var(--text-s);

@@ -8,16 +8,18 @@ import { MaterialLibrary } from '../materials';
 import { buildWatch } from '../watch';
 import { profileAttachmentSurface } from './case-profile';
 import { lugRoot } from './occlusion';
+import { buildCushionCase } from './cushion-case';
 
 function positions(group: THREE.Object3D) {
   const result: number[] = [];
   group.traverse((o) => {
-    if (o instanceof THREE.Mesh) result.push(...o.geometry.getAttribute('position').array);
+    if (o instanceof THREE.Mesh)
+      for (const value of o.geometry.getAttribute('position').array) result.push(value);
   });
   return result;
 }
 
-it.each(CASE_SHAPES)('%s: four distinct profiles preserve the aperture and dimensions', (shape) => {
+it.each(CASE_SHAPES)('%s: upper curvature preserves the aperture and dimensions', (shape) => {
   const lib = new MaterialLibrary();
   const config = defaultConfig();
   config.case.shape = shape;
@@ -25,8 +27,8 @@ it.each(CASE_SHAPES)('%s: four distinct profiles preserve the aperture and dimen
   config.bezel.type = 'stepped';
   let reference: { dimensions: unknown; rehaut: number[]; crystal: number[] } | undefined;
   const signatures = new Set<string>();
-  for (const profile of CASE_PROFILES) {
-    config.case.profile = profile;
+  for (const dome of [0, 0.5, 1]) {
+    config.case.construction!.dome = dome;
     const model = buildWatch(config, lib, {
       quality: 'fallback',
       layers: ['case', 'rehaut', 'crystal'],
@@ -41,7 +43,7 @@ it.each(CASE_SHAPES)('%s: four distinct profiles preserve the aperture and dimen
     else reference = actual;
     model.dispose();
   }
-  expect(signatures.size).toBe(4);
+  expect(signatures.size).toBe(3);
   config.case.profile = 'curved';
   const original = buildWatch(config, lib, { quality: 'fallback', layers: ['case'] });
   config.case.profile = 'future-unknown';
@@ -53,7 +55,7 @@ it.each(CASE_SHAPES)('%s: four distinct profiles preserve the aperture and dimen
 });
 
 it.each(CASE_SHAPES)(
-  '%s: attachments stay buried in the actual case at both size extremes',
+  '%s: historical attachments stay buried in the legacy case at both size extremes',
   (shape) => {
     const lib = new MaterialLibrary();
     const ray = new THREE.Raycaster();
@@ -66,8 +68,11 @@ it.each(CASE_SHAPES)(
         const d = watchDimensions(config);
         const model = buildWatch(config, lib, {
           quality: 'fallback',
+          refinement: 'legacy',
           layers: ['case', 'lugs', 'crown'],
         });
+        const historicalCase =
+          shape === 'cushion' ? buildCushionCase(config, d, lib).case : model.layers.case;
         model.root.updateMatrixWorld(true);
         model.root.traverse((o) => {
           if (!(o instanceof THREE.Mesh)) return;
@@ -90,7 +95,7 @@ it.each(CASE_SHAPES)(
                   .setZ(z),
                 direction.clone().negate(),
               );
-              const hit = ray.intersectObject(model.layers.case, true)[0];
+              const hit = ray.intersectObject(historicalCase, true)[0];
               const context = `${shape}, ${diameter} mm, ${profile}, z=${z}, angle=${angle}`;
               expect(hit, context).toBeDefined();
               const depth = Math.hypot(hit!.point.x, hit!.point.y) - surface(angle);
@@ -98,6 +103,10 @@ it.each(CASE_SHAPES)(
               expect(depth, context).toBeLessThan(2);
             }
         }
+        if (historicalCase !== model.layers.case)
+          historicalCase.traverse((o) => {
+            if (o instanceof THREE.Mesh) o.geometry.dispose();
+          });
         model.dispose();
       }
     lib.dispose();

@@ -7,6 +7,7 @@
   import { snapToStops } from '../../core/config/case-dimensions';
 
   interface Props {
+    id?: string;
     label: string;
     min: number;
     max: number;
@@ -19,6 +20,7 @@
     oninput: (value: number) => void;
   }
   let {
+    id,
     label,
     min,
     max,
@@ -69,6 +71,7 @@
 
 <div class="range">
   <input
+    {id}
     bind:this={input}
     type="range"
     aria-label={label}

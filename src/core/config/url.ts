@@ -12,6 +12,7 @@ import { DEFAULT_LUME, normalizeLume, lumePigment } from './lume';
 import { HAND_STYLES } from './hands';
 import { BEZEL_SHAPES, BEZEL_FINISHES } from './bezel';
 import { LUG_JOINS } from './lugs';
+import { caseConstruction, casePreset, type CaseConstruction } from './case-construction';
 import { detailsSchema, cleanDetails } from './details';
 import { normalizeDialFinish } from './dial';
 import { DIAL_FINISH_IDS } from './dial-finishes';
@@ -24,7 +25,12 @@ import { V1_PREFIX, V2_PREFIX, decodeLinkPayload, encodeLinkPayload } from './li
 // JSON and all existing wire identifiers stay unchanged.
 const V1_DEFAULTS = {
   ...frozenDefaults,
-  case: { ...frozenDefaults.case, profile: 'curved', lugJoin: 'detached' },
+  case: {
+    ...frozenDefaults.case,
+    profile: 'curved',
+    lugJoin: 'detached',
+    construction: casePreset(40),
+  },
   bezel: {
     ...frozenDefaults.bezel,
     angleDeg: 0,
@@ -339,6 +345,30 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
   bg: field('strap.length', z.enum(['short', 'standard', 'long'])),
   bh: field('strap.taperMm', z.number().finite().min(0).max(6)),
   bi: field('strap.buckleFinish', z.enum(['case', 'steel', 'gold-yellow', 'gold-rose', 'black'])),
+  bj: field(
+    'case.construction',
+    z
+      .object({
+        attachment: z.enum(['lugs', 'block', 'none']),
+        dome: z.number().min(0).max(1),
+        integration: z.number().min(0).max(1),
+        lugWidthMm: z.number().min(1.2).max(5),
+        taper: z.number().min(0).max(1),
+        swell: z.number().min(0).max(1),
+        tipRound: z.number().min(0).max(1),
+        sectionRound: z.number().min(0).max(1).optional(),
+        transition: z.number().min(0).max(1).optional(),
+        underside: z.enum(['flat', 'curved']).optional(),
+        tipThicknessMm: z.number().finite().min(0.6).max(25).optional(),
+        tipOffsetMm: z.number().finite().min(-4).max(25).optional(),
+        drop: z.number().min(0).max(1).optional(),
+        pointThin: z.number().min(0).max(1).optional(),
+        edge: z.enum(['sharp', 'chamfer', 'rounded']),
+        edgeSizeMm: z.number().min(0.05).max(1.2),
+        drilled: z.boolean(),
+      })
+      .strict(),
+  ),
 };
 
 /**
@@ -451,8 +481,18 @@ export function decodeConfigHash(hash: string, catalog: Catalog): ConfigLink {
         adjusted = true;
         continue;
       }
-      config = setAtPath(config, descriptor.path, checked.data);
+      // A construction is a complete drawing. Replacing it also lets the
+      // normalizer distinguish older profiles from newly introduced defaults.
+      config =
+        descriptor.path === 'case.construction'
+          ? { ...config, case: { ...config.case, construction: checked.data as CaseConstruction } }
+          : setAtPath(config, descriptor.path, checked.data);
     }
+    // Crown guards are part of the case now: the former crown style becomes a
+    // fluted head with guards, so older links keep exactly the same watch.
+    if (config.crown.style === 'guarded')
+      config = { ...config, crown: { ...config.crown, style: 'fluted', guard: true } };
+    config = { ...config, case: { ...config.case, construction: caseConstruction(config) } };
     adjusted ||= [config.hands, config.dial.indices].some(
       (part) => Boolean(part.lume) && !lumePigment(part.lume),
     );

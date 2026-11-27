@@ -1,115 +1,6 @@
 {
-  "catalogVersion": "0.15.0",
+  "catalogVersion": "0.16.0",
   "rows": [
-    {
-      "id": "case-shape",
-      "group": "case",
-      "kind": "enum",
-      "path": "case.shape",
-      "previewContext": "none",
-      "looping": true,
-      "priority": "P0",
-      "i18n": {
-        "name": "Forme du boîtier"
-      },
-      "variants": [
-        {
-          "id": "round",
-          "value": "round",
-          "preview": "case-shape/round.svg",
-          "i18n": {
-            "name": "Rond"
-          }
-        },
-        {
-          "id": "cushion",
-          "value": "cushion",
-          "preview": "case-shape/cushion.svg",
-          "i18n": {
-            "name": "Coussin"
-          }
-        },
-        {
-          "id": "tonneau",
-          "value": "tonneau",
-          "preview": "case-shape/tonneau.svg",
-          "i18n": {
-            "name": "Tonneau"
-          }
-        },
-        {
-          "id": "octagon",
-          "value": "octagon",
-          "preview": "case-shape/octagon.svg",
-          "i18n": {
-            "name": "Octogonal"
-          }
-        },
-        {
-          "id": "square",
-          "value": "square",
-          "preview": "case-shape/square.svg",
-          "i18n": {
-            "name": "Carré"
-          }
-        },
-        {
-          "id": "rectangle",
-          "value": "rectangle",
-          "preview": "case-shape/rectangle.svg",
-          "i18n": {
-            "name": "Rectangulaire"
-          }
-        }
-      ]
-    },
-    {
-      "id": "case-profile",
-      "group": "case",
-      "kind": "enum",
-      "path": "case.profile",
-      "previewContext": "case-sample",
-      "looping": true,
-      "priority": "P0",
-      "i18n": {
-        "name": "Profil du boîtier",
-        "hint": "Silhouette de la carrure vue de côté"
-      },
-      "variants": [
-        {
-          "id": "straight",
-          "value": "straight",
-          "preview": "case-profile/straight.svg",
-          "i18n": {
-            "name": "Droit"
-          }
-        },
-        {
-          "id": "curved",
-          "value": "curved",
-          "preview": "case-profile/curved.svg",
-          "i18n": {
-            "name": "Galbé"
-          }
-        },
-        {
-          "id": "faceted",
-          "value": "faceted",
-          "preview": "case-profile/faceted.svg",
-          "i18n": {
-            "name": "Facetté"
-          }
-        },
-        {
-          "id": "stepped",
-          "value": "stepped",
-          "preview": "case-profile/stepped.svg",
-          "i18n": {
-            "name": "Étagé"
-          }
-        }
-      ]
-    },
     {
       "id": "case-size",
       "group": "case",
@@ -308,79 +199,63 @@
       ]
     },
     {
-      "id": "lugs",
+      "id": "case-shape",
       "group": "case",
       "kind": "enum",
-      "path": "case.lugs",
+      "path": "case.shape",
       "previewContext": "none",
       "looping": true,
       "priority": "P0",
       "i18n": {
-        "name": "Cornes"
+        "name": "Boîtier"
       },
       "variants": [
         {
-          "id": "straight",
-          "value": "straight",
-          "preview": "lugs/straight.svg",
+          "id": "round",
+          "value": "round",
+          "preview": "case-shape/round.svg",
           "i18n": {
-            "name": "Droites"
+            "name": "Rond"
           }
         },
         {
-          "id": "curved",
-          "value": "curved",
-          "preview": "lugs/curved.svg",
+          "id": "cushion",
+          "value": "cushion",
+          "preview": "case-shape/cushion.svg",
           "i18n": {
-            "name": "Courbes"
+            "name": "Coussin"
           }
         },
         {
-          "id": "pointed",
-          "value": "pointed",
-          "preview": "lugs/pointed.svg",
+          "id": "tonneau",
+          "value": "tonneau",
+          "preview": "case-shape/tonneau.svg",
           "i18n": {
-            "name": "Pointues"
+            "name": "Tonneau"
           }
         },
         {
-          "id": "faceted",
-          "value": "faceted",
-          "preview": "lugs/faceted.svg",
+          "id": "octagon",
+          "value": "octagon",
+          "preview": "case-shape/octagon.svg",
           "i18n": {
-            "name": "Chanfreinées"
+            "name": "Octogonal"
           }
         },
         {
-          "id": "teardrop",
-          "value": "teardrop",
-          "preview": "lugs/teardrop.svg",
+          "id": "square",
+          "value": "square",
+          "preview": "case-shape/square.svg",
           "i18n": {
-            "name": "Gouttes"
+            "name": "Carré"
           }
         },
         {
-          "id": "drilled",
-          "value": "drilled",
-          "preview": "lugs/drilled.svg",
+          "id": "rectangle",
+          "value": "rectangle",
+          "preview": "case-shape/rectangle.svg",
           "i18n": {
-            "name": "Percées"
-          }
-        },
-        {
-          "id": "integrated",
-          "value": "integrated",
-          "preview": "lugs/integrated.svg",
-          "i18n": {
-            "name": "Intégrées"
-          }
-        },
-        {
-          "id": "none",
-          "value": "none",
-          "preview": "lugs/none.svg",
-          "i18n": {
-            "name": "Aucune"
+            "name": "Rectangulaire"
           }
         }
       ]
@@ -579,14 +454,6 @@
           "preview": "crown/pump.svg",
           "i18n": {
             "name": "Pompe"
-          }
-        },
-        {
-          "id": "guarded",
-          "value": "guarded",
-          "preview": "crown/guarded.svg",
-          "i18n": {
-            "name": "À protège-couronne"
           }
         }
       ]

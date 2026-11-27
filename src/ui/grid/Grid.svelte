@@ -601,16 +601,22 @@
                   : 'No markers'
                 : row.variants[selected(rowIndex)]?.i18n.name}
         </span>
-        {#if row.id === 'case-size'}
+        {#if ['case-size', 'case-shape'].includes(row.id)}
           <button
             class="color-button"
             type="button"
             tabindex={dRow === 0 ? 0 : -1}
-            aria-label={t().grid.caseDimensions}
+            aria-label={row.id === 'case-size' ? t().grid.caseDimensions : t().grid.caseSettings}
             onclick={ondimensions}
           >
             {@render settingsIcon()}
-            <span>{t().grid.dimensions}</span>
+            <span>
+              {row.id === 'case-size'
+                ? t().grid.dimensions
+                : i18n.locale === 'fr'
+                  ? 'Paramètres'
+                  : 'Settings'}
+            </span>
           </button>
         {/if}
         {#if target}

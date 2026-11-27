@@ -12,7 +12,7 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
     case 'chapter-ring':
       return 'chapterRing';
     case 'lugs':
-      return config.case.lugs !== 'none' ? 'lugs' : null;
+      return null;
     case 'bezel':
       return 'bezel';
     case 'dial-finish':
@@ -57,7 +57,7 @@ export function colorForRow(id: string, config: WatchConfig): ColorTarget | null
  * panel, the case dimensions, or none (a dial whose material has its own colour has none).
  */
 export function settingsForRow(id: string, config: WatchConfig): ColorTarget | 'dimensions' | null {
-  if (id === 'case-size') return 'dimensions';
+  if (['case-size', 'case-shape'].includes(id)) return 'dimensions';
   const target = colorForRow(id, config);
   if (target === 'dial' && hasIntrinsicColor(config.dial.finish)) return null;
 
