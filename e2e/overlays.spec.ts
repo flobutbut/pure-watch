@@ -1,19 +1,21 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-test.setTimeout(60_000);
+// The live 3D watch slows every step: the first test walks a dozen rows and opens the view.
+test.setTimeout(120_000);
 
 async function row(page: Page, id: string) {
   const grid = page.getByRole('grid');
   await grid.focus();
+  // Up to the first row, the case size.
   for (let i = 0; i < 6; i++) {
     const active = await grid.getAttribute('aria-activedescendant');
-    if (active?.startsWith('cell-case-shape-')) break;
+    if (active?.startsWith('cell-case-size-')) break;
     await page.keyboard.press('PageUp');
     await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
   }
   for (let i = 0; i < 40; i++) {
-    if ((await grid.getAttribute('aria-activedescendant'))?.startsWith(`cell-${id}-`)) break;
     const active = await grid.getAttribute('aria-activedescendant');
+    if (active?.startsWith(`cell-${id}-`)) break;
     await page.keyboard.press('ArrowDown');
     await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
   }
@@ -63,7 +65,7 @@ test('chaque panneau se ferme d’un clic dans le vide, pas d’un clic dedans n
   // Dimensions du boîtier.
   await row(page, 'case-size');
   await page.getByRole('button', { name: 'Dimensions du boîtier', exact: true }).click();
-  const dimensions = page.getByRole('dialog', { name: 'Dimensions du boîtier' });
+  const dimensions = page.getByRole('dialog', { name: 'Boîtier et attaches' });
   await expect(dimensions).toBeVisible();
   await clickOutside(page, dimensions);
   await expect(dimensions).toBeHidden();
