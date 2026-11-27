@@ -8,6 +8,7 @@
   } from '../../core/config/strap';
   import { STRAP_LABELS } from './strap-settings';
   import { i18n } from '../i18n.svelte';
+  import RangeField from '../kit/RangeField.svelte';
   import ChoiceGroup from '../kit/ChoiceGroup.svelte';
   import SegmentedControl from '../kit/SegmentedControl.svelte';
   import ColorField from './ColorField.svelte';
@@ -46,17 +47,16 @@
     options={Object.entries(m.sizes).map(([value, label]) => ({ value, label }))}
     onchange={(length) => patch({ length: length as StrapLength })}
   />
-  <label class="taper">
-    <span>{m.taper}</span><output>{value.taperMm ?? 4} mm</output><input
-      aria-label={m.taper}
-      type="range"
-      min="0"
-      max={Math.min(6, config.case.lugWidthMm - 8)}
-      step="1"
-      value={value.taperMm ?? 4}
-      oninput={(event) => patch({ taperMm: Number(event.currentTarget.value) })}
-    />
-  </label>
+  <RangeField
+    label={m.taper}
+    value={value.taperMm ?? 4}
+    min={0}
+    max={Math.min(6, config.case.lugWidthMm - 8)}
+    step={1}
+    display={`${value.taperMm ?? 4} mm`}
+    compact
+    onchange={(taperMm) => patch({ taperMm })}
+  />
   <p class="note">{m.width} · {config.case.lugWidthMm} mm</p>
   {#if metal}
     <ChoiceGroup
@@ -136,19 +136,6 @@
     display: grid;
     gap: 22px;
   }
-  .taper {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    font-size: var(--text-s);
-  }
-  input {
-    grid-column: 1/-1;
-    width: 100%;
-    margin: 0;
-    accent-color: var(--ink);
-  }
-  output,
   .note {
     color: var(--ink-soft);
   }

@@ -5,7 +5,13 @@ import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { buildRuns, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
-import { caseLevels, metricLatheUV, shapeAperture, shapeLathe } from './levels';
+import {
+  caseLevels,
+  metricLatheUV,
+  shapeAperture,
+  shapeLathe,
+  smoothLatheTangents,
+} from './levels';
 import { applyOcclusion, caseOcclusion } from './occlusion';
 import type { CaseParts } from './case';
 import { bezelTypeForConfig, independentBezel } from '../../core/config/bezel';
@@ -20,6 +26,7 @@ export function buildCushionCase(
   config: WatchConfig,
   d: WatchDimensions,
   lib: MaterialLibrary,
+  buildBody = true,
 ): CaseParts {
   const { R, T, c, flankTop, seat, rehautTop } = caseLevels(d);
   const zb = d.z.back;
@@ -135,14 +142,14 @@ export function buildCushionCase(
   const occlusion = caseOcclusion(config, d);
   const batches = new Map<THREE.Material, THREE.BufferGeometry[]>();
   for (const mesh of buildRuns(
-    runs,
+    buildBody ? runs : [],
     (s) => (s === 'joint' ? lib.matte('#303238') : lib.caseMetal(config, s, true)),
     (run) => bezelSegments(bezelType, run.points, d),
   )) {
     machineBezel(mesh.geometry, bezelType, d);
     shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth', !!midcase);
     metricLatheUV(mesh.geometry, R);
-    smoothTangents(mesh.geometry, (mesh.geometry as THREE.LatheGeometry).parameters.segments);
+    smoothLatheTangents(mesh.geometry, (mesh.geometry as THREE.LatheGeometry).parameters.segments);
     if (mesh.name !== 'joint') applyOcclusion(mesh.geometry, occlusion);
     const material = mesh.material as THREE.Material;
     const batch = batches.get(material) ?? [];
@@ -188,38 +195,4 @@ export function buildCushionCase(
     rehaut.add(mesh);
   }
   return { case: group, rehaut };
-}
-
-/** Continuous circumferential tangents avoid triangle-wise anisotropy bands on the broad bezel. */
-function smoothTangents(geometry: THREE.BufferGeometry, segments: number) {
-  const p = geometry.getAttribute('position');
-  const n = geometry.getAttribute('normal');
-  const rows = p.count / (segments + 1);
-  const tangent = new Float32Array(p.count * 4);
-  const a = new THREE.Vector3();
-  const b = new THREE.Vector3();
-  const normal = new THREE.Vector3();
-  const bitangent = new THREE.Vector3();
-  const increasingV = new THREE.Vector3();
-  for (let i = 0; i <= segments; i++) {
-    for (let j = 0; j < rows; j++) {
-      const index = i * rows + j;
-      const previous = ((i + segments - 1) % segments) * rows + j;
-      const next = ((i + 1) % segments) * rows + j;
-      a.fromBufferAttribute(p, next);
-      b.fromBufferAttribute(p, previous);
-      normal.fromBufferAttribute(n, index);
-      a.sub(b);
-      // Every angular row shares the same pole. Its circumferential derivative
-      // vanishes, so supply the limiting tangent rather than a zero basis.
-      if (a.lengthSq() < 1e-10)
-        a.set(Math.cos((i / segments) * Math.PI * 2), Math.sin((i / segments) * Math.PI * 2), 0);
-      a.addScaledVector(normal, -a.dot(normal)).normalize();
-      increasingV.set(p.getX(index), p.getY(index), 0).normalize();
-      increasingV.z = 1;
-      bitangent.crossVectors(normal, a);
-      tangent.set([a.x, a.y, a.z, bitangent.dot(increasingV) >= 0 ? 1 : -1], index * 4);
-    }
-  }
-  geometry.setAttribute('tangent', new THREE.BufferAttribute(tangent, 4));
 }

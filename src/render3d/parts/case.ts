@@ -28,6 +28,7 @@ export function buildCase(
   d: WatchDimensions,
   lib: MaterialLibrary,
   instrument = false,
+  buildBody = true,
 ): CaseParts {
   const { R, T, c, flankTop, seat, rehautTop } = caseLevels(d);
   const zb = d.z.back;
@@ -127,15 +128,18 @@ export function buildCase(
   caseGroup.name = 'case';
   // Ombre douce autour de la racine des cornes et du tube de couronne.
   const occlusion = caseOcclusion(config, d);
-  for (const mesh of buildRuns(runs, metal, (run) => bezelSegments(bezelType, run.points, d))) {
+  for (const mesh of buildRuns(buildBody ? runs : [], metal, (run) =>
+    bezelSegments(bezelType, run.points, d),
+  )) {
     machineBezel(mesh.geometry, bezelType, d);
     shapeLathe(mesh.geometry, d, config.case.shape, bezelType !== 'smooth', !!midcase);
     metricLatheUV(mesh.geometry, R);
     applyOcclusion(mesh.geometry, occlusion);
     caseGroup.add(mesh);
   }
-  for (const mesh of buildRuns([{ surface: 'brushed' as const, points: back }], (s) =>
-    lib.caseMetal(config, s, true),
+  for (const mesh of buildRuns(
+    buildBody ? [{ surface: 'brushed' as const, points: back }] : [],
+    (s) => lib.caseMetal(config, s, true),
   )) {
     shapeLathe(mesh.geometry, d, config.case.shape, false, !!midcase);
     metricLatheUV(mesh.geometry, R);

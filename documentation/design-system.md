@@ -77,6 +77,25 @@ Deux à quatre **modes exclusifs** aux libellés courts, côte à côte dans un 
 - Exemples : Automatique / Couleur libre, Arabes / Romains, Sans insert / Luminescent,
   Hériter / Personnaliser, jonction des cornes, repères accentués du réhaut.
 
+### `RangeField`
+
+Curseur partagé par les panneaux Boîtier, Lunette, Aiguilles, Bracelet et les réglages
+fins des détails et index (via `DetailRange`). Une même ligne associe libellé, valeur
+avec unité, curseur natif et aide facultative. `display` permet un affichage en mm,
+en pourcentage ou une valeur calculée ; `ariaLabel` distingue les commandes de
+même nom, et l’aide est reliée au curseur par `aria-describedby`.
+
+Le panneau Boîtier utilise quatre vues : Taille (dimensions), Forme (silhouette),
+Profil (dessus, dessous, pointes) et Détails (arêtes, protections, perçages). Ses
+dessins d’attaches sont regroupés dans Forme, sans ligne Cornes séparée. Ses
+onglets occupent le snippet `toolbar` de `Sheet` et restent visibles pendant le
+défilement. Le profil affiche les courbes et le plan de référence du dessous ;
+le mode « Aligné sur le boîtier » impose ce plan à la géométrie.
+
+Les dimensions physiques du boîtier gardent `MagneticRange`, avec leurs crans de
+valeur standard et leur saisie numérique. Les formes et traitements de surface
+utilisent `ChoiceGroup` ; les onglets restent des `SegmentedControl`.
+
 ### `Checkbox`
 
 Une **option isolée** que l'on coche ou non, à côté d'un texte qui la nomme : « Ne plus afficher

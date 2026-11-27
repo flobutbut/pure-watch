@@ -15,6 +15,8 @@ import { studioEnvironment } from './environment';
 import { refinementFromSearch } from './refinement';
 import { softShadowTexture } from './textures';
 import { buildWatch, type Layer, type WatchModel } from './watch';
+import { prepareEnvelope } from './envelope-client';
+import type { EnvelopeData } from './parts/case-envelope';
 
 export interface SnapshotJob {
   config: WatchConfig;
@@ -73,6 +75,9 @@ interface QueuedJob {
    */
   state: 'pending' | 'building' | 'prepared' | 'done';
   model: WatchModel | null;
+  /** Its case envelope is ready (or not needed): the model can be built without stalling. */
+  ready: boolean;
+  envelope: EnvelopeData | null;
   resolve: (bitmap: ImageBitmap) => void;
   reject: (error: unknown) => void;
 }
@@ -209,6 +214,9 @@ export class Stage {
   private cameraGoal: CameraGoal | null = null;
   private liveConfigKey = '';
   private liveConfig: WatchConfig | null = null;
+  private liveMaterialsNight = false;
+  /** Cancels the envelope still awaited for a superseded live configuration. */
+  private liveEnvelope: AbortController | null = null;
   private bezelEditing = false;
   private onBezelChange: ((angle: number) => void) | null = null;
   private bezelDrag: { id: number; angle: number; remainder: number } | null = null;
@@ -391,14 +399,30 @@ export class Stage {
     const key = JSON.stringify({ ...config, bezel: { ...config.bezel, angleDeg: 0 } });
     if (!transient && !this.liveMaterials && this.live && key === this.liveConfigKey) {
       ++this.liveVersion; // Cancel an in-flight build if the user returned to this configuration.
+      this.liveEnvelope?.abort();
       this.liveConfig = config;
       this.live.setBezelAngle(config.bezel.angleDeg);
       this.dirty = true;
       return;
     }
     const version = ++this.liveVersion;
+    // The envelope is computed in a worker, ahead of every thumbnail; meanwhile the
+    // previous watch stays on screen and the page keeps responding.
+    this.liveEnvelope?.abort();
+    const pending = (this.liveEnvelope = new AbortController());
+    const envelope =
+      this.refinement === 'legacy' ? null : await prepareEnvelope(config, -1e9, pending.signal);
+    if (version !== this.liveVersion) return;
+    // A preview session keeps one material library: creating a new one at every
+    // slider step rebuilt every texture and the strap (some 200 ms each time).
+    // It is released once the preview ends, or when the night mode changes.
+    const reused =
+      transient && this.liveMaterials && this.liveMaterialsNight === config.view.night
+        ? this.liveMaterials
+        : null;
+    const owned = transient && !reused;
     const materials = transient
-      ? new MaterialLibrary(this.refinement === 'refined', config.view.night)
+      ? (reused ?? new MaterialLibrary(this.refinement === 'refined', config.view.night))
       : config.view.night
         ? this.nightMaterials
         : this.materials;
@@ -406,6 +430,8 @@ export class Stage {
       quality: this.quality,
       refinement: this.refinement,
       printSize: transient ? 1024 : undefined,
+      envelope,
+      live: !transient,
     });
     try {
       await model.ready;
@@ -416,17 +442,18 @@ export class Stage {
       }
     } catch (error) {
       model.dispose();
-      if (transient) materials.dispose();
+      if (owned) materials.dispose();
       throw error;
     }
     if (version !== this.liveVersion) {
       model.dispose();
-      if (transient) materials.dispose();
+      if (owned) materials.dispose();
       return;
     }
     this.live?.dispose();
-    this.liveMaterials?.dispose();
+    if (this.liveMaterials && this.liveMaterials !== materials) this.liveMaterials.dispose();
     this.liveMaterials = transient ? materials : null;
+    this.liveMaterialsNight = config.view.night;
     this.live = model;
     this.scene.environmentIntensity = config.view.night ? 0.018 : 1;
     for (const child of this.scene.children) {
@@ -527,7 +554,23 @@ export class Stage {
       }
       // Simple demande pour l'instant : le modèle n'est construit qu'à son tour (frame),
       // pour ne pas assembler toutes les cellules de la grille dans la même tâche.
-      const entry: QueuedJob = { job, state: 'pending', model: null, resolve, reject };
+      const needsEnvelope =
+        this.refinement !== 'legacy' &&
+        (!job.layers || job.layers.includes('case') || job.layers.includes('lugs'));
+      const entry: QueuedJob = {
+        job,
+        state: 'pending',
+        model: null,
+        resolve,
+        reject,
+        ready: !needsEnvelope,
+        envelope: null,
+      };
+      if (needsEnvelope)
+        void prepareEnvelope(job.config, job.priority ?? 0, job.signal).then((envelope) => {
+          entry.envelope = envelope;
+          entry.ready = true;
+        });
       job.signal?.addEventListener('abort', () => this.cancel(entry, abortError()), {
         once: true,
       });
@@ -545,6 +588,7 @@ export class Stage {
         refinement: this.refinement,
         layers: job.layers,
         printSize: 1024,
+        envelope: entry.envelope,
       });
       model.showOnly(job.layers);
       model.setAngles(handAngles(POSTER_TIME, 0));
@@ -797,7 +841,10 @@ export class Stage {
       this.building.size + this.prepared.length < MAX_IN_FLIGHT &&
       (started === 0 || performance.now() < deadline)
     ) {
-      this.prepare(this.pending.shift()!);
+      // Most urgent first, among the jobs whose envelope has arrived from the worker.
+      const next = this.pending.findIndex((entry) => entry.ready);
+      if (next < 0) break;
+      this.prepare(this.pending.splice(next, 1)[0]!);
       started++;
     }
 
@@ -906,6 +953,7 @@ export class Stage {
 
   dispose(): void {
     ++this.liveVersion;
+    this.liveEnvelope?.abort();
     clearTimeout(this.shrinkTimer);
     cancelAnimationFrame(this.frameHandle);
     this.resizeObserver.disconnect();

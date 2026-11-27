@@ -3,6 +3,7 @@ import { contourExtents } from '../geometry/dial-shape';
 import type { Locale } from '../i18n/locale';
 import { MESSAGES } from '../i18n/messages';
 import type { WatchConfig } from './types';
+import { caseConstruction, type CaseDraft } from './case-construction';
 
 export const CASE_DIMENSIONS = [
   { key: 'diameterMm', label: 'Diamètre', min: 22, max: 48, step: 0.1 },
@@ -76,4 +77,35 @@ export function withCaseDimensions(config: WatchConfig, values: CaseDimensions):
         ? config.strap
         : { ...config.strap, widthMm: values.lugWidthMm },
   };
+}
+
+export function withCaseDraft(config: WatchConfig, draft: CaseDraft): WatchConfig {
+  const construction = caseConstruction({
+    ...config,
+    case: {
+      ...config.case,
+      shape: draft.shape,
+      thicknessMm: draft.thicknessMm,
+      construction: draft.construction,
+    },
+  });
+  const lugs =
+    construction.attachment === 'none'
+      ? 'none'
+      : construction.attachment === 'block'
+        ? 'integrated'
+        : ['none', 'integrated'].includes(draft.lugs)
+          ? 'straight'
+          : draft.lugs;
+  const next = {
+    ...config,
+    case: { ...config.case, shape: draft.shape, lugs, construction },
+    crown: {
+      ...config.crown,
+      guard: draft.crownGuard,
+      style: !draft.crownGuard && config.crown.style === 'guarded' ? 'fluted' : config.crown.style,
+    },
+  };
+  const { diameterMm, thicknessMm, lugToLugMm, lugWidthMm } = draft;
+  return withCaseDimensions(next, { diameterMm, thicknessMm, lugToLugMm, lugWidthMm });
 }

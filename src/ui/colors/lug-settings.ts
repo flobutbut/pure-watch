@@ -2,23 +2,23 @@ export const LUG_SETTINGS = {
   fr: {
     label: 'Raccord au boîtier',
     intro: 'Choisissez comment les cornes prolongent la carrure, indépendamment de leur dessin.',
-    names: { detached: 'Détaché', flush: 'Affleurant', blended: 'Fondu' },
+    names: { detached: 'Détaché', flush: 'Intégré', blended: 'Intégré' },
     descriptions: {
       detached: 'Cornes en retrait, avec une jonction marquée.',
       flush: 'Dessus aligné sur l’épaulement du boîtier, avec des contours distincts.',
-      blended: 'Dessus affleurant et transitions latérales adoucies dans la carrure.',
+      blended: 'Cornes et carrure forment une enveloppe continue, avec des raccords adoucis.',
     },
-    note: 'La lunette reste une pièce distincte au-dessus de la carrure. Les cornes courbes gardent leur descente vers le poignet.',
+    note: 'Les arêtes se prolongent sur la carrure. La descente vers le poignet suit le dessin des cornes ; la lunette reste une pièce distincte.',
   },
   en: {
     label: 'Case connection',
     intro: 'Choose how the lugs continue the midcase, independently of their design.',
-    names: { detached: 'Detached', flush: 'Flush', blended: 'Blended' },
+    names: { detached: 'Detached', flush: 'Integrated', blended: 'Integrated' },
     descriptions: {
       detached: 'Recessed lugs with a defined connection.',
       flush: 'Top aligned with the case shoulder, retaining distinct outlines.',
-      blended: 'Flush top and softened sides flowing into the midcase.',
+      blended: 'Lugs and midcase share one continuous envelope with softened connections.',
     },
-    note: 'The bezel remains a separate part above the midcase. Curved lugs retain their downward wrist profile.',
+    note: 'Edges continue along the midcase. The downward wrist profile follows the lug design; the bezel remains a separate part.',
   },
 };

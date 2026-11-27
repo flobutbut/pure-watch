@@ -1,6 +1,5 @@
 import type { WatchConfig } from './types';
 import { shapeRadius } from '../geometry/case-shape';
-import { continuousLugs } from './lugs';
 
 export const DEFAULT_BEZEL_LAYOUT = { shape: 'case', width: 1, height: 1, finish: 'case' };
 export const BEZEL_SHAPES = [
@@ -33,15 +32,9 @@ export function bezelLayout(config: WatchConfig): BezelLayout {
   };
 }
 export function independentBezel(config: WatchConfig): boolean {
-  const b = bezelLayout(config);
-  return (
-    !hasBezelInsert(config) &&
-    (b.shape !== 'case' ||
-      b.width !== 1 ||
-      b.height !== 1 ||
-      b.finish !== 'case' ||
-      continuousLugs(config))
-  );
+  // Every fixed bezel is a separate part. Its seat and dimensions must not depend
+  // on whether the midcase has detached lugs, integrated lugs or crown guards.
+  return !hasBezelInsert(config);
 }
 export function bezelShape(config: WatchConfig): string {
   const b = bezelLayout(config);
@@ -54,7 +47,7 @@ export function bezelMetalConfig(config: WatchConfig): WatchConfig {
 const envelopes = new Map<string, number>();
 /** Largest centred bezel that stays on the case shoulder at every angle. */
 export function bezelEnvelopeRadius(config: WatchConfig, radius: number): number {
-  if (!independentBezel(config)) return radius;
+  if (!independentBezel(config) || bezelShape(config) === config.case.shape) return radius;
   const shape = bezelShape(config),
     key = `${config.case.shape}:${shape}:${radius}`;
   const cached = envelopes.get(key);

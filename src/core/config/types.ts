@@ -7,6 +7,7 @@
  */
 
 import type { WatchDetails } from './details';
+import type { CaseConstruction } from './case-construction';
 
 type Open<T extends string> = T | (string & {});
 
@@ -14,16 +15,20 @@ export type HexColor = `#${string}`;
 export type ClockPosition = Open<'12h' | '3h' | '4h30' | '6h' | '9h' | '2h' | '4h'>;
 
 export interface CaseConfig {
+  construction?: CaseConstruction;
   shape: Open<'round' | 'cushion' | 'tonneau' | 'octagon' | 'square' | 'rectangle' | 'asymmetric'>;
+  /** Legacy side profile; the upper surface is driven by construction.dome. */
   profile: Open<'straight' | 'curved' | 'faceted' | 'stepped'>;
   /** Diamètre du boîtier hors couronne (décision D5). Le cadran en découle. */
   diameterMm: number;
   thicknessMm: number;
   lugToLugMm: number;
   lugWidthMm: number;
+  /** Starting drawing identifier; independent controls live in construction. */
   lugs: Open<
     'straight' | 'curved' | 'pointed' | 'faceted' | 'teardrop' | 'drilled' | 'integrated' | 'none'
   >;
+  /** Legacy link value; construction.integration drives the continuous connection. */
   lugJoin: 'detached' | 'flush' | 'blended';
   material: Open<
     'steel' | 'titanium' | 'bronze' | 'gold-yellow' | 'gold-rose' | 'ceramic' | 'brass' | 'carbon'

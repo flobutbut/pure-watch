@@ -1,6 +1,7 @@
 /**
  * Couronne (spec §5.4) : tube + corps de révolution, six formes, trois positions.
- * Le protège-couronne est modélisé avec la couronne et tourne avec elle.
+ * Les protections appartiennent à la carrure ; le chemin historique reste disponible
+ * pour les comparaisons et les aperçus isolés de la couronne.
  */
 import * as THREE from 'three';
 import { toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -143,6 +144,7 @@ export function buildCrown(
   d: WatchDimensions,
   lib: MaterialLibrary,
   refined = false,
+  legacyGuards = true,
 ): THREE.Group {
   const { R, T } = caseLevels(d);
   const r = d.crown.radius;
@@ -208,7 +210,7 @@ export function buildCrown(
   pivot.rotation.z = mount.angle;
   pivot.add(head);
 
-  if (style === 'guarded' || config.crown.guard) {
+  if (legacyGuards && (style === 'guarded' || config.crown.guard)) {
     // Ailettes : même construction que les cornes (congés tangents au flanc, arêtes
     // arrondies), tournées vers la couronne et limitées à la hauteur du flanc.
     const { c, flankTop } = caseLevels(d);

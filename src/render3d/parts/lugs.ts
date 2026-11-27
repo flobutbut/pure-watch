@@ -14,11 +14,11 @@ import type { WatchConfig } from '../../core/config/types';
 import { clamp, type WatchDimensions } from '../../core/geometry/dimensions';
 import type { MaterialLibrary } from '../materials';
 import { caseLevels } from './levels';
-import { profileAttachmentSurface } from './case-profile';
-import { applyOcclusion, lugRoot } from './occlusion';
-import { continuousLugs, lugJoin } from '../../core/config/lugs';
+import { applyOcclusion } from './occlusion';
 import { shapeRadius } from '../../core/geometry/case-shape';
-import { lugShoulder } from './lug-shoulder';
+import { caseConstruction } from '../../core/config/case-construction';
+import { bezierGuide, domedGuide } from '../../core/geometry/case-guides';
+import { caseDeckTop } from './levels';
 
 export interface HornSpec {
   /** Optional continuous connection; absent for historical lugs and crown guards. */
@@ -371,153 +371,97 @@ export function hornGeometry(h: HornSpec): THREE.BufferGeometry {
 
 /* ---------- Styles de cornes (spec §5.1) ---------- */
 
-interface LugStyle {
-  /** Hauteur à la pointe, en fraction de l'épaisseur du boîtier au-dessus du fond. */
-  tipTop: number;
-  tipBottom: number;
-  /** Courbure du dessus et du dessous (exposants du profil). */
-  topCurve: number;
-  bottomCurve: number;
-  /** Arêtes : rayon (fraction de l'épaisseur de corne) et segments. */
-  bevel: number;
-  bevelSegments: number;
-  /** Effilement vers la pointe, côté extérieur et intérieur (fraction de l'épaisseur). */
-  taper?: number;
-  taperInner?: number;
-  /** Acier poli (facettes qui accrochent la lumière) au lieu du satiné. */
-  polished?: boolean;
-  tipRadius?: number;
-  /** Trous de barrette visibles sur les flancs (cornes percées). */
-  drilled?: boolean;
-  /** Bloc unique entre les cornes, très court (bracelet intégré). */
-  integrated?: boolean;
-}
-
-const STYLES: Record<string, LugStyle> = {
-  straight: {
-    tipTop: 0.36,
-    tipBottom: 0.06,
-    topCurve: 1.3,
-    bottomCurve: 1.8,
-    bevel: 0.16,
-    bevelSegments: 6,
-    tipRadius: 0.28,
-  },
-  curved: {
-    tipTop: 0.12,
-    tipBottom: -0.16,
-    topCurve: 1.7,
-    bottomCurve: 1.6,
-    bevel: 0.16,
-    bevelSegments: 6,
-    tipRadius: 0.28,
-  },
-  // Pointues : vue de côté, le dessus plonge en ligne droite vers une pointe fine.
-  pointed: {
-    tipTop: 0.15,
-    tipBottom: 0.07,
-    topCurve: 1,
-    bottomCurve: 2,
-    bevel: 0.14,
-    bevelSegments: 6,
-    tipRadius: 0.3,
-  },
-  // Chanfreinées : deux larges facettes polies forment une arête vive sur le dessus.
-  faceted: {
-    tipTop: 0.32,
-    tipBottom: 0.05,
-    topCurve: 1.4,
-    bottomCurve: 1.8,
-    bevel: 0.42,
-    bevelSegments: 1,
-    tipRadius: 0.3,
-    polished: true,
-  },
-  // Gouttes : section ronde, la corne reste pleine puis s'arrondit en goutte à la pointe.
-  teardrop: {
-    tipTop: 0.3,
-    tipBottom: 0.11,
-    topCurve: 2.4,
-    bottomCurve: 2,
-    bevel: 0.38,
-    bevelSegments: 8,
-    taper: 0.1,
-    taperInner: 0.1,
-    tipRadius: 0.4,
-  },
-  // Percées : cornes droites avec trous de barrette apparents.
-  drilled: {
-    tipTop: 0.36,
-    tipBottom: 0.06,
-    topCurve: 1.3,
-    bottomCurve: 1.8,
-    bevel: 0.14,
-    bevelSegments: 6,
-    tipRadius: 0.28,
-    drilled: true,
-  },
-  // Intégrées : un bloc court sur toute la largeur, prolongé par le bracelet.
-  integrated: {
-    tipTop: 0.3,
-    tipBottom: 0.08,
-    topCurve: 1.2,
-    bottomCurve: 1.5,
-    bevel: 0.2,
-    bevelSegments: 6,
-    integrated: true,
-  },
-};
-
-export const LUG_STYLES = [...Object.keys(STYLES), 'none'];
+export const LUG_STYLES = [
+  'straight',
+  'curved',
+  'pointed',
+  'faceted',
+  'teardrop',
+  'drilled',
+  'integrated',
+  'none',
+];
 
 /** Géométrie partagée des cornes : profil, pointe et raccord, pour les cornes et le bracelet. */
-function lugLayout(config: WatchConfig, d: WatchDimensions, refined: boolean) {
+export function lugLayout(config: WatchConfig, d: WatchDimensions, refined: boolean) {
+  // Both render modes now use the same attachment construction.
+  void refined;
   const { R, T, c } = caseLevels(d);
-  const joined = continuousLugs(config),
-    blended = lugJoin(config) === 'blended';
-  const original = STYLES[config.case.lugs] ?? STYLES['straight']!;
-  const legacyMachined = refined && ['straight', 'curved', 'drilled'].includes(config.case.lugs);
-  const machined = legacyMachined || joined;
-  // Preserve inside spacing and lug-to-lug. Only the outside tapers, by 0.18 mm.
-  const style = legacyMachined
-    ? { ...original, bevel: 0.085, bevelSegments: 1, taper: 0.07, tipRadius: 0.18 }
-    : original;
-  const root = lugRoot(d, config);
-  const zb = d.z.back;
-  const tipTop = joined ? root.top - (0.39 - style.tipTop) * T : zb + style.tipTop * T;
-  const tipBottom = joined
-    ? tipTop - (style.tipTop - style.tipBottom) * T
-    : zb + style.tipBottom * T;
-  const thickness = d.lugThickness;
-  // Boîtiers non ronds : la corne part de là où le flanc se trouve réellement.
-  const shoulder = joined ? lugShoulder(config, d) : undefined;
-  const buried = profileAttachmentSurface(config, d, root.bottom, root.top, refined);
-  const surface = shoulder
-    ? blended
-      ? shoulder
-      : (theta: number) => Math.min(shoulder(theta) - 0.025, buried(theta))
-    : buried;
-  const yFlank = surfaceY(d.lugWidth / 2 + thickness, surface);
-  const roundFlank = surfaceY(d.lugWidth / 2 + thickness, () => R - c * 0.6 - 0.05);
-  const yJunction = R * 0.9 + (yFlank - roundFlank);
-  // Intégrées : bloc court ; sinon pointe au lug-to-lug.
-  const yTip = style.integrated
-    ? Math.max(yFlank, joined ? surface(Math.PI / 2) : 0) + clamp(R * 0.14, 2, 3.4)
-    : Math.max(d.lugToLug / 2, yFlank + R * 0.2);
-  const profileStart = joined ? Math.min(yJunction, yTip - Math.max(1, R * 0.12)) : yJunction;
-
-  // Profil de côté : la corne s'affine (droite) ou plonge vers le poignet (courbe).
-  const profile = (y: number) => {
-    const u = clamp((y - profileStart) / (yTip - profileStart), 0, 1);
-    const top = root.top + (tipTop - root.top) * u ** style.topCurve;
-    const bottom = root.bottom + (tipBottom - root.bottom) * u ** style.bottomCurve;
-    return { top, bottom };
+  const construction = caseConstruction(config);
+  const joined = construction.integration > 0,
+    blended = construction.integration > 0;
+  const machined = true;
+  const style = {
+    integrated: construction.attachment === 'block',
+    drilled: construction.drilled,
+    taper: construction.taper * 0.65,
+    taperInner: 0,
+    tipRadius: 0.08 + construction.tipRound * 0.37,
+    bevelSegments: construction.edge === 'rounded' ? 6 : 1,
+    polished: false,
   };
+  const root = { top: caseDeckTop(d), bottom: d.z.back };
+  const thickness = construction.lugWidthMm;
+  // Boîtiers non ronds : la corne part de là où le flanc se trouve réellement.
+  const shoulder = joined
+    ? (theta: number) => R * shapeRadius(config.case.shape, theta) - 0.15
+    : undefined;
+  const surface = (theta: number) => R * shapeRadius(config.case.shape, theta) - 0.15;
+  const yFlank = surfaceY(d.lugWidth / 2 + thickness, surface);
+  const yTip = Math.max(d.lugToLug / 2, yFlank + R * 0.2);
+  // Plan-view tapering and buried root splay do not depend on the longitudinal
+  // profile's transition length. In particular, wide straps retain their neck.
+  const roundFlank = surfaceY(d.lugWidth / 2 + thickness, () => R - c * 0.6 - 0.05);
+  const taperStart = Math.min(R * 0.9 + yFlank - roundFlank, yTip - Math.max(1, R * 0.12));
+  const centre = style.integrated ? 0 : Math.min(d.lugWidth / 2 + thickness * 0.5, R * 0.8);
+  const landingY = surfaceY(centre, (theta) => R * shapeRadius(config.case.shape, theta) - c * 1.5);
+  const profileStart = Math.min(
+    Math.max(0, landingY - (0.5 + construction.transition * R * 0.14)),
+    yTip - 1,
+  );
+  const tipOffset = construction.underside === 'flat' ? 0 : construction.tipOffsetMm;
+  const tipTop = d.z.back + tipOffset + construction.tipThicknessMm;
+  const span = yTip - profileStart;
+  // The free end continues towards the wrist instead of returning to a
+  // horizontal tangent. In the aligned mode only the upper taper descends.
+  const bottomTipSlope =
+    construction.underside === 'flat' ? 0 : clamp((tipOffset / span) * 1.35, -1.2, 0.8);
+  const thinningSlope = -clamp(((root.top - tipTop) / span) * 0.35, 0, 0.8);
+  const topTipSlope = Math.min(bottomTipSlope, thinningSlope);
+  // The dome is the shape of the descent, not a small bump proportional to it:
+  // taut (0) follows the eased guide, domed (1) holds the root height and rolls
+  // over towards the tip. The drop itself comes from the tip thickness and height.
+  const topGuide = domedGuide(
+    bezierGuide(
+      profileStart,
+      yTip,
+      { value: root.top, slope: 0, curvature: 0 },
+      { value: tipTop, slope: topTipSlope, curvature: 0 },
+    ),
+    root.top,
+    tipTop,
+    construction.dome,
+  );
+  const bottomGuide = bezierGuide(
+    profileStart,
+    yTip,
+    { value: d.z.back, slope: 0, curvature: 0 },
+    { value: d.z.back + tipOffset, slope: bottomTipSlope, curvature: 0 },
+  );
+  const profile = (y: number) => ({
+    top: topGuide.value(y),
+    // A flat underside is a geometric constraint, independent of the top guide,
+    // tip thinning, root recess, edge treatment and crown guards.
+    bottom: construction.underside === 'flat' ? d.z.back : bottomGuide.value(y),
+  });
 
   const aIn = style.integrated ? -(d.lugWidth / 2 + thickness) : d.lugWidth / 2;
   // L'arrondi d'arête ne doit jamais dépasser la moitié de la largeur ni le rayon de la
   // pointe : sinon le contour intérieur du biseau se retourne.
-  const bevel = clamp(thickness * style.bevel, 0.15, Math.min(0.9, thickness * 0.44));
+  const bevel = Math.min(
+    construction.edge === 'sharp' ? 0.01 : construction.edgeSizeMm,
+    thickness * (1 - construction.taper * 0.65) * 0.27,
+  );
   const tipRadius = Math.max((style.tipRadius ?? 0.38) * thickness, bevel * 1.1);
   // Trou de barrette : près de la pointe, à mi-hauteur du flanc de la corne.
   const barRadius = clamp(thickness * 0.2, 0.32, 0.5);
@@ -539,14 +483,52 @@ function lugLayout(config: WatchConfig, d: WatchDimensions, refined: boolean) {
     shoulder,
     surface,
     yTip,
+    taperStart,
     profileStart,
     profile,
+    topGuide,
+    bottomGuide,
     aIn,
     bevel,
     tipRadius,
     barRadius,
     barY,
     barZ,
+  };
+}
+
+/**
+ * Logement du bracelet d'un boîtier sans cornes : une poche creusée par-dessous à 12 h
+ * et 6 h, où l'extrémité du bracelet se glisse sous la carrure. Le bord du boîtier reste
+ * entier vu de face. `back` est la paroi du fond de la poche (y), `edge` le bord du
+ * boîtier dans l'axe ; `height` est mesurée depuis le plan du fond. Null avec des attaches.
+ */
+export function strapPocket(config: WatchConfig, d: WatchDimensions) {
+  if (caseConstruction(config).attachment !== 'none') return null;
+  const { R } = caseLevels(d);
+  const radius = (theta: number) => R * shapeRadius(config.case.shape, theta);
+  const halfWidth = d.lugWidth / 2 + 0.2;
+  const edge = radius(Math.PI / 2);
+  // Round, octagonal and tonneau cases narrow towards 12 o'clock: the case edge above
+  // the strap's corners is lower than in the axis. The strap end must stay covered
+  // there too, so the pocket goes deeper than its usual depth on such shapes.
+  const corner = surfaceY(halfWidth, radius);
+  const COVER = 1.5;
+  const usual = edge - clamp(R * 0.18, 2.5, 4.5);
+  // Never into the central back, which the underside triangulates separately.
+  const floor = 0.65 * edge + 0.8;
+  const back = Math.max(floor, Math.min(usual, corner - COVER - 0.3));
+  // Room for the thickest strap (padded leather, about 3.3 mm), while leaving the
+  // flank above the pocket at least 40 % of the case body.
+  const height = Math.min(3.6, (caseDeckTop(d) - d.z.back) * 0.6);
+  return {
+    halfWidth,
+    back,
+    edge,
+    depth: edge - back,
+    height,
+    /** Where the strap end lies, clear of the back wall. */
+    strapEnd: back + 0.3,
   };
 }
 

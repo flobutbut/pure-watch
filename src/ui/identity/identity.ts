@@ -7,10 +7,9 @@ import { bezelScale, hasBezelInsert, bezelLayout, bezelShape } from '../../core/
 import { handAdjustment, handStyle } from '../../core/config/hands';
 import { PART_SETTINGS } from '../colors/part-settings';
 import { detailTraits } from './detail-traits';
-import { lugJoin } from '../../core/config/lugs';
+import { CASE_DRAWINGS, caseConstruction, isCasePreset } from '../../core/config/case-construction';
 import { STRAP_LABELS } from '../colors/strap-settings';
 import { strapSettings } from '../../core/config/strap';
-import { LUG_SETTINGS } from '../colors/lug-settings';
 import { handColor, indexColor, INDEX_FINISHES } from '../../core/config/colors';
 import { hasLume, lumeChoice, lumePigment } from '../../core/config/lume';
 import { dateComplication } from '../../core/config/date';
@@ -412,11 +411,79 @@ export function identitySections(
         });
     }
     section.traits.push(...detailTraits(row.id, config, locale));
-    if (row.id === 'lugs' && config.case.lugs !== 'none')
+    const construction = caseConstruction(config);
+    if (row.id === 'case-shape')
+      section.traits.push(
+        {
+          label: locale === 'fr' ? 'Galbe du dessus' : 'Top curvature',
+          value: `${Math.round(construction.dome * 100)} %`,
+        },
+        {
+          label: locale === 'fr' ? 'Arêtes' : 'Edges',
+          value:
+            construction.edge === 'sharp'
+              ? locale === 'fr'
+                ? 'Vives'
+                : 'Sharp'
+              : `${construction.edge === 'chamfer' ? (locale === 'fr' ? 'Chanfrein' : 'Chamfer') : locale === 'fr' ? 'Arrondi' : 'Rounded'} ${construction.edgeSizeMm} mm`,
+        },
+      );
+    if (row.id === 'case-shape') {
+      const names =
+        locale === 'fr'
+          ? ['Classiques', 'Effilées', 'Gouttes', 'Intégrées', 'Sans cornes']
+          : ['Classic', 'Tapered', 'Teardrop', 'Integrated', 'No lugs'];
       section.traits.push({
-        label: LUG_SETTINGS[locale].label,
-        value: LUG_SETTINGS[locale].names[lugJoin(config)],
+        label: locale === 'fr' ? 'Attaches' : 'Attachments',
+        value: isCasePreset(config)
+          ? (names[CASE_DRAWINGS.indexOf(config.case.lugs as (typeof CASE_DRAWINGS)[number])] ??
+            names[0]!)
+          : locale === 'fr'
+            ? 'Personnalisées'
+            : 'Custom',
       });
+      if (construction.attachment !== 'none')
+        section.traits.push(
+          {
+            label: locale === 'fr' ? 'Fondu du raccord' : 'Root blend',
+            value: `${Math.round(construction.integration * 100)} %`,
+          },
+          {
+            label: locale === 'fr' ? 'Dessous des cornes' : 'Lug underside',
+            value:
+              construction.underside === 'flat'
+                ? locale === 'fr'
+                  ? 'Aligné sur le boîtier'
+                  : 'Aligned with case'
+                : `${construction.tipOffsetMm} mm`,
+          },
+          {
+            label: locale === 'fr' ? 'Largeur des cornes' : 'Lug width',
+            value: `${construction.lugWidthMm.toFixed(2)} mm`,
+          },
+          {
+            label: locale === 'fr' ? 'Perçages' : 'Drilling',
+            value: construction.drilled
+              ? locale === 'fr'
+                ? 'Oui'
+                : 'Yes'
+              : locale === 'fr'
+                ? 'Non'
+                : 'No',
+          },
+        );
+      section.traits.push({
+        label: locale === 'fr' ? 'Protections de couronne' : 'Crown guards',
+        value:
+          config.crown.guard || config.crown.style === 'guarded'
+            ? locale === 'fr'
+              ? 'Oui'
+              : 'Yes'
+            : locale === 'fr'
+              ? 'Non'
+              : 'No',
+      });
+    }
     const settings = PART_SETTINGS[locale];
     if (
       row.id === 'hands' &&

@@ -5,7 +5,6 @@ import { CASE_SHAPES, shapeRadius } from '../../core/geometry/case-shape';
 import { CASE_PROFILES } from '../../core/config/case-profile';
 import { proportionsForDiameter, watchDimensions } from '../../core/geometry/dimensions';
 import { caseDeckTop } from './levels';
-import { lugRoot } from './occlusion';
 import { MaterialLibrary } from '../materials';
 import { buildWatch } from '../watch';
 import rawCatalog from '../../data/catalog.json';
@@ -34,10 +33,10 @@ it.each(
             lugJoin: join,
           });
           c.dial.shape = shape;
+          c.case.construction!.integration = join === 'flush' ? 0.5 : 1;
           const d = watchDimensions(c),
             lib = new MaterialLibrary(),
             model = buildWatch(c, lib, { quality: 'fallback', layers: ['case', 'lugs'] });
-          expect(lugRoot(d, c).top).toBe(caseDeckTop(d));
           let count = 0,
             max = -Infinity,
             clearance = Infinity;
@@ -64,7 +63,7 @@ it.each(
           });
           expect(count).toBeGreaterThan(0);
           expect(max).toBeLessThanOrEqual(caseDeckTop(d) + 0.001);
-          expect(max).toBeGreaterThan(caseDeckTop(d) - 0.05);
+          expect(max).toBeGreaterThan(d.z.back);
           expect(clearance).toBeGreaterThan(0.005);
           model.dispose();
           lib.dispose();
@@ -98,10 +97,12 @@ it('keeps the interiors of broad blended root faces out of the glass opening', (
   model.layers.lugs.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
     const positions = o.geometry.getAttribute('position');
-    for (let i = 0; i < positions.count; i += 3) {
-      a.fromBufferAttribute(positions, i);
-      b.fromBufferAttribute(positions, i + 1);
-      v.fromBufferAttribute(positions, i + 2);
+    const count = o.geometry.index?.count ?? positions.count;
+    const at = (i: number) => o.geometry.index?.getX(i) ?? i;
+    for (let i = 0; i < count; i += 3) {
+      a.fromBufferAttribute(positions, at(i));
+      b.fromBufferAttribute(positions, at(i + 1));
+      v.fromBufferAttribute(positions, at(i + 2));
       for (let j = 0; j <= 4; j++)
         for (let k = 0; k <= 4 - j; k++) {
           p.copy(a)

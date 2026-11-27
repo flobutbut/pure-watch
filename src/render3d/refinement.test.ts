@@ -10,19 +10,11 @@ import { buildWatch, type WatchModel } from './watch';
 import { buildHands, HAND_SETS } from './parts/hands';
 import { buildCrystal } from './parts/crystal';
 import { LUG_STYLES } from './parts/lugs';
+import { geometrySignature } from './geometry-test-utils';
 
 const layers = ['case', 'rehaut', 'lugs', 'crown'] as const;
 function fingerprint(model: WatchModel) {
-  const arrays: ArrayLike<number>[] = [];
-  model.root.traverse((o) => {
-    if (!(o instanceof THREE.Mesh)) return;
-    for (const name of ['position', 'normal', 'uv', 'color']) {
-      const a = o.geometry.getAttribute(name)?.array;
-      if (a) arrays.push(a.slice());
-    }
-    if (o.geometry.index) arrays.push(o.geometry.index.array.slice());
-  });
-  return arrays;
+  return geometrySignature(model.root, ['position', 'normal', 'uv', 'color']);
 }
 function dispose(object: THREE.Object3D) {
   object.traverse((o) => {
@@ -30,18 +22,26 @@ function dispose(object: THREE.Object3D) {
   });
 }
 
-describe('cushion refinement isolation', () => {
+describe('common envelope render modes', () => {
   it.each([...CASE_SHAPES.filter((s) => s !== 'cushion'), 'asymmetric'])(
-    '%s keeps exactly the same case geometry in both render modes',
+    '%s shares the envelope in geometry and refined modes, preserving the legacy dimensions',
     (shape) => {
       const config = defaultConfig();
       config.case.shape = shape;
       const lib = new MaterialLibrary();
       const before = buildWatch(config, lib, { quality: 'fallback', refinement: 'legacy', layers });
       const after = buildWatch(config, lib, { quality: 'fallback', refinement: 'refined', layers });
-      expect(fingerprint(after)).toEqual(fingerprint(before));
+      const geometry = buildWatch(config, lib, {
+        quality: 'fallback',
+        refinement: 'geometry',
+        layers,
+      });
+      expect(fingerprint(after)).toBe(fingerprint(geometry));
+      expect(fingerprint(after)).not.toBe(fingerprint(before));
+      expect(after.dimensions).toEqual(before.dimensions);
       before.dispose();
       after.dispose();
+      geometry.dispose();
       lib.dispose();
     },
   );

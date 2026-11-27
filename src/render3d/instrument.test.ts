@@ -6,6 +6,7 @@ import { MaterialLibrary } from './materials';
 import { buildWatch, type WatchModel } from './watch';
 import { buildHands, HAND_SETS } from './parts/hands';
 import { beveledBaton } from './parts/profile';
+import { geometrySignature } from './geometry-test-utils';
 
 function dispose(root: THREE.Object3D) {
   root.traverse((o) => {
@@ -13,11 +14,7 @@ function dispose(root: THREE.Object3D) {
   });
 }
 function positions(model: WatchModel) {
-  const result: ArrayLike<number>[] = [];
-  model.root.traverse((o) => {
-    if (o instanceof THREE.Mesh) result.push(o.geometry.getAttribute('position').array.slice());
-  });
-  return result;
+  return geometrySignature(model.root);
 }
 const layers = ['case', 'rehaut', 'crown'] as const;
 
@@ -55,12 +52,12 @@ describe('black ceramic tonneau', () => {
     legacy.dispose();
   });
 
-  it('keeps the steel tonneau case geometry unchanged and never mutates the pilot config', () => {
+  it('shares the steel tonneau envelope across geometry and refined modes without mutating the pilot', () => {
     const lib = new MaterialLibrary();
     const config = blackTonneauPilot();
     config.case.material = 'steel';
     const original = structuredClone(config);
-    const before = buildWatch(config, lib, { quality: 'fallback', refinement: 'legacy', layers });
+    const before = buildWatch(config, lib, { quality: 'fallback', refinement: 'geometry', layers });
     const after = buildWatch(config, lib, { quality: 'fallback', refinement: 'refined', layers });
     expect(positions(after)).toEqual(positions(before));
     expect(config).toEqual(original);

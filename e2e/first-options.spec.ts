@@ -8,9 +8,10 @@ const payload = (page: Page) => linkPayload(page.url());
 async function row(page: Page, id: string) {
   const grid = page.getByRole('grid');
   await grid.focus();
+  // Up to the first row, Size (the catalogue keeps it first), then down to the target.
   for (let i = 0; i < 6; i++) {
     const active = await grid.getAttribute('aria-activedescendant');
-    if (active?.startsWith('cell-case-shape-')) break;
+    if (active?.startsWith('cell-case-size-')) break;
     await page.keyboard.press('PageUp');
     await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
   }
@@ -101,7 +102,7 @@ test('les dimensions indépendantes se ferment avec Échap et reviennent depuis 
   });
   await page.getByLabel('Épaisseur', { exact: true }).fill('');
   await expect(page.getByRole('alert')).toBeVisible();
-  await page.getByRole('button', { name: 'Fermer les dimensions', exact: true }).click();
+  await page.getByRole('button', { name: 'Fermer les paramètres du boîtier', exact: true }).click();
   expect(page.url()).toBe(saved);
 });
 

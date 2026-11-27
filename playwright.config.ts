@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'e2e',
+  // One browser at a time: each scenario renders the 3D watch and its thumbnail grid.
+  // Several browsers in parallel saturate the pages until their timeouts expire.
+  workers: 1,
   use: {
     baseURL: 'http://localhost:4173',
     // The site follows the browser language: the journeys are written for the French site.

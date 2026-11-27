@@ -11,6 +11,7 @@
     shareUrl as sharedLink,
   } from './core/config/url';
   import { bezelAngle } from './core/config/bezel';
+  import { caseDraft, type CaseDraft } from './core/config/case-construction';
   import type { WatchConfig } from './core/config/types';
   import { withColorChoice, type ColorChoice, type ColorTarget } from './core/config/colors';
   import {
@@ -33,11 +34,7 @@
   import Ambience from './ui/Ambience.svelte';
   import ColorPanel from './ui/colors/ColorPanel.svelte';
   import DimensionsPanel from './ui/dimensions/DimensionsPanel.svelte';
-  import {
-    caseDimensions,
-    withCaseDimensions,
-    type CaseDimensions,
-  } from './core/config/case-dimensions';
+  import { caseDimensions, withCaseDraft } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
   import { settingsForRow } from './ui/grid/row-settings';
   import { browsesFrom, commandFromKey, pointerSlider } from './ui/grid/keyboard';
@@ -220,13 +217,13 @@
     dimensionsEditing = false;
     previewConfig = null;
   }
-  function previewDimensions(values: CaseDimensions) {
-    if (dimensionsEditing) previewConfig = withCaseDimensions(config, values);
+  function previewDimensions(values: CaseDraft) {
+    if (dimensionsEditing) previewConfig = withCaseDraft(config, values);
   }
-  function closeDimensions(values: CaseDimensions) {
+  function closeDimensions(values: CaseDraft) {
     if (!dimensionsEditing) return;
     const before = config;
-    const next = withCaseDimensions(config, values);
+    const next = withCaseDraft(config, values);
     if (encodeConfigHash(next) !== encodeConfigHash(before)) {
       config = next;
       nav = {
@@ -408,7 +405,7 @@
       return { color: target };
     }
     if (dimensionsEditing) {
-      if (previewConfig) closeDimensions(caseDimensions(previewConfig));
+      if (previewConfig) closeDimensions(caseDraft(previewConfig));
       else dropEditor();
       return { dimensions: true };
     }
@@ -588,6 +585,7 @@
   {:else if dimensionsEditing}
     <DimensionsPanel
       {config}
+      initialTab={rows[nav.activeRow]?.id === 'case-size' ? 'dimensions' : 'attachments'}
       defaults={sizeDefaults}
       onpreview={previewDimensions}
       onclose={closeDimensions}
@@ -598,10 +596,11 @@
         <DimensionsPanel
           bind:this={previewPanel}
           {config}
+          initialTab={rows[nav.activeRow]?.id === 'case-size' ? 'dimensions' : 'attachments'}
           defaults={sizeDefaults}
           companion
-          onpreview={(values) => (previewConfig = withCaseDimensions(config, values))}
-          onclose={(values) => closePreviewSettings(withCaseDimensions(config, values))}
+          onpreview={(values) => (previewConfig = withCaseDraft(config, values))}
+          onclose={(values) => closePreviewSettings(withCaseDraft(config, values))}
         />
       </div>
     {/key}

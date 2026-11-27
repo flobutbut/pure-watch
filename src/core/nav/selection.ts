@@ -5,6 +5,8 @@
 import type { Catalog, RowDef, RowId } from '../catalog/types';
 import { getAtPath, matchesValue, setAtPath } from '../config/path';
 import { resolveLayout } from '../config/complications';
+import { effectiveCaseProfile } from '../config/case-profile';
+import { caseConstruction } from '../config/case-construction';
 import { cleanDetails } from '../config/details';
 import { restoreSeconds, withoutSeconds } from '../config/seconds';
 import { withStrapType, type StrapType } from '../config/strap';
@@ -24,6 +26,14 @@ export function variantIndexFromConfig(row: RowDef, config: WatchConfig): number
   const actual = getAtPath(config, row.path);
   const index = row.variants.findIndex((variant) => matchesValue(actual, variant.value));
   if (index !== -1) return index;
+  if (row.id === 'case-profile') {
+    const curvature =
+      effectiveCaseProfile(config.case.profile) === 'curved' ? 'curved' : 'straight';
+    return Math.max(
+      0,
+      row.variants.findIndex((variant) => variant.value === curvature),
+    );
+  }
   // A custom size remains between nearby presets rather than jumping to 22 mm.
   if (row.id === 'case-size') {
     return row.variants.reduce((closest, variant, i) => {
@@ -67,8 +77,29 @@ export function applyVariant(config: WatchConfig, row: RowDef, variantIndex: num
         minute: { ...next.hands.minute, style: 'match' },
       },
     };
+  if (row.id === 'case-size' && next.case.diameterMm !== config.case.diameterMm) {
+    const construction = caseConstruction(config);
+    next = {
+      ...next,
+      case: {
+        ...next.case,
+        construction: {
+          ...construction,
+          lugWidthMm: Math.min(
+            5,
+            Math.max(
+              1.2,
+              (construction.lugWidthMm * next.case.diameterMm) / config.case.diameterMm,
+            ),
+          ),
+        },
+      },
+    };
+  }
   if (row.id === 'case-size' && next.case.lugWidthMm !== config.case.lugWidthMm)
     next = { ...next, strap: { ...next.strap, widthMm: next.case.lugWidthMm } };
+  if (row.id === 'case-size')
+    next = { ...next, case: { ...next.case, construction: caseConstruction(next) } };
   if (row.id === 'seconds') next = withoutSeconds(next);
   if (row.id === 'numerals' && next.details?.hourMarkers) {
     const details = { ...next.details };

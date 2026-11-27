@@ -2,6 +2,14 @@ import { expect, it } from 'vitest';
 import { defaultConfig } from '../../core/config/defaults';
 import { settingsForRow } from './row-settings';
 
+it('ouvre le même panneau boîtier depuis la taille et le boîtier, même sans cornes', () => {
+  const config = defaultConfig();
+  config.case.lugs = 'none';
+  for (const row of ['case-size', 'case-shape'])
+    expect(settingsForRow(row, config)).toBe('dimensions');
+  expect(settingsForRow('lugs', config)).toBeNull();
+});
+
 it('opens date settings only when a date is present', () => {
   const config = defaultConfig();
   expect(settingsForRow('date', config)).toBeNull();

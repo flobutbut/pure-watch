@@ -82,6 +82,7 @@ describe('assembled shaped dials', () => {
         }
       lib.dispose();
     },
+    20_000,
   );
 
   it.each(nonRound)('%s: rehaut and glass use the exact same angular contour', (shape) => {

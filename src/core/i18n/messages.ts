@@ -106,7 +106,7 @@ const fr = {
     ],
   },
   app: {
-    dimensionsSaved: 'Dimensions enregistrées',
+    dimensionsSaved: 'Boîtier enregistré',
     numeralsSaved: 'Réglages des chiffres enregistrés',
     indicesSaved: 'Réglages des index enregistrés',
     rehautSaved: 'Réglages du réhaut enregistrés',
@@ -132,6 +132,7 @@ const fr = {
     center: ' — montre complète, Entrée pour la voir en 3D',
     custom: 'Sur mesure',
     caseDimensions: 'Dimensions du boîtier',
+    caseSettings: 'Paramètres du boîtier',
     dimensions: 'Dimensions',
     naturalTitle: 'Cette finition possède sa propre coloration.',
     natural: 'Teinte naturelle',
@@ -276,8 +277,8 @@ const fr = {
     nightHint: 'Nuit',
   },
   dimensions: {
-    title: 'Dimensions du boîtier',
-    close: 'Fermer les dimensions',
+    title: 'Boîtier et attaches',
+    close: 'Fermer les paramètres du boîtier',
     intro:
       'Chaque cote se règle séparément. Les tailles de la grille restent des points de départ.',
     nominal: 'Taille nominale du boîtier',
@@ -529,7 +530,7 @@ const en: Messages = {
     ],
   },
   app: {
-    dimensionsSaved: 'Dimensions saved',
+    dimensionsSaved: 'Case saved',
     numeralsSaved: 'Numeral settings saved',
     indicesSaved: 'Index settings saved',
     rehautSaved: 'Flange settings saved',
@@ -553,6 +554,7 @@ const en: Messages = {
     center: ' — complete watch, Enter to see it in 3D',
     custom: 'Custom',
     caseDimensions: 'Case dimensions',
+    caseSettings: 'Case settings',
     dimensions: 'Dimensions',
     naturalTitle: 'This finish has its own coloring.',
     natural: 'Natural tone',
@@ -697,8 +699,8 @@ const en: Messages = {
     nightHint: 'Night',
   },
   dimensions: {
-    title: 'Case dimensions',
-    close: 'Close dimensions',
+    title: 'Case and attachments',
+    close: 'Close case settings',
     intro: 'Each measurement is set separately. The grid sizes remain starting points.',
     nominal: 'Nominal case size',
     adjust: (label: string) => `Adjust: ${label}`,

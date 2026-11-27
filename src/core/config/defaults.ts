@@ -3,6 +3,7 @@ import { DEFAULT_REHAUT } from './rehaut';
 import { DEFAULT_LUME } from './lume';
 import { DEFAULT_HAND_LAYOUT } from './hands';
 import { DEFAULT_BEZEL_LAYOUT } from './bezel';
+import { casePreset } from './case-construction';
 
 /** Montre de départ : ronde, acier, 40 mm, cadran noir mat, aiguilles épée. */
 export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
@@ -10,6 +11,7 @@ export const DEFAULT_CONFIG: Readonly<WatchConfig> = Object.freeze({
   style: null,
   movement: 'nh35',
   case: {
+    construction: casePreset(40),
     shape: 'round',
     profile: 'curved',
     diameterMm: 40,

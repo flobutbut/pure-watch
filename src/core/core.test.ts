@@ -10,10 +10,8 @@ describe('catalogue', () => {
   it("le catalogue est valide et suit l'ordre du regard (spec §5)", () => {
     const catalog = parseCatalog(rawCatalog);
     expect(catalog.rows.map((r) => r.id)).toEqual([
-      'case-shape',
-      'case-profile',
       'case-size',
-      'lugs',
+      'case-shape',
       'case-material',
       'case-finish',
       'crown',
