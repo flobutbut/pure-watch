@@ -337,7 +337,8 @@
     }
   }
   // An unfinished HEX entry is ignored: the last valid colour, still shown on the watch, is kept.
-  function close() {
+  /** Saves and closes, as a click beside the sheet does (also used by the arrow keys). */
+  export function close() {
     clearTimeout(previewTimer);
     previewTimer = undefined;
     onclose(changed ? choice : initial);

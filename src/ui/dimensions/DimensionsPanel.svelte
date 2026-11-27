@@ -85,7 +85,8 @@
     timer = undefined;
     onpreview(error ? lastValid : { ...values });
   }
-  function close() {
+  /** Saves and closes, as a click beside the sheet does (also used by the arrow keys). */
+  export function close() {
     clearTimeout(timer);
     onclose(error ? lastValid : { ...values });
   }

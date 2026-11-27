@@ -37,7 +37,7 @@
   import { caseDimensions, withCaseDraft } from './core/config/case-dimensions';
   import AppChrome from './ui/AppChrome.svelte';
   import { settingsForRow } from './ui/grid/row-settings';
-  import { browsesFrom, commandFromKey, pointerSlider } from './ui/grid/keyboard';
+  import { browsesFrom, commandFromKey, pointerControl } from './ui/grid/keyboard';
   import { generationPrompt } from './ui/identity/prompt';
   import { ambienceFor, NIGHT_AMBIENCE } from './ui/ambience';
   import { bootStage, bootTheme } from './ui/boot';
@@ -467,15 +467,28 @@
 
   /** Curseur de l'aperçu en cours de glissement, à la souris ou au doigt. */
   let slider: Element | null = null;
+  let sliderPanel: string | null = null;
+  /** Settings beside the 3D view, and the sheet opened from a row of the grid. */
+  const PREVIEW_PANEL = '[data-preview-panel]';
+  const SETTINGS_SHEET = '[data-settings-sheet]';
+  /** The open settings sheet: an arrow that browses saves and closes it first. */
+  let sheetPanel = $state.raw<{ close: () => void } | undefined>();
+  // The sheet is modal: it wins over the preview's panel, which it hides while open.
+  const keyPanel = () =>
+    editing ? SETTINGS_SHEET : previewSettings !== null ? PREVIEW_PANEL : null;
   /** Relâché, il rend les flèches à la navigation, sans clic dans le vide. */
   function releaseSlider() {
     const control = slider;
     slider = null;
     if (!control) return;
-    // Après le `change` du curseur, qui suit le relâchement.
+    // Après le `change` de la commande, qui suit le relâchement.
     setTimeout(() => {
       if (document.activeElement !== control) return;
-      document.querySelector<HTMLElement>('[role="grid"]')?.focus({ preventScroll: true });
+      // Beside the view the grid takes the keyboard back; a sheet keeps it, but the
+      // next arrow then browses (and closes the sheet) instead of moving the control.
+      if (sliderPanel === PREVIEW_PANEL)
+        document.querySelector<HTMLElement>('[role="grid"]')?.focus({ preventScroll: true });
+      else (control as HTMLElement).blur();
     });
   }
 
@@ -498,7 +511,8 @@
 
 <svelte:window
   onpointerdowncapture={(e) => {
-    slider = previewSettings === null ? null : pointerSlider(e.target, '[data-preview-panel]');
+    sliderPanel = keyPanel();
+    slider = sliderPanel ? pointerControl(e.target, sliderPanel) : null;
   }}
   onpointerupcapture={releaseSlider}
   onpointercancelcapture={releaseSlider}
@@ -506,11 +520,14 @@
     // Modal sheets own Escape and commit their last valid values.
     if (e.key === 'Escape' && !editing && !e.defaultPrevented) close();
     // The preview's panel is beside the view, outside the grid: its plain buttons leave the
-    // arrows to the rows, and the view takes the keyboard back.
-    if (previewSettings === null || e.defaultPrevented) return;
+    // arrows to the rows, and the view takes the keyboard back. A settings sheet does the
+    // same, saving and closing as a click beside it would.
+    const panel = keyPanel();
+    if (!panel || e.defaultPrevented) return;
     const command = commandFromKey(e);
-    if (!command || !browsesFrom(e.target, '[data-preview-panel]')) return;
+    if (!command || !browsesFrom(e.target, panel)) return;
     e.preventDefault();
+    if (panel === SETTINGS_SHEET) sheetPanel?.close();
     run(command);
     document.querySelector<HTMLElement>('[role="grid"]')?.focus({ preventScroll: true });
   }}
@@ -571,25 +588,31 @@
     }}
   />
   {#if colorTarget}
-    <ColorPanel
-      target={colorTarget}
-      {config}
-      presets={colorPresets}
-      finishes={dialFinishes}
-      {settingsRows}
-      {night}
-      onnight={() => (night = !night)}
-      onpreview={previewColor}
-      onclose={closeColor}
-    />
+    <div data-settings-sheet class="settings-sheet">
+      <ColorPanel
+        bind:this={sheetPanel}
+        target={colorTarget}
+        {config}
+        presets={colorPresets}
+        finishes={dialFinishes}
+        {settingsRows}
+        {night}
+        onnight={() => (night = !night)}
+        onpreview={previewColor}
+        onclose={closeColor}
+      />
+    </div>
   {:else if dimensionsEditing}
-    <DimensionsPanel
-      {config}
-      initialTab={rows[nav.activeRow]?.id === 'case-size' ? 'dimensions' : 'attachments'}
-      defaults={sizeDefaults}
-      onpreview={previewDimensions}
-      onclose={closeDimensions}
-    />
+    <div data-settings-sheet class="settings-sheet">
+      <DimensionsPanel
+        bind:this={sheetPanel}
+        {config}
+        initialTab={rows[nav.activeRow]?.id === 'case-size' ? 'dimensions' : 'attachments'}
+        defaults={sizeDefaults}
+        onpreview={previewDimensions}
+        onclose={closeDimensions}
+      />
+    </div>
   {:else if previewSettings === 'dimensions'}
     {#key previewStep}
       <div data-preview-panel class="preview-panel">
@@ -655,6 +678,10 @@
   }
 
   /* A wrapper only: the panel inside is placed on its own (fixed). */
+  /* A marker only: the sheet inside lays itself out. */
+  .settings-sheet {
+    display: contents;
+  }
   .preview-panel {
     display: contents;
   }

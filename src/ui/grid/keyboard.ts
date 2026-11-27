@@ -24,13 +24,17 @@ export function commandFromKey(event: Pick<KeyboardEvent, 'key'>): NavCommand | 
   }
 }
 
-/** Controls that give the arrows a meaning of their own (sliders, choice lists, text). */
+/**
+ * Controls that give the arrows a meaning of their own (sliders, choice lists, text).
+ * A checkbox has none: the arrows go on browsing the rows from it.
+ */
 const OWN_ARROWS =
-  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="radio"], [role="tab"], [role="option"], [role="listbox"], [role="menuitem"], [role="spinbutton"]';
+  'input:not([type="checkbox"]), textarea, select, [contenteditable]:not([contenteditable="false"]), [role="slider"], [role="radio"], [role="tab"], [role="option"], [role="listbox"], [role="menuitem"], [role="spinbutton"]';
 
 /**
  * In the preview, an arrow pressed beside the 3D view still browses the rows: on a plain
  * button of the settings panel, or with the focus lost (the panel it was in was replaced).
+ * The same holds in a settings sheet, which then closes and saves, as a click beside it does.
  */
 export function browsesFrom(target: EventTarget | null, panel: string): boolean {
   const element = target as Element | null;
@@ -38,14 +42,19 @@ export function browsesFrom(target: EventTarget | null, panel: string): boolean 
   return Boolean(element.closest(panel)) && !element.closest(OWN_ARROWS);
 }
 
-const SLIDERS = 'input[type="range"], [role="slider"]';
+/**
+ * Controls set with a click or a drag: sliders, segmented and choice lists, checkboxes.
+ * Text and number fields are left out: one types in them, and their arrows move the caret.
+ */
+const POINTER_SET =
+  'input[type="range"], [role="slider"], [role="radio"], [role="tab"], input[type="radio"], input[type="checkbox"], [role="checkbox"], [role="switch"]';
 
 /**
- * Curseur saisi au pointeur dans le panneau de l'aperçu : une fois relâché, il rend les
- * flèches aux lignes (au clavier, atteint par Tab, il les garde pour se régler).
+ * Commande réglée au pointeur dans un panneau de réglages : une fois relâchée, elle rend
+ * les flèches aux lignes (au clavier, atteinte par Tab, elle les garde pour se régler).
  */
-export function pointerSlider(target: EventTarget | null, panel: string): Element | null {
+export function pointerControl(target: EventTarget | null, panel: string): Element | null {
   const element = target as Element | null;
   if (!element?.closest?.(panel)) return null;
-  return element.closest(SLIDERS);
+  return element.closest(POINTER_SET);
 }
