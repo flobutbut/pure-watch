@@ -11,6 +11,7 @@ import { shapeRadius } from '../../core/geometry/case-shape';
 import { buildStrap } from './strap';
 import { bezelOutline, caseDeckTop, caseLevels } from './levels';
 import { buildWatch } from '../watch';
+import { bezelRingWidth } from './independent-bezel';
 
 it.each(['round', 'cushion', 'tonneau', 'square', 'rectangle', 'octagon'])(
   '%s: the shared construction stays closed with a clean back and changing curvature',
@@ -593,3 +594,28 @@ it('spaces bezel cuts evenly along a shaped outline, at a constant depth', () =>
   model.dispose();
   lib.dispose();
 });
+
+it.each(['smooth', 'rotating'])(
+  'reports the visible width of a %s bezel ring, as it is built',
+  (type) => {
+    const config = defaultConfig();
+    config.bezel.type = type;
+    const d = watchDimensions(config),
+      lib = new MaterialLibrary(),
+      model = buildWatch(config, lib, { quality: 'fallback', layers: ['case'] });
+    const ring = model.layers.case.getObjectByName(
+      type === 'rotating' ? 'rotating-bezel' : 'independent-bezel',
+    )!;
+    const radii: number[] = [];
+    ring.traverse((o: THREE.Object3D) => {
+      if (!(o instanceof THREE.Mesh) || o.name.startsWith('bezel-')) return;
+      const p = o.geometry.getAttribute('position');
+      for (let i = 0; i < p.count; i++) radii.push(Math.hypot(p.getX(i), p.getY(i)));
+    });
+    // Set back from the shoulder, the ring is well under its nominal width.
+    expect(bezelRingWidth(config, d)).toBeCloseTo(Math.max(...radii) - Math.min(...radii), 2);
+    expect(bezelRingWidth(config, d)).toBeLessThan(d.bezelWidth - 0.5);
+    model.dispose();
+    lib.dispose();
+  },
+);

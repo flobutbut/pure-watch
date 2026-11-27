@@ -31,6 +31,7 @@ const fr = {
   } as Record<string, string>,
   bezelShape: 'Forme de la lunette',
   bezelWidth: 'Largeur de la lunette',
+  bezelWidthHint: 'Anneau visible · l’élargir réduit le cadran',
   bezelHeight: 'Hauteur de la lunette',
   bezelFinish: 'Finition de la lunette',
   shapes: {
@@ -89,6 +90,7 @@ export const PART_SETTINGS: Record<'fr' | 'en', typeof fr> = {
     },
     bezelShape: 'Bezel shape',
     bezelWidth: 'Bezel width',
+    bezelWidthHint: 'Visible ring · widening it narrows the dial',
     bezelHeight: 'Bezel height',
     bezelFinish: 'Bezel finish',
     shapes: {

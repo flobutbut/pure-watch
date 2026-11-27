@@ -1,5 +1,10 @@
 import * as THREE from 'three';
-import { bezelShape, bezelMetalConfig, bezelTypeForConfig } from '../../core/config/bezel';
+import {
+  bezelShape,
+  bezelMetalConfig,
+  bezelTypeForConfig,
+  hasBezelInsert,
+} from '../../core/config/bezel';
 import { caseConstruction } from '../../core/config/case-construction';
 import type { WatchConfig } from '../../core/config/types';
 import { shapeRadius } from '../../core/geometry/case-shape';
@@ -8,6 +13,31 @@ import { buildRuns, type P2, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
 import { machineBezel, type BezelStretch } from './bezel';
 import { bezelOutline, caseLevels, metricLatheUV, smoothLatheTangents } from './levels';
+import { rotatingBezelDimensions } from './rotating-bezel';
+
+/** The fixed ring's footprint: its aperture, its set-back outline and narrowest width. */
+export function independentBezelRing(config: WatchConfig, d: WatchDimensions) {
+  const shape = bezelShape(config);
+  const inner = d.openingRadius + 0.285;
+  const aperture = (angle: number) => inner * d.dialScale * shapeRadius(d.dialShape, angle);
+  // Set back from the case edge and seated on the deck (see bezelOutline).
+  const outline = bezelOutline(d, config.case.shape, shape, aperture, 0.6);
+  let narrowest = Infinity;
+  for (let i = 0; i < 256; i++) {
+    const angle = (i * Math.PI) / 128;
+    narrowest = Math.min(narrowest, outline.perimeter(angle) - aperture(angle));
+  }
+  return { shape, inner, aperture, outline, narrowest };
+}
+
+/** Visible width of the bezel ring, as the settings panel reports it (mm). */
+export function bezelRingWidth(config: WatchConfig, d: WatchDimensions): number {
+  if (hasBezelInsert(config)) {
+    const { outer, inner } = rotatingBezelDimensions(config, d);
+    return outer - inner;
+  }
+  return independentBezelRing(config, d).narrowest;
+}
 
 /** Independent exterior contour with a separate aperture; never deforms the midcase. */
 export function buildIndependentBezel(
@@ -17,19 +47,10 @@ export function buildIndependentBezel(
 ) {
   const group = new THREE.Group();
   group.name = 'independent-bezel';
-  const type = bezelTypeForConfig(config),
-    shape = bezelShape(config);
+  const type = bezelTypeForConfig(config);
   const { c } = caseLevels(d);
-  const inner = d.openingRadius + 0.285;
-  const aperture = (angle: number) => inner * d.dialScale * shapeRadius(d.dialShape, angle);
-  // Set back from the case edge and seated on the deck (see bezelOutline).
-  const outline = bezelOutline(d, config.case.shape, shape, aperture, 0.6);
+  const { shape, inner, aperture, outline, narrowest } = independentBezelRing(config, d);
   // The profile is drawn at the ring's narrowest width, then stretched to the outline.
-  let narrowest = Infinity;
-  for (let i = 0; i < 256; i++) {
-    const angle = (i * Math.PI) / 128;
-    narrowest = Math.min(narrowest, outline.perimeter(angle) - aperture(angle));
-  }
   const outer = inner + narrowest;
   const bottom = outline.bottom;
   const top = d.z.bezelTop - 0.045;

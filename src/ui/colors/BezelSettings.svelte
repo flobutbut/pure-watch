@@ -7,6 +7,7 @@
   } from '../../core/config/bezel';
   import type { WatchConfig } from '../../core/config/types';
   import { watchDimensions } from '../../core/geometry/dimensions';
+  import { bezelRingWidth } from '../../render3d/parts/independent-bezel';
   import { formatNumber } from '../../core/i18n/locale';
   import { i18n } from '../i18n.svelte';
   import { PART_SETTINGS } from './part-settings';
@@ -36,7 +37,8 @@
     min={0.7}
     max={1.8}
     value={value.width}
-    display={mm(d.bezelWidth)}
+    display={mm(bezelRingWidth({ ...config, bezel: { ...config.bezel, ...value } }, d))}
+    hint={m.bezelWidthHint}
     onchange={(width) => onchange({ ...value, width })}
   />
   <RangeField
