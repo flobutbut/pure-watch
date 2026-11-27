@@ -30,7 +30,8 @@ function ui(page: Page) {
     settings: page.getByRole('dialog').filter({
       has: page.getByRole('button', { name: 'Fermer les couleurs', exact: true }),
     }),
-    dimensions: page.getByRole('dialog', { name: 'Dimensions du boîtier' }),
+    /** The case panel: size, top, profile and details tabs. */
+    dimensions: page.getByRole('dialog', { name: 'Boîtier et attaches' }),
     close3d: page.getByRole('button', { name: 'Fermer', exact: true }),
   };
 }
@@ -140,13 +141,20 @@ test('un réglage fait dans l’aperçu est gardé en changeant de ligne', async
   );
 });
 
-test('l’aperçu montre les dimensions sur la ligne de la taille', async ({ page }) => {
+test('l’aperçu montre le panneau du boîtier sur les lignes Taille et Boîtier', async ({ page }) => {
   const { grid, dimensions } = ui(page);
+  const tab = (name: string) => dimensions.getByRole('radio', { name, exact: true });
   await row(page, 'case-size');
   await preview(page);
   await expect(dimensions).toBeVisible();
+  await expect(tab('Taille')).toHaveAttribute('aria-checked', 'true');
+  // The shape row, just below, keeps the panel and opens it on the case's top.
   await page.keyboard.press('ArrowDown');
-  await expect(grid).not.toHaveAttribute('aria-activedescendant', /^cell-case-size-/);
+  await expect(grid).toHaveAttribute('aria-activedescendant', /^cell-case-shape-/);
+  await expect(tab('Dessus')).toHaveAttribute('aria-checked', 'true');
+  // The material has no settings of its own here.
+  await page.keyboard.press('ArrowDown');
+  await expect(grid).toHaveAttribute('aria-activedescendant', /^cell-case-material-/);
   await expect(dimensions).toBeHidden();
   await page.keyboard.press('ArrowUp');
   await expect(dimensions).toBeVisible();
