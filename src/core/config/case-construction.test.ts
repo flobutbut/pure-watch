@@ -7,6 +7,7 @@ import { withCaseDraft } from './case-dimensions';
 import { applyVariant } from '../nav/selection';
 import { encodeLinkPayload } from './link-codec';
 import { decodeConfigHash, encodeConfigHash } from './url';
+import { blackTonneauPilot } from './pilot';
 const catalog = parseCatalog(raw);
 
 it('keeps size first and a single case row with attachment drawings in its panel', () => {
@@ -108,4 +109,26 @@ it('keeps crown guards in the case panel and reads the former guarded crown styl
   expect(decoded.notice).toBe('');
   expect(decoded.config.crown).toMatchObject({ style: 'fluted', guard: true });
   expect(caseDraft(decoded.config).crownGuard).toBe(true);
+});
+
+it('keeps the attachment type of links and pilots that only name the lugs', () => {
+  // Links from before the case construction carry `case.lugs` alone.
+  for (const [token, attachment] of [
+    [7, 'block'],
+    [8, 'none'],
+    [5, 'lugs'],
+  ] as const) {
+    const decoded = decodeConfigHash(encodeLinkPayload({ f: token }), catalog);
+    expect(decoded.notice).toBe('');
+    expect(caseConstruction(decoded.config).attachment).toBe(attachment);
+  }
+  expect(caseConstruction(blackTonneauPilot()).attachment).toBe('none');
+  // Choosing lugs again in the panel still restores them.
+  const config = withCaseDraft(blackTonneauPilot(), {
+    ...caseDraft(blackTonneauPilot()),
+    lugs: 'straight',
+    construction: caseDrawing(caseConstruction(blackTonneauPilot()), 40, 'straight'),
+  });
+  expect(config.case.lugs).toBe('straight');
+  expect(caseConstruction(config).attachment).toBe('lugs');
 });

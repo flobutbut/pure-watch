@@ -403,6 +403,19 @@ export function encodeConfigHash(config: WatchConfig): string {
     const raw = getAtPath(config, descriptor.path);
     const value = descriptor.path === 'details' ? orderedDetails(raw) : raw;
     if (JSON.stringify(value) === JSON.stringify(getAtPath(V1_DEFAULTS, descriptor.path))) continue;
+    // A construction that a link without one decodes to anyway (the default drawing,
+    // normalized for this case) is left out: lugless and integrated cases stay short.
+    if (
+      descriptor.path === 'case.construction' &&
+      JSON.stringify(value) ===
+        JSON.stringify(
+          caseConstruction({
+            ...config,
+            case: { ...config.case, construction: V1_DEFAULTS.case.construction },
+          }),
+        )
+    )
+      continue;
     payload[key] = descriptor.bit
       ? value
         ? 1

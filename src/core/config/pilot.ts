@@ -1,3 +1,4 @@
+import { caseConstruction } from './case-construction';
 import { defaultConfig } from './defaults';
 import type { WatchConfig } from './types';
 
@@ -16,6 +17,7 @@ export function cushionPilot(): WatchConfig {
   config.hands.second.style = 'lollipop';
   config.hands.second.color = '#C52B36';
   config.view.time = 'fixed';
+  config.case.construction = caseConstruction(config);
   return config;
 }
 
@@ -37,5 +39,7 @@ export function blackTonneauPilot(): WatchConfig {
   config.hands.second.style = 'lollipop';
   config.hands.second.color = '#F2C230';
   config.view.time = 'fixed';
+  // A lugless pilot: its construction says so too, as a link decodes it.
+  config.case.construction = caseConstruction(config);
   return config;
 }
