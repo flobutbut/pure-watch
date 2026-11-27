@@ -134,6 +134,11 @@ export function caseConstruction(config: WatchConfig): CaseConstruction {
     Math.max(0, config.case.thicknessMm * 0.85 - value.tipThicknessMm),
   );
   if (!['lugs', 'block', 'none'].includes(value.attachment)) value.attachment = 'lugs';
+  // The default construction is a complete "classic lugs" drawing. Older links, pilots
+  // and code that only set `case.lugs` to none or integrated keep that attachment type
+  // instead of it. The settings panel always sets both consistently.
+  if (config.case.lugs === 'none') value.attachment = 'none';
+  else if (config.case.lugs === 'integrated') value.attachment = 'block';
   if (!['sharp', 'chamfer', 'rounded'].includes(value.edge)) value.edge = 'rounded';
   if (!['flat', 'curved'].includes(value.underside)) value.underside = 'flat';
   return value;

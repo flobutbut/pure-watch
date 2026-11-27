@@ -80,23 +80,27 @@ export function withCaseDimensions(config: WatchConfig, values: CaseDimensions):
 }
 
 export function withCaseDraft(config: WatchConfig, draft: CaseDraft): WatchConfig {
+  // In a draft the attachment chosen in the panel decides; `case.lugs` follows it, and
+  // is set before normalizing so the previous value cannot override that choice.
+  const attachment = draft.construction.attachment;
+  const lugs =
+    attachment === 'none'
+      ? 'none'
+      : attachment === 'block'
+        ? 'integrated'
+        : ['none', 'integrated'].includes(draft.lugs)
+          ? 'straight'
+          : draft.lugs;
   const construction = caseConstruction({
     ...config,
     case: {
       ...config.case,
       shape: draft.shape,
       thicknessMm: draft.thicknessMm,
+      lugs,
       construction: draft.construction,
     },
   });
-  const lugs =
-    construction.attachment === 'none'
-      ? 'none'
-      : construction.attachment === 'block'
-        ? 'integrated'
-        : ['none', 'integrated'].includes(draft.lugs)
-          ? 'straight'
-          : draft.lugs;
   const next = {
     ...config,
     case: { ...config.case, shape: draft.shape, lugs, construction },
