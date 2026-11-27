@@ -16,6 +16,7 @@ import { refinementFromSearch } from './refinement';
 import { softShadowTexture } from './textures';
 import { buildWatch, type Layer, type WatchModel } from './watch';
 import { prepareEnvelope } from './envelope-client';
+import { rotatingBezelDimensions } from './parts/rotating-bezel';
 import type { EnvelopeData } from './parts/case-envelope';
 
 export interface SnapshotJob {
@@ -269,6 +270,24 @@ export class Stage {
     return Math.atan2(point.y, point.x);
   }
 
+  /** Client coordinates of the ring's mid-width at `degrees`, clockwise from 12 o'clock. */
+  private bezelScreenPoint(degrees: number): { x: number; y: number } | null {
+    const config = this.liveConfig;
+    if (!this.live || !config) return null;
+    const { inner, outer, top } = rotatingBezelDimensions(config, this.live.dimensions);
+    const radius = (inner + outer) / 2,
+      angle = degrees * DEG;
+    this.floating.updateWorldMatrix(true, true);
+    const point = new THREE.Vector3(radius * Math.sin(angle), radius * Math.cos(angle), top)
+      .applyMatrix4(this.live.root.matrixWorld)
+      .project(this.camera);
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    return {
+      x: rect.left + ((point.x + 1) / 2) * rect.width,
+      y: rect.top + ((1 - point.y) / 2) * rect.height,
+    };
+  }
+
   private bezelPointerDown = (event: PointerEvent): void => {
     if (!this.bezelEditing || this.mode !== 'inspect' || event.button !== 0 || this.bezelDrag)
       return;
@@ -375,6 +394,12 @@ export class Stage {
     this.renderer.domElement.addEventListener('pointerup', this.bezelPointerUp);
     this.renderer.domElement.addEventListener('pointercancel', this.bezelPointerUp);
     this.renderer.domElement.addEventListener('lostpointercapture', this.bezelPointerUp);
+    // Automated browsers only (end-to-end tests): where a point of the rotating bezel lies
+    // on screen, so a drag lands on the ring whatever the view, open panel or scale.
+    if (navigator.webdriver)
+      Object.assign(this.renderer.domElement, {
+        bezelPoint: (degrees: number) => this.bezelScreenPoint(degrees),
+      });
     this.controls.minPolarAngle = Math.PI / 2 - MAX_EL;
     this.controls.maxPolarAngle = Math.PI / 2 - MIN_EL;
     this.placeCamera(VIEWS.grid);

@@ -87,12 +87,22 @@ test('la lunette tournante conserve sa couleur, sa graduation et sa position dan
 });
 
 async function arc(page: Page, info: TestInfo, from: number, to: number) {
-  const box = (await page.locator('.live canvas').boundingBox())!;
-  const point = (a: number) => ({
-    x: box.x + box.width / 2 + box.width * 0.27 * Math.sin((a * Math.PI) / 180),
-    y: box.y + box.height / 2 - box.width * 0.27 * Math.cos((a * Math.PI) / 180),
-  });
-  const start = point(from);
+  // Aim at the ring where the scene draws it: its size and place on screen depend on
+  // the view, the open settings panel and the display scale. The camera stays put
+  // during the drag, so every point is read once, before the page gets busy turning it.
+  const angles = Array.from({ length: 13 }, (_, i) => from + ((to - from) * i) / 12);
+  const points = await page.locator('.live canvas').evaluate(
+    (canvas, list) =>
+      list.map((degrees) =>
+        (
+          canvas as HTMLCanvasElement & {
+            bezelPoint(degrees: number): { x: number; y: number } | null;
+          }
+        ).bezelPoint(degrees)!,
+      ),
+    angles,
+  );
+  const start = points[0]!;
   const mobile = info.project.use.isMobile;
   const cdp = mobile ? await page.context().newCDPSession(page) : null;
   if (cdp)
@@ -105,7 +115,7 @@ async function arc(page: Page, info: TestInfo, from: number, to: number) {
     await page.mouse.down();
   }
   for (let i = 1; i <= 12; i++) {
-    const p = point(from + ((to - from) * i) / 12);
+    const p = points[i]!;
     if (cdp)
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove',
