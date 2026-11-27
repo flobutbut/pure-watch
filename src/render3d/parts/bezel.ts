@@ -90,11 +90,23 @@ export function bezelProfile(
   return runs;
 }
 
+/**
+ * How a round ring is stretched onto a shaped bezel. `phase` maps an angle to the
+ * position along the real outer contour (0 to 2π, by arc length); `stretch` is the
+ * local ring width over the narrowest one. The cuts then keep a constant pitch,
+ * band and depth in millimetres, instead of fanning out where the ring widens.
+ */
+export interface BezelStretch {
+  phase: (angle: number) => number;
+  stretch: (angle: number) => number;
+}
+
 /** Cut the radial profile before shaping it to the case: the aperture itself is never cut. */
 export function machineBezel(
   geometry: THREE.BufferGeometry,
   type: string,
   d: WatchDimensions,
+  shaped?: BezelStretch,
 ): void {
   if (!patterned(type)) return;
   const { c, flankTop } = caseLevels(d);
@@ -110,8 +122,13 @@ export function machineBezel(
       z = p.getZ(i),
       r = Math.hypot(x, y);
     if (r <= d.openingRadius || z <= flankTop) continue;
-    const angle = Math.atan2(y, x);
-    const band = (r - d.openingRadius) / d.bezelWidth;
+    const theta = Math.atan2(y, x);
+    const angle = shaped ? shaped.phase(theta) : theta;
+    const k = shaped ? shaped.stretch(theta) : 1;
+    // Measured from the outer edge in shaped millimetres, so the cut band keeps the
+    // same width where the ring is stretched wider.
+    const fraction = (r - d.openingRadius) / d.bezelWidth;
+    const band = shaped ? 1 - (1 - fraction) * k : fraction;
     const rim = smooth((band - 0.14) / 0.5);
     const height = smooth((z - flankTop) / (c * 0.85));
     const count = type === 'fluted' ? 48 : type === 'coin' ? 72 : 12;
@@ -125,7 +142,8 @@ export function machineBezel(
         : rim;
     const cut =
       depth * wave * height * edge * (type === 'notched' ? 1.35 : type === 'coin' ? 0.7 : 1);
-    const radius = Math.max(d.openingRadius, r - cut);
+    // The ring is stretched by k afterwards: cut 1/k here for the same depth in mm.
+    const radius = Math.max(d.openingRadius, r - (shaped ? cut / k : cut));
     p.setXYZ(
       i,
       (x * radius) / r,

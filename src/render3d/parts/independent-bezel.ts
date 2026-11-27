@@ -6,7 +6,7 @@ import { shapeRadius } from '../../core/geometry/case-shape';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { buildRuns, type P2, type ProfileRun } from '../lathe';
 import type { MaterialLibrary } from '../materials';
-import { machineBezel } from './bezel';
+import { machineBezel, type BezelStretch } from './bezel';
 import { bezelOutline, caseLevels, metricLatheUV, smoothLatheTangents } from './levels';
 
 /** Independent exterior contour with a separate aperture; never deforms the midcase. */
@@ -103,10 +103,40 @@ export function buildIndependentBezel(
     );
   runs.push({ surface: 'polished', points: [right, [inner, top - 2 * bevel], [inner, bottom]] });
   const metal = bezelMetalConfig(config);
-  const segments = ['fluted', 'coin', 'notched'].includes(type) ? 576 : 192;
+  // A shaped ring covers more contour per degree on its long sides: twice the detail.
+  const segments = ['fluted', 'coin', 'notched'].includes(type)
+    ? shape !== 'round' || d.dialShape !== 'round'
+      ? 1152
+      : 576
+    : 192;
   const ringD = { ...d, caseRadius: outer, openingRadius: inner, bezelWidth: outer - inner };
+  // A shaped ring is not a circle: space the cuts by arc length along its real outer
+  // contour and keep their band and depth in millimetres (see BezelStretch).
+  let shaped: BezelStretch | undefined;
+  if (shape !== 'round' || d.dialShape !== 'round') {
+    const SAMPLES = 2048,
+      length = new Float64Array(SAMPLES + 1);
+    let previous = { x: outline.perimeter(0), y: 0 };
+    for (let i = 1; i <= SAMPLES; i++) {
+      const angle = (i / SAMPLES) * Math.PI * 2,
+        radius = outline.perimeter(angle),
+        point = { x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
+      length[i] = length[i - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y);
+      previous = point;
+    }
+    const total = length[SAMPLES]!;
+    shaped = {
+      phase: (angle) => {
+        const t = (((angle / (Math.PI * 2)) % 1) + 1) % 1,
+          at = t * SAMPLES,
+          i = Math.min(SAMPLES - 1, Math.floor(at));
+        return ((length[i]! + (at - i) * (length[i + 1]! - length[i]!)) / total) * Math.PI * 2;
+      },
+      stretch: (angle) => (outline.perimeter(angle) - aperture(angle)) / narrowest,
+    };
+  }
   for (const mesh of buildRuns(runs, (s) => lib.caseMetal(metal, s), segments)) {
-    machineBezel(mesh.geometry, type, ringD);
+    machineBezel(mesh.geometry, type, ringD, shaped);
     const p = mesh.geometry.getAttribute('position');
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i),

@@ -9,7 +9,7 @@ import { buildCaseEnvelope, caseEnvelopeLayout } from './case-envelope';
 import { strapPocket, strapSeat, lugLayout, surfaceY } from './lugs';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { buildStrap } from './strap';
-import { caseDeckTop, caseLevels } from './levels';
+import { bezelOutline, caseDeckTop, caseLevels } from './levels';
 import { buildWatch } from '../watch';
 
 it.each(['round', 'cushion', 'tonneau', 'square', 'rectangle', 'octagon'])(
@@ -531,3 +531,65 @@ it.each(['sharp', 'chamfer', 'rounded'] as const)(
     lib.dispose();
   },
 );
+
+it('spaces bezel cuts evenly along a shaped outline, at a constant depth', () => {
+  const config = defaultConfig();
+  config.case.shape = 'rectangle';
+  config.bezel.type = 'notched';
+  const d = watchDimensions(config),
+    lib = new MaterialLibrary(),
+    model = buildWatch(config, lib, { quality: 'fallback', layers: ['case'] });
+  const inner = d.openingRadius + 0.285;
+  const outline = bezelOutline(d, 'rectangle', 'rectangle', () => inner, 0.6);
+  // Depth of the cut below the outer contour, along the outer wall just under its edge.
+  const top = Math.max(
+    ...(() => {
+      const zs: number[] = [];
+      model.layers.case.getObjectByName('independent-bezel')!.traverse((o: THREE.Object3D) => {
+        if (o instanceof THREE.Mesh) {
+          const p = o.geometry.getAttribute('position');
+          for (let i = 0; i < p.count; i++) zs.push(p.getZ(i));
+        }
+      });
+      return zs;
+    })(),
+  );
+  const wall = top - 0.3;
+  const samples: { angle: number; deficit: number }[] = [];
+  model.layers.case.getObjectByName('independent-bezel')!.traverse((o: THREE.Object3D) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const p = o.geometry.getAttribute('position');
+    for (let i = 0; i < p.count; i++) {
+      if (Math.abs(p.getZ(i) - wall) > 1e-4) continue;
+      const angle = Math.atan2(p.getY(i), p.getX(i));
+      samples.push({ angle, deficit: outline.perimeter(angle) - Math.hypot(p.getX(i), p.getY(i)) });
+    }
+  });
+  samples.sort((a, b) => a.angle - b.angle);
+  // Notch centres: local maxima of the cut, then their position along the contour.
+  const deepest = Math.max(...samples.map((s) => s.deficit));
+  const centres = samples.filter((s, i) => {
+    const before = samples[(i + samples.length - 1) % samples.length]!,
+      after = samples[(i + 1) % samples.length]!;
+    return s.deficit > deepest * 0.5 && s.deficit >= before.deficit && s.deficit > after.deficit;
+  });
+  expect(centres).toHaveLength(12);
+  const along = (angle: number) => {
+    let length = 0,
+      previous = outline.perimeter(-Math.PI);
+    for (let a = -Math.PI + 0.001; a <= angle; a += 0.001) {
+      const radius = outline.perimeter(a);
+      length += Math.hypot(radius - previous, radius * 0.001);
+      previous = radius;
+    }
+    return length;
+  };
+  const positions = centres.map((c) => along(c.angle));
+  const total = along(Math.PI);
+  const gaps = positions.map((s, i) => (i ? s - positions[i - 1]! : s + total - positions.at(-1)!));
+  expect(Math.max(...gaps) / Math.min(...gaps)).toBeLessThan(1.1);
+  const depths = centres.map((c) => c.deficit);
+  expect(Math.max(...depths) / Math.min(...depths)).toBeLessThan(1.15);
+  model.dispose();
+  lib.dispose();
+});
