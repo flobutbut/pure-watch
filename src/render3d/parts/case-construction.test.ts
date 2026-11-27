@@ -9,7 +9,8 @@ import { buildCaseEnvelope, caseEnvelopeLayout } from './case-envelope';
 import { strapPocket, strapSeat, lugLayout, surfaceY } from './lugs';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { buildStrap } from './strap';
-import { caseDeckTop } from './levels';
+import { caseDeckTop, caseLevels } from './levels';
+import { buildWatch } from '../watch';
 
 it.each(['round', 'cushion', 'tonneau', 'square', 'rectangle', 'octagon'])(
   '%s: the shared construction stays closed with a clean back and changing curvature',
@@ -449,4 +450,50 @@ it.each(['leather', 'metal', 'rubber', 'fabric'])(
     expect(highest).toBeLessThan(d.z.back + pocket.height);
     lib.dispose();
   },
+);
+
+it.each(['round', 'cushion', 'tonneau', 'octagon', 'square', 'rectangle'])(
+  '%s: the bezel stops before the shoulder and sits on a flat deck, with no void beneath',
+  (shape) => {
+    for (const type of ['smooth', 'fluted', 'rotating']) {
+      const config = defaultConfig();
+      config.case.shape = shape;
+      config.bezel.type = type;
+      config.case.construction = { ...config.case.construction!, dome: 1 };
+      const d = watchDimensions(config),
+        { R, c } = caseLevels(d),
+        deck = caseDeckTop(d),
+        layout = caseEnvelopeLayout(config, d),
+        lib = new MaterialLibrary();
+      const model = buildWatch(config, lib, { quality: 'fallback', layers: ['case'] });
+      const ring = model.layers.case.getObjectByName(
+        type === 'rotating' ? 'rotating-bezel' : 'independent-bezel',
+      )!;
+      model.root.updateMatrixWorld(true);
+      const v = new THREE.Vector3();
+      let lowest = Infinity,
+        overhang = -Infinity,
+        gap = 0;
+      ring.traverse((o: THREE.Object3D) => {
+        if (!(o instanceof THREE.Mesh) || o.name.startsWith('bezel-')) return;
+        const p = o.geometry.getAttribute('position');
+        for (let i = 0; i < p.count; i++) {
+          v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
+          const angle = Math.atan2(v.y, v.x);
+          lowest = Math.min(lowest, v.z);
+          overhang = Math.max(
+            overhang,
+            Math.hypot(v.x, v.y) - (R * shapeRadius(shape, angle) - c * 1.5),
+          );
+          gap = Math.max(gap, deck - layout.section(v.x, v.y).top);
+        }
+      });
+      expect(lowest, type).toBeCloseTo(deck + 0.01, 3);
+      expect(overhang, type).toBeLessThan(0);
+      expect(gap, type).toBeLessThan(1e-6);
+      model.dispose();
+      lib.dispose();
+    }
+  },
+  30_000,
 );
