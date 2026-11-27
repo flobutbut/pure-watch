@@ -258,8 +258,8 @@
   {:else}
     <p class="intro">
       {fr
-        ? 'Les arêtes suivent tout le contour : carrure, cornes et protections.'
-        : 'Edges follow the whole outline: case, lugs and guards.'}
+        ? 'Les arêtes suivent tout le contour : carrure, cornes, protections et bord de la lunette.'
+        : 'Edges follow the whole outline: case, lugs, guards and the bezel’s outer edge.'}
     </p>
     <ChoiceGroup
       label={fr ? 'Traitement des arêtes' : 'Edge treatment'}

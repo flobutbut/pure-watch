@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { WatchConfig } from '../../core/config/types';
 import { bezelAngle, bezelMetalConfig } from '../../core/config/bezel';
+import { caseConstruction } from '../../core/config/case-construction';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
 import { bezelPrintSvg } from '../../render2d/bezel-print';
 import { buildRuns, type ProfileRun } from '../lathe';
@@ -44,6 +45,54 @@ export function buildGraduatedBezel(
     config,
     d,
   );
+  // The outer top edge follows the case's edge treatment, within the narrow metal rim
+  // left around the printed insert.
+  const settings = caseConstruction(config);
+  const edge = Math.min(
+    settings.edge === 'sharp' ? 0.01 : settings.edgeSizeMm,
+    (outer - insertOuter) * 0.9,
+    (top - bottom) * 0.45,
+  );
+  const wall: [number, number][] = [
+    [outer - 0.12, bottom],
+    [outer, bottom + 0.08],
+    [outer, top - edge],
+  ];
+  const rim: ProfileRun<'brushed' | 'polished'>[] =
+    settings.edge === 'rounded'
+      ? [
+          {
+            surface: 'polished',
+            points: [
+              ...wall,
+              ...Array.from({ length: 8 }, (_, i) => {
+                const a = ((i + 1) / 8) * (Math.PI / 2);
+                return [outer - edge + edge * Math.cos(a), top - edge + edge * Math.sin(a)] as [
+                  number,
+                  number,
+                ];
+              }),
+              [insertOuter, top],
+            ],
+          },
+        ]
+      : [
+          { surface: 'polished', points: wall },
+          {
+            surface: 'polished',
+            points: [
+              [outer, top - edge],
+              [outer - edge, top],
+            ],
+          },
+          {
+            surface: 'polished',
+            points: [
+              [outer - edge, top],
+              [insertOuter, top],
+            ],
+          },
+        ];
   const runs: ProfileRun<'brushed' | 'polished'>[] = [
     {
       surface: 'brushed',
@@ -52,16 +101,7 @@ export function buildGraduatedBezel(
         [outer - 0.12, bottom],
       ],
     },
-    {
-      surface: 'polished',
-      points: [
-        [outer - 0.12, bottom],
-        [outer, bottom + 0.08],
-        [outer, top - 0.1],
-        [outer - 0.08, top],
-        [insertOuter, top],
-      ],
-    },
+    ...rim,
     {
       surface: 'polished',
       points: [

@@ -497,3 +497,37 @@ it.each(['round', 'cushion', 'tonneau', 'octagon', 'square', 'rectangle'])(
   },
   30_000,
 );
+
+it.each(['sharp', 'chamfer', 'rounded'] as const)(
+  'the bezel’s outer edge follows the case edge treatment: %s',
+  (edge) => {
+    const config = defaultConfig();
+    config.case.construction = { ...config.case.construction!, edge, edgeSizeMm: 0.3 };
+    const lib = new MaterialLibrary(),
+      model = buildWatch(config, lib, { quality: 'fallback', layers: ['case'] });
+    const ring = model.layers.case.getObjectByName('independent-bezel')!;
+    const points: [number, number][] = [];
+    ring.traverse((o: THREE.Object3D) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      const p = o.geometry.getAttribute('position');
+      expect(Array.from(o.geometry.getAttribute('normal').array).every(Number.isFinite)).toBe(true);
+      for (let i = 0; i < p.count; i++) points.push([Math.hypot(p.getX(i), p.getY(i)), p.getZ(i)]);
+    });
+    const outer = Math.max(...points.map(([r]) => r)),
+      top = Math.max(...points.map(([, z]) => z));
+    // Where the flat top starts: the edge width, in from the outer wall.
+    const flat = Math.max(...points.filter(([, z]) => z > top - 1e-4).map(([r]) => r));
+    expect(outer - flat).toBeCloseTo(edge === 'sharp' ? 0.01 : 0.3, 3);
+    // Where the outer wall ends: the same height down from the top.
+    const wall = Math.max(...points.filter(([r]) => r > outer - 1e-4).map(([, z]) => z));
+    expect(top - wall).toBeCloseTo(edge === 'sharp' ? 0.01 : 0.3, 3);
+    // A rounded edge is a quarter circle; a chamfer cuts straight across.
+    const middle = points.filter(([r, z]) => r > flat + 0.05 && z > wall + 0.05);
+    if (edge === 'rounded') {
+      expect(middle.length).toBeGreaterThan(0);
+      for (const [r, z] of middle) expect(Math.hypot(r - flat, z - wall)).toBeCloseTo(0.3, 3);
+    } else expect(middle).toHaveLength(0);
+    model.dispose();
+    lib.dispose();
+  },
+);
