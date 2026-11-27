@@ -8,9 +8,10 @@ const payload = (page: Page) => linkPayload(page.url());
 async function row(page: Page, id: string) {
   const grid = page.getByRole('grid');
   await grid.focus();
+  // Up to the first row, Size (the catalogue keeps it first), then down to the target.
   for (let i = 0; i < 6; i++) {
     const active = await grid.getAttribute('aria-activedescendant');
-    if (active?.startsWith('cell-case-shape-')) break;
+    if (active?.startsWith('cell-case-size-')) break;
     await page.keyboard.press('PageUp');
     await expect(grid).not.toHaveAttribute('aria-activedescendant', active!);
   }
