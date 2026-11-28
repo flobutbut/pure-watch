@@ -43,7 +43,16 @@ export interface DialPrintOptions {
 
 import { fontAttributes, fontDef } from './fonts';
 import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
-import { chapterMarkDetails, type ChapterRingDetails } from '../core/config/details';
+import {
+  chapterMarkDetails,
+  type ChapterMarkGroup,
+  type ChapterRingDetails,
+} from '../core/config/details';
+import {
+  CHAPTER_DOT_POSITION,
+  CHAPTER_TICK_EDGE,
+  chapterTickStart,
+} from '../core/config/chapter-ring';
 import { numeralHours, type HourMarkers } from '../core/config/numerals';
 export { numeralHours } from '../core/config/numerals';
 
@@ -68,71 +77,96 @@ function chapterRingMarkup(
   settings?: DialPrintOptions['chapterRingDetails'],
   ink?: string,
 ): string {
+  if (style === 'none') return '';
   const width = settings?.lineWidth ?? 1;
-  const length = settings?.length ?? 1;
   const minor = chapterMarkDetails(settings, 'minor');
   const major = chapterMarkDetails(settings, 'major');
-  const position = settings?.radius ?? 1;
+  const legacyPosition = settings?.radius ?? 1;
+  const position = settings?.position ?? CHAPTER_TICK_EDGE * legacyPosition;
   const accent = settings?.accent && settings.accent !== 'auto' ? settings.accent : ink;
   const accentAt = (minute: number) =>
     settings?.accentAt === 'quarters'
       ? minute % 15 === 0
       : settings?.accentAt === 'zero' && minute === 0;
-  const radius = (minute: number, fraction: number) =>
-    (radiusAt
-      ? radiusAt(Math.PI / 2 - (minute / 60) * Math.PI * 2) * 0.985 - R * (0.985 - fraction)
-      : R * fraction) * position;
-  const mark = (r0: number, r1: number, minute: number, weight: number) => {
-    const dimensions = minute % 5 === 0 ? major : minor;
+  const edge = (minute: number) => radiusAt?.(Math.PI / 2 - (minute / 60) * Math.PI * 2) ?? R;
+  const outer = (minute: number) => edge(minute) * position;
+  const inner = (minute: number, group: ChapterMarkGroup, length = 1, span?: number) => {
+    if (span !== undefined) return outer(minute) * (1 - span);
+    const depth = (CHAPTER_TICK_EDGE - chapterTickStart(style, group)) * R * length;
+    return Math.max(0, outer(minute) - (depth * position) / CHAPTER_TICK_EDGE);
+  };
+  const mark = (minute: number, weight: number) => {
+    const group = minute % 5 === 0 ? 'major' : 'minor';
+    const dimensions = group === 'major' ? major : minor;
     return tick(
-      radius(minute, r1 - (r1 - r0) * (dimensions.length ?? 1)),
-      radius(minute, r1),
+      inner(minute, group, dimensions.length, dimensions.span),
+      outer(minute),
       minute,
       weight * (dimensions.lineWidth ?? 1),
       accentAt(minute) ? accent : undefined,
     );
   };
-  const track = (fraction: number) => {
-    if (!radiusAt)
-      return `<circle r="${f(R * fraction * position)}" fill="none" stroke-width="${f(R * 0.006 * width)}"/>`;
-    const path =
-      Array.from({ length: 240 }, (_, i) => {
-        const m = (i / 240) * 60;
-        const [x, y] = polar(radius(m, fraction), m);
-        return `${i === 0 ? 'M' : 'L'}${f(x)} ${f(y)}`;
-      }).join('') + 'Z';
-    return `<path d="${path}" fill="none" stroke-width="${f(R * 0.006 * width)}"/>`;
-  };
+  const contour = (radius: (minute: number) => number, attrs = '') =>
+    radiusAt
+      ? `<path d="${Array.from({ length: 240 }, (_, i) => {
+          const minute = i / 4;
+          const [x, y] = polar(radius(minute), minute);
+          return `${i === 0 ? 'M' : 'L'}${f(x)} ${f(y)}`;
+        }).join('')}Z"${attrs}/>`
+      : `<circle r="${f(radius(0))}"${attrs}/>`;
+  const rail = (radius: (minute: number) => number) =>
+    contour(radius, ` fill="none" stroke-width="${f(R * 0.006 * width)}"`);
   const parts: string[] = [];
   switch (style) {
     case 'railroad':
-      parts.push(track(0.985), track(0.985 - (0.985 - 0.93) * length));
+      parts.push(
+        rail(outer),
+        // Le rail intérieur rejoint les graduations les plus courtes dès que leur longueur est éditée.
+        rail((minute) =>
+          minor.span === undefined && major.span === undefined
+            ? inner(minute, 'minor', settings?.length)
+            : Math.max(
+                inner(minute, 'minor', minor.length, minor.span),
+                inner(minute, 'major', major.length, major.span),
+              ),
+        ),
+      );
       for (let m = 0; m < 60; m++) {
-        parts.push(mark(0.93, 0.985, m, m % 5 === 0 ? R * 0.014 : R * 0.006));
+        parts.push(mark(m, m % 5 === 0 ? R * 0.014 : R * 0.006));
       }
       break;
     case 'ticks':
       for (let m = 0; m < 60; m++) {
-        parts.push(mark(m % 5 === 0 ? 0.9 : 0.94, 0.985, m, m % 5 === 0 ? R * 0.016 : R * 0.007));
+        parts.push(mark(m, m % 5 === 0 ? R * 0.016 : R * 0.007));
       }
       break;
     case 'dots':
       for (let m = 0; m < 60; m++) {
-        const [x, y] = polar(radius(m, 0.955), m);
         const large = m % 5 === 0;
         const dots = (large ? major : minor).dotSize ?? dotSize;
+        const dotRadius = R * (large ? 0.016 : 0.007) * dots;
+        const limit = edge(m);
+        const radius =
+          settings?.position === undefined
+            ? (limit * CHAPTER_TICK_EDGE - R * (CHAPTER_TICK_EDGE - CHAPTER_DOT_POSITION)) *
+              legacyPosition
+            : Math.min(limit * position, Math.max(0, limit - dotRadius - dots / 2));
+        const [x, y] = polar(radius, m);
         parts.push(
-          `<circle cx="${f(x)}" cy="${f(y)}" r="${f(R * (large ? 0.016 : 0.007) * dots)}" stroke-width="${f(dots)}"${accentAt(m) && accent ? ` stroke="${accent}" fill="${accent}"` : ''}/>`,
+          `<circle cx="${f(x)}" cy="${f(y)}" r="${f(dotRadius)}" stroke-width="${f(dots)}"${accentAt(m) && accent ? ` stroke="${accent}" fill="${accent}"` : ''}/>`,
         );
       }
       break;
     case 'five-minute':
-      for (let m = 0; m < 60; m += 5) parts.push(mark(0.91, 0.985, m, R * 0.014));
+      for (let m = 0; m < 60; m += 5) parts.push(mark(m, R * 0.014));
       break;
     default:
       break;
   }
-  return parts.join('');
+  const marks = parts.join('');
+  if (settings?.position === undefined || !marks) return marks;
+  // The actual contour trims the ink at the rehaut even for thick strokes.
+  return `<defs><clipPath id="minute-track-edge">${contour(edge, ' fill="white" stroke="none"')}</clipPath></defs><g clip-path="url(#minute-track-edge)">${marks}</g>`;
 }
 
 const ROMAN = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];

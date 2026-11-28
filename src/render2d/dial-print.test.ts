@@ -280,3 +280,39 @@ it('dimensionne séparément les deux tailles de points en gardant la taille com
   expect(onlyMajor[0]).toBe(changed[0]);
   expect(onlyMajor[1]).toBe(original[1]);
 });
+
+it.each(['railroad', 'ticks', 'five-minute'])(
+  'étend les grandes graduations de la piste %s du réhaut au centre',
+  (chapterRing) => {
+    const radiusAt = (angle: number) => 10 + 2 * Math.cos(2 * angle);
+    const svg = dialPrintSvg({
+      ...base,
+      chapterRing,
+      extent: 12,
+      radiusAt,
+      chapterRingDetails: { position: 1, major: { span: 1 }, minor: { span: 0.25 } },
+    });
+    const ticks = [
+      ...svg.matchAll(/<line x1="([\d.-]+)" y1="([\d.-]+)" x2="([\d.-]+)" y2="([\d.-]+)"/g),
+    ];
+    expect(ticks[0]!.slice(1).map(Number)).toEqual([0, 0, 0, -8]);
+    const [, x0, y0, x1, y1] = ticks[1]!.map(Number);
+    expect(Math.hypot(x0!, y0!)).toBeCloseTo(
+      chapterRing === 'five-minute' ? 0 : 0.75 * Math.hypot(x1!, y1!),
+      3,
+    );
+    expect(svg).toContain('clip-path="url(#minute-track-edge)"');
+  },
+);
+
+it('place les points au centre ou au réhaut en gardant leur contour dans le cadran', () => {
+  const options = { ...base, chapterRing: 'dots' };
+  const firstDot = (position: number) =>
+    dialPrintSvg({ ...options, chapterRingDetails: { position } })
+      .match(/<circle cx="([\d.-]+)" cy="([\d.-]+)" r="([\d.]+)" stroke-width="([\d.]+)"/)!
+      .slice(1)
+      .map(Number);
+  expect(firstDot(0).slice(0, 2)).toEqual([0, 0]);
+  const [, y, radius, stroke] = firstDot(1);
+  expect(-y! + radius! + stroke! / 2).toBeCloseTo(10, 3);
+});

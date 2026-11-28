@@ -4,13 +4,13 @@
     chapterMarkDetails,
     chapterMarkGroups,
     CHAPTER_DOT_SIZE_RANGE,
-    CHAPTER_TICK_LENGTH_RANGE,
     CHAPTER_TICK_WIDTH_RANGE,
     type ChapterMarkDetails,
     type ChapterMarkGroup,
     type ChapterRingDetails,
     type WatchDetails,
   } from '../../core/config/details';
+  import { chapterMarkSpan, chapterTrackPosition } from '../../core/config/chapter-ring';
   import type { RowDef } from '../../core/catalog/types';
   import { chapterRingColor } from '../../core/config/dial';
   import { normalizeHex } from '../../core/config/colors';
@@ -19,6 +19,7 @@
   import ChoiceCarousel from '../kit/ChoiceCarousel.svelte';
   import SegmentedControl from '../kit/SegmentedControl.svelte';
   import DetailRange from './DetailRange.svelte';
+  import RangeField from '../kit/RangeField.svelte';
   import ColorField, { CUSTOM } from './ColorField.svelte';
   import DetailSettings from './DetailSettings.svelte';
   import ScalePreview from './ScalePreview.svelte';
@@ -45,6 +46,10 @@
   const style = $derived(rehaut ? config.rehaut.scale : config.dial.chapterRing);
   const details = $derived(config.details ?? {});
   const track = $derived(details.chapterRing ?? {});
+  const position = $derived(chapterTrackPosition(style, track));
+  const percentage = $derived(
+    new Intl.NumberFormat(i18n.locale, { style: 'percent', maximumFractionDigits: 1 }),
+  );
   function patch(patch: Partial<ChapterRingDetails>) {
     onchange(style, { ...details, chapterRing: { ...track, ...patch } });
   }
@@ -82,6 +87,7 @@
     {#each chapterMarkGroups(style) as group (group)}
       {@const labels = m.marks[group]}
       {@const mark = chapterMarkDetails(track, group)}
+      {@const span = chapterMarkSpan(style, group, mark)}
       <fieldset class="mark-settings">
         <legend>{labels.name}</legend>
         {#if style === 'dots'}
@@ -93,12 +99,16 @@
             onchange={(dotSize) => patchMark(group, { dotSize })}
           />
         {:else}
-          <DetailRange
+          <RangeField
             label={m.markLength}
             ariaLabel={labels.length}
-            value={mark.length ?? 1}
-            {...CHAPTER_TICK_LENGTH_RANGE}
-            onchange={(length) => patchMark(group, { length })}
+            value={span}
+            display={percentage.format(span)}
+            min={0}
+            max={1}
+            step={0.001}
+            compact
+            onchange={(span) => patchMark(group, { span })}
           />
           <DetailRange
             label={m.markWidth}
@@ -110,12 +120,16 @@
         {/if}
       </fieldset>
     {/each}
-    <DetailRange
+    <RangeField
       label={m.radius}
-      value={track.radius ?? 1}
-      min={0.6}
+      value={position}
+      display={percentage.format(position)}
+      min={0}
       max={1}
-      onchange={(radius) => patch({ radius })}
+      step={0.001}
+      hint={m.positionHint}
+      compact
+      onchange={(position) => patch({ position })}
     />
     <div>
       <p class="section-label">{m.accents}</p>
