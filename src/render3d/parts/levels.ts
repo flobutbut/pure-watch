@@ -138,7 +138,7 @@ export function shapeLathe(
 
 /**
  * Coordonnées de texture métriques pour une pièce tournée : u suit le tour (en mm), v la
- * hauteur et le rayon. Les textures (carbone, patine) gardent leurs proportions et le
+ * hauteur et le rayon. Le carbone forgé garde ses proportions et le
  * brossage reste circulaire (u croît toujours dans le sens du tour).
  */
 export function metricLatheUV(geometry: THREE.BufferGeometry, radius: number): void {

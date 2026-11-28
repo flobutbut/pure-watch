@@ -4,6 +4,7 @@
  * rayons (documentation/studio-render/README.md).
  */
 import * as THREE from 'three';
+import { bakePatinaColors } from '../../render3d/patina';
 
 /**
  * Le studio procédural en panorama HDR (équirectangulaire, demi-flottants) : le lanceur de
@@ -69,10 +70,13 @@ export function studioEquirect(
   return texture;
 }
 
-/** Les trois adaptations de la montre, dans l'ordre. */
+/** Adaptations sur la copie de la montre destinée au lancer de rayons. */
 export function prepareForPathTracer(root: THREE.Object3D): void {
   thinGlass(root);
   singleMaterialGroups(root);
+  root.traverse((object) => {
+    if (object instanceof THREE.Mesh) bakePatinaColors(object);
+  });
   rgbaVertexColors(root);
 }
 
