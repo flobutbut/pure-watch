@@ -2,7 +2,12 @@ import { smallSeconds } from '../../core/config/small-seconds';
 import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
 import type { WatchConfig } from '../../core/config/types';
-import { dialSurface, indexAt } from '../../core/config/details';
+import {
+  chapterMarkDetails,
+  chapterMarkGroups,
+  dialSurface,
+  indexAt,
+} from '../../core/config/details';
 import { indexColor } from '../../core/config/colors';
 import { hasIntrinsicColor } from '../../core/config/dial';
 import { isDialPatternFinish } from '../../render3d/dial-patterns';
@@ -27,28 +32,20 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
         ...(value === 'auto' ? {} : { swatch: value }),
       });
   };
-  if (
-    row === 'chapter-ring' &&
-    config.dial.chapterRing === 'dots' &&
-    d.chapterRing?.dotSize !== undefined
-  ) {
-    traits.push({
-      label: locale === 'fr' ? 'Taille des points' : 'Dot size',
-      value: percent(d.chapterRing.dotSize),
-    });
-  }
   if (row === 'chapter-ring' && config.dial.chapterRing !== 'none' && d.chapterRing) {
     const labels = SCALE_LABELS[locale];
-    for (const [key, label] of [
-      ['length', labels.length],
-      ['lineWidth', labels.width],
-      ['radius', labels.radius],
-    ] as const)
-      if (
-        d.chapterRing[key] !== undefined &&
-        (config.dial.chapterRing !== 'dots' || key === 'radius')
-      )
-        traits.push({ label, value: percent(d.chapterRing[key]!) });
+    const style = config.dial.chapterRing;
+    const keys = style === 'dots' ? (['dotSize'] as const) : (['length', 'lineWidth'] as const);
+    for (const group of chapterMarkGroups(style)) {
+      const mark = chapterMarkDetails(d.chapterRing, group);
+      for (const key of keys) {
+        const value = mark[key];
+        if (value !== undefined)
+          traits.push({ label: labels.marks[group][key], value: percent(value) });
+      }
+    }
+    if (d.chapterRing.radius !== undefined)
+      traits.push({ label: labels.radius, value: percent(d.chapterRing.radius) });
     if (d.chapterRing.accentAt && d.chapterRing.accentAt !== 'none') {
       traits.push({
         label: labels.accents,

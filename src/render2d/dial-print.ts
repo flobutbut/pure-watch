@@ -13,9 +13,9 @@ export interface DialPrintOptions {
   ink: string;
   /** Couleur de la piste des minutes (par défaut : l'encre). */
   chapterRingInk?: string;
-  /** Scale of minute dots, preserving the relative size of five-minute marks. */
+  /** Shared dot size used when the track details do not specify one. */
   chapterRingDotSize?: number;
-  chapterRingDetails?: import('../core/config/details').WatchDetails['chapterRing'];
+  chapterRingDetails?: ChapterRingDetails;
   /** Jeu de chiffres (voir numeralHours) et famille typographique. */
   numerals?: string;
   hourMarkers?: import('../core/config/numerals').HourMarkers;
@@ -43,6 +43,7 @@ export interface DialPrintOptions {
 
 import { fontAttributes, fontDef } from './fonts';
 import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
+import { chapterMarkDetails, type ChapterRingDetails } from '../core/config/details';
 import { numeralHours, type HourMarkers } from '../core/config/numerals';
 export { numeralHours } from '../core/config/numerals';
 
@@ -68,8 +69,9 @@ function chapterRingMarkup(
   ink?: string,
 ): string {
   const width = settings?.lineWidth ?? 1;
-  const dots = settings?.dotSize ?? dotSize;
   const length = settings?.length ?? 1;
+  const minor = chapterMarkDetails(settings, 'minor');
+  const major = chapterMarkDetails(settings, 'major');
   const position = settings?.radius ?? 1;
   const accent = settings?.accent && settings.accent !== 'auto' ? settings.accent : ink;
   const accentAt = (minute: number) =>
@@ -80,14 +82,16 @@ function chapterRingMarkup(
     (radiusAt
       ? radiusAt(Math.PI / 2 - (minute / 60) * Math.PI * 2) * 0.985 - R * (0.985 - fraction)
       : R * fraction) * position;
-  const mark = (r0: number, r1: number, minute: number, width: number) =>
-    tick(
-      radius(minute, r1 - (r1 - r0) * length),
+  const mark = (r0: number, r1: number, minute: number, weight: number) => {
+    const dimensions = minute % 5 === 0 ? major : minor;
+    return tick(
+      radius(minute, r1 - (r1 - r0) * (dimensions.length ?? 1)),
       radius(minute, r1),
       minute,
-      width * (settings?.lineWidth ?? 1),
+      weight * (dimensions.lineWidth ?? 1),
       accentAt(minute) ? accent : undefined,
     );
+  };
   const track = (fraction: number) => {
     if (!radiusAt)
       return `<circle r="${f(R * fraction * position)}" fill="none" stroke-width="${f(R * 0.006 * width)}"/>`;
@@ -115,8 +119,10 @@ function chapterRingMarkup(
     case 'dots':
       for (let m = 0; m < 60; m++) {
         const [x, y] = polar(radius(m, 0.955), m);
+        const large = m % 5 === 0;
+        const dots = (large ? major : minor).dotSize ?? dotSize;
         parts.push(
-          `<circle cx="${f(x)}" cy="${f(y)}" r="${f((m % 5 === 0 ? R * 0.016 : R * 0.007) * dots)}" stroke-width="${f(dots)}"${accentAt(m) && accent ? ` stroke="${accent}" fill="${accent}"` : ''}/>`,
+          `<circle cx="${f(x)}" cy="${f(y)}" r="${f(R * (large ? 0.016 : 0.007) * dots)}" stroke-width="${f(dots)}"${accentAt(m) && accent ? ` stroke="${accent}" fill="${accent}"` : ''}/>`,
         );
       }
       break;

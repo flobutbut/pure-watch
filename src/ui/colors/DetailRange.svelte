@@ -2,6 +2,7 @@
   import RangeField from '../kit/RangeField.svelte';
   let {
     label,
+    ariaLabel,
     value,
     min,
     max,
@@ -9,6 +10,7 @@
     onchange,
   }: {
     label: string;
+    ariaLabel?: string;
     value: number;
     min: number;
     max: number;
@@ -17,4 +19,4 @@
   } = $props();
 </script>
 
-<RangeField {label} {value} {min} {max} {step} {onchange} compact />
+<RangeField {label} {ariaLabel} {value} {min} {max} {step} {onchange} compact />

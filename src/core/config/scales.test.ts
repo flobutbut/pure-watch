@@ -26,6 +26,8 @@ it('règle le style, la géométrie et les accents de minuterie sans modifier le
       chapterRing: {
         lineWidth: 1.4,
         length: 1.3,
+        minor: { length: 0.7, dotSize: 0.5 },
+        major: { lineWidth: 1.8, dotSize: 1.2 },
         radius: 0.85,
         accentAt: 'quarters',
         accent: '#D7262E',
@@ -72,6 +74,8 @@ it('valide les bornes des réglages sans modifier les anciennes données', () =>
   for (const value of [
     { chapterRing: { radius: 1.5 } },
     { chapterRing: { lineWidth: 0 } },
+    { chapterRing: { minor: { length: 2 } } },
+    { chapterRing: { major: { dotSize: 0 } } },
     { chapterRing: { accentAt: 'hours' } },
     { rehaut: { tickLength: 3 } },
   ])

@@ -5,7 +5,22 @@ const fr = {
   hidden:
     'Aucune graduation pour le moment. Les réglages sont conservés pour le prochain style choisi.',
   length: 'Longueur des traits',
-  width: 'Épaisseur des traits',
+  markLength: 'Longueur',
+  markWidth: 'Épaisseur',
+  marks: {
+    minor: {
+      name: 'Petites graduations',
+      length: 'Longueur des petites graduations',
+      lineWidth: 'Épaisseur des petites graduations',
+      dotSize: 'Taille des petits points',
+    },
+    major: {
+      name: 'Grandes graduations',
+      length: 'Longueur des grandes graduations',
+      lineWidth: 'Épaisseur des grandes graduations',
+      dotSize: 'Taille des grands points',
+    },
+  },
   radius: 'Position de la piste',
   accents: 'Repères accentués',
   none: 'Aucun',
@@ -22,7 +37,22 @@ export const SCALE_LABELS: Record<'fr' | 'en', typeof fr> = {
     next: 'Next',
     hidden: 'There are no graduations yet. These settings are kept for the next style you choose.',
     length: 'Tick length',
-    width: 'Line weight',
+    markLength: 'Length',
+    markWidth: 'Weight',
+    marks: {
+      minor: {
+        name: 'Minute marks',
+        length: 'Minute mark length',
+        lineWidth: 'Minute mark weight',
+        dotSize: 'Minute dot size',
+      },
+      major: {
+        name: 'Five-minute marks',
+        length: 'Five-minute mark length',
+        lineWidth: 'Five-minute mark weight',
+        dotSize: 'Five-minute dot size',
+      },
+    },
     radius: 'Track position',
     accents: 'Accented markers',
     none: 'None',

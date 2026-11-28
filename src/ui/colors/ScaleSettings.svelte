@@ -1,7 +1,16 @@
 <script lang="ts">
   import type { WatchConfig } from '../../core/config/types';
-  import type { WatchDetails } from '../../core/config/details';
-  import { CHAPTER_DOT_SIZE_RANGE } from '../../core/config/details';
+  import {
+    chapterMarkDetails,
+    chapterMarkGroups,
+    CHAPTER_DOT_SIZE_RANGE,
+    CHAPTER_TICK_LENGTH_RANGE,
+    CHAPTER_TICK_WIDTH_RANGE,
+    type ChapterMarkDetails,
+    type ChapterMarkGroup,
+    type ChapterRingDetails,
+    type WatchDetails,
+  } from '../../core/config/details';
   import type { RowDef } from '../../core/catalog/types';
   import { chapterRingColor } from '../../core/config/dial';
   import { normalizeHex } from '../../core/config/colors';
@@ -36,8 +45,11 @@
   const style = $derived(rehaut ? config.rehaut.scale : config.dial.chapterRing);
   const details = $derived(config.details ?? {});
   const track = $derived(details.chapterRing ?? {});
-  function patch(patch: Partial<NonNullable<WatchDetails['chapterRing']>>) {
+  function patch(patch: Partial<ChapterRingDetails>) {
     onchange(style, { ...details, chapterRing: { ...track, ...patch } });
+  }
+  function patchMark(group: ChapterMarkGroup, mark: ChapterMarkDetails) {
+    patch({ [group]: { ...track[group], ...mark } });
   }
 </script>
 
@@ -67,30 +79,37 @@
       onchange={(details) => onchange(style, details)}
     />
   {:else}
-    {#if style === 'dots'}
-      <DetailRange
-        label={t().colors.dotSize}
-        value={track.dotSize ?? 1}
-        min={CHAPTER_DOT_SIZE_RANGE.min}
-        max={CHAPTER_DOT_SIZE_RANGE.max}
-        onchange={(dotSize) => patch({ dotSize })}
-      />
-    {:else}
-      <DetailRange
-        label={m.length}
-        value={track.length ?? 1}
-        min={0.5}
-        max={1.6}
-        onchange={(length) => patch({ length })}
-      />
-      <DetailRange
-        label={m.width}
-        value={track.lineWidth ?? 1}
-        min={0.5}
-        max={2}
-        onchange={(lineWidth) => patch({ lineWidth })}
-      />
-    {/if}
+    {#each chapterMarkGroups(style) as group (group)}
+      {@const labels = m.marks[group]}
+      {@const mark = chapterMarkDetails(track, group)}
+      <fieldset class="mark-settings">
+        <legend>{labels.name}</legend>
+        {#if style === 'dots'}
+          <DetailRange
+            label={t().colors.dotSize}
+            ariaLabel={labels.dotSize}
+            value={mark.dotSize ?? 1}
+            {...CHAPTER_DOT_SIZE_RANGE}
+            onchange={(dotSize) => patchMark(group, { dotSize })}
+          />
+        {:else}
+          <DetailRange
+            label={m.markLength}
+            ariaLabel={labels.length}
+            value={mark.length ?? 1}
+            {...CHAPTER_TICK_LENGTH_RANGE}
+            onchange={(length) => patchMark(group, { length })}
+          />
+          <DetailRange
+            label={m.markWidth}
+            ariaLabel={labels.lineWidth}
+            value={mark.lineWidth ?? 1}
+            {...CHAPTER_TICK_WIDTH_RANGE}
+            onchange={(lineWidth) => patchMark(group, { lineWidth })}
+          />
+        {/if}
+      </fieldset>
+    {/each}
     <DetailRange
       label={m.radius}
       value={track.radius ?? 1}
@@ -146,6 +165,20 @@
     color: var(--ink-soft);
     font-size: var(--text-s);
     line-height: 1.5;
+  }
+  .mark-settings {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .mark-settings legend {
+    margin-bottom: 8px;
+    padding: 0;
+    font-size: var(--text-m);
+    font-weight: 600;
   }
   .section-label {
     margin: 0 0 10px;
