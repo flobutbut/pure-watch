@@ -19,6 +19,7 @@ const hex = z
   .transform((value) => value as HexColor);
 const ink = z.union([hex, z.literal('auto')]);
 const factor = (min: number, max: number) => z.number().finite().min(min).max(max);
+const hourKey = z.string().regex(/^(?:[1-9]|1[0-2])$/);
 export const CHAPTER_DOT_SIZE_RANGE = { min: 0.05, max: 2.5 } as const;
 export const CHAPTER_TICK_LENGTH_RANGE = { min: 0.5, max: 1.6 } as const;
 export const CHAPTER_TICK_WIDTH_RANGE = { min: 0.5, max: 2 } as const;
@@ -129,7 +130,7 @@ export const detailsSchema = z
       .optional(),
     indices: z
       .record(
-        z.string().regex(/^(?:[1-9]|1[0-2])$/),
+        hourKey,
         z
           .object({
             style: z.enum(INDEX_DESIGNS).optional(),
@@ -152,10 +153,10 @@ export const detailsSchema = z
           .strict(),
       )
       .optional(),
+    /** Heure par heure, indépendamment de la disposition et de la finition. */
+    doubleIndices: z.record(hourKey, z.literal(true)).optional(),
     /** Explicit marker kinds, independent of the retained per-index appearance. */
-    hourMarkers: z
-      .record(z.string().regex(/^(?:[1-9]|1[0-2])$/), z.enum(['numeral', 'index', 'none']))
-      .optional(),
+    hourMarkers: z.record(hourKey, z.enum(['numeral', 'index', 'none'])).optional(),
     /** Matière des chiffres des heures (encre, métal, luminescent) ; absente : encre mate. */
     numerals: materialSchema.optional(),
     // `null` : la ligne « Anneau » sur « Sans anneau » (cleanDetails l'efface ensuite).

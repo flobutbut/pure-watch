@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { WatchConfig } from '../../core/config/types';
   import type { WatchDetails } from '../../core/config/details';
-  import { numeralHours, numeralSystem } from '../../core/config/numerals';
+  import { indexHours, numeralHours, numeralSystem } from '../../core/config/numerals';
   import { complicationHours } from '../../core/config/complications';
   import {
     colorChoice,
@@ -46,7 +46,9 @@
   let tab = $state('');
   const m = $derived(MARKER_LABELS[i18n.locale]);
   const indices = $derived(config.dial.indices);
-  const actualTab = $derived(tab || (indices.numerals === 'none' ? 'indices' : 'numerals'));
+  const actualTab = $derived(
+    tab || (['none', 'empty'].includes(indices.numerals) ? 'indices' : 'numerals'),
+  );
   const details = $derived(config.details ?? {});
   const fonts = $derived(settingsRows.find((r) => r.id === 'numeral-font')!);
   const shapes = $derived(settingsRows.find((r) => r.id === 'indices')!);
@@ -54,12 +56,19 @@
   const numeralHoursShown = $derived(
     numeralHours(indices.numerals, details.hourMarkers).filter((h) => !blocked.includes(h)),
   );
+  const hasIndices = $derived(indexHours(config).some((h) => !blocked.includes(h)));
   function patch(patch: Partial<WatchConfig['dial']['indices']>) {
     onchange({ ...indices, ...patch }, details);
   }
   function edit(target: 'numerals' | 'indices', patch: Partial<ColorChoice>) {
     const next = withColorChoice(config, target, { ...colorChoice(config, target), ...patch });
     onchange(next.dial.indices, next.details ?? {});
+  }
+  function setDouble(hour: number, double: boolean) {
+    const doubleIndices = { ...details.doubleIndices };
+    if (double) doubleIndices[String(hour)] = true;
+    else delete doubleIndices[String(hour)];
+    onchange(indices, { ...details, doubleIndices });
   }
 </script>
 
@@ -142,7 +151,7 @@
       {/snippet}
     </MaterialField>
   {:else}
-    {#if numeralHoursShown.length === 12}<p class="hint">{m.noIndices}</p>{/if}
+    {#if !hasIndices}<p class="hint">{m.noIndices}</p>{/if}
     <ChoiceCarousel
       value={indices.style}
       label={m.shape}
@@ -212,6 +221,7 @@
     onchange={(value) => onchange(indices, { ...details, indices: value })}
     markers={details.hourMarkers ?? {}}
     onmarkers={(hourMarkers) => onchange(indices, { ...details, hourMarkers })}
+    ondouble={setDouble}
   />
 </div>
 

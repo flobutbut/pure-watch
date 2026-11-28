@@ -7,7 +7,12 @@
     type IndexOverride,
   } from '../../core/config/details';
   import { INDEX_FINISHES } from '../../core/config/colors';
-  import { hourMarkerAt, type HourMarkers, type HourMarker } from '../../core/config/numerals';
+  import {
+    hourMarkerAt,
+    isDoubleIndex,
+    type HourMarkers,
+    type HourMarker,
+  } from '../../core/config/numerals';
   import { MARKER_LABELS } from './marker-labels';
   import { complicationHours } from '../../core/config/complications';
   import { i18n } from '../i18n.svelte';
@@ -24,6 +29,7 @@
     onchange,
     markers = {},
     onmarkers,
+    ondouble,
   }: {
     config: WatchConfig;
     presets: { name: string; color: string }[];
@@ -32,6 +38,7 @@
     onchange: (value: NonNullable<WatchDetails['indices']>) => void;
     markers?: HourMarkers;
     onmarkers?: (value: HourMarkers) => void;
+    ondouble?: (hour: number, double: boolean) => void;
   } = $props();
   const m = $derived(DETAIL_SETTINGS[i18n.locale]);
   const labels = $derived(MARKER_LABELS[i18n.locale]);
@@ -82,17 +89,26 @@
             { ...config, details: { ...config.details, hourMarkers: markers } },
             h % 12,
           )}
+          {@const double = marker === 'index' && isDoubleIndex(config, h % 12)}
+          {@const name =
+            marker === 'numeral'
+              ? labels.numeral
+              : marker === 'none'
+                ? labels.none
+                : double
+                  ? labels.doubleIndex
+                  : labels.index}
           <button
             type="button"
-            class:custom={markers[String(h)] || value[String(h)]}
+            class:custom={markers[String(h)] || value[String(h)] || double}
             aria-pressed={hour === h}
-            aria-label={`${h} h · ${marker === 'numeral' ? labels.numeral : marker === 'index' ? labels.index : labels.none}`}
+            aria-label={`${h} h · ${name}`}
             style:left={`${50 + 41 * Math.sin((h / 6) * Math.PI)}%`}
             style:top={`${50 - 41 * Math.cos((h / 6) * Math.PI)}%`}
             onclick={() => (hour = h)}
           >
             <span>{h}</span><span class="kind" aria-hidden="true">
-              {marker === 'numeral' ? '12' : marker === 'index' ? '│' : '–'}
+              {marker === 'numeral' ? '12' : marker === 'none' ? '–' : double ? 'Ⅱ' : '│'}
             </span>
           </button>
         {/each}
@@ -127,6 +143,20 @@
         }))}
         onchange={(value) => (hour = Number(value))}
       />
+    {/if}
+    {#if kind === 'index' && ondouble}
+      <div class="index-count">
+        <p>{labels.indexCount}</p>
+        <SegmentedControl
+          label={labels.indexCount}
+          value={isDoubleIndex(config, hour % 12) ? 'double' : 'single'}
+          options={[
+            { value: 'single', label: labels.single },
+            { value: 'double', label: labels.double },
+          ]}
+          onchange={(value) => ondouble(hour, value === 'double')}
+        />
+      </div>
     {/if}
     {#if kind === 'index' || !onmarkers}
       <SegmentedControl
@@ -273,6 +303,10 @@
   }
   .selected {
     text-align: center;
+  }
+  .index-count {
+    display: grid;
+    gap: 7px;
   }
   .follow {
     background: none;

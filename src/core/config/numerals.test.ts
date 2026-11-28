@@ -7,7 +7,7 @@ import { colorChoice, withColorChoice } from './colors';
 import { defaultConfig } from './defaults';
 import { decodeConfigHash, encodeConfigHash } from './url';
 
-import { hourMarkerAt, numeralHours } from './numerals';
+import { hourMarkerAt, indexHours, isDoubleIndex, numeralHours } from './numerals';
 import { detailsSchema } from './details';
 
 const catalog = parseCatalog(rawCatalog);
@@ -110,6 +110,29 @@ it('les exceptions choisissent chiffre, index ou rien et se retrouvent dans les 
 it('refuse les heures et types de repères invalides dans les liens', () => {
   for (const hourMarkers of [{ '0': 'index' }, { '13': 'numeral' }, { '1': 'baton' }])
     expect(detailsSchema.safeParse({ hourMarkers }).success).toBe(false);
+  for (const doubleIndices of [{ '0': true }, { '13': true }, { '1': false }])
+    expect(detailsSchema.safeParse({ doubleIndices }).success).toBe(false);
+});
+
+it('choisit une disposition vide et mémorise les index doubles indépendamment de la disposition', () => {
+  const config = defaultConfig();
+  expect(isDoubleIndex(config, 0)).toBe(false);
+  config.details = { doubleIndices: { '5': true, '12': true } };
+  const row = catalog.rows.find((r) => r.id === 'numerals')!;
+  const empty = applyVariant(
+    config,
+    row,
+    row.variants.findIndex((v) => v.id === 'empty'),
+  );
+  expect(indexHours(empty)).toEqual([]);
+  expect(numeralHours(empty.dial.indices.numerals)).toEqual([]);
+  expect(empty.details?.doubleIndices).toEqual(config.details.doubleIndices);
+  expect(decodeConfigHash(encodeConfigHash(empty), catalog)).toEqual({ config: empty, notice: '' });
+  expect(decodeConfigHash(hash({ D: 9 }), catalog).config.dial.indices.numerals).toBe('empty');
+  empty.details = { ...empty.details, hourMarkers: { '5': 'index', '12': 'numeral' } };
+  expect(indexHours(empty)).toEqual([5]);
+  expect(numeralHours('empty', empty.details.hourMarkers)).toEqual([0]);
+  expect(isDoubleIndex(empty, 5)).toBe(true);
 });
 
 it('enregistre tout le panneau sans changer les autres pièces et rétablit exactement l’état initial', () => {

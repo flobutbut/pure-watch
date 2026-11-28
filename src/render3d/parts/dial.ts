@@ -5,7 +5,7 @@ import { dialRadiusAt } from '../../core/geometry/dial-shape';
 import { shapeRadius } from '../../core/geometry/case-shape';
 import { shapeAperture } from './levels';
 import { chapterRingColor, effectiveDialColor, numeralColor } from '../../core/config/dial';
-import { hourMarkerAt, numeralSystem } from '../../core/config/numerals';
+import { hourMarkerAt, isDoubleIndex, numeralSystem } from '../../core/config/numerals';
 import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
 import type { WatchDimensions } from '../../core/geometry/dimensions';
@@ -276,7 +276,6 @@ export function buildDial(
 interface IndexDesign {
   geometry: () => THREE.BufferGeometry;
   radius: number;
-  twin?: number;
   big?: number;
 }
 
@@ -308,7 +307,7 @@ function indexDesign(style: string, R: number): IndexDesign | null {
   const k = R / 20;
   switch (style) {
     case 'baton':
-      return { geometry: () => bar(R * 0.15, R * 0.045, 0.32), radius: R * 0.8, twin: R * 0.04 };
+      return { geometry: () => bar(R * 0.15, R * 0.045, 0.32), radius: R * 0.8 };
     case 'baton-facet': {
       const L = R * 0.16;
       const W = R * 0.055;
@@ -323,7 +322,6 @@ function indexDesign(style: string, R: number): IndexDesign | null {
             0.16 * k,
           ),
         radius: R * 0.8,
-        twin: R * 0.05,
       };
     }
     case 'dauphine': {
@@ -341,7 +339,6 @@ function indexDesign(style: string, R: number): IndexDesign | null {
             0.2 * k,
           ),
         radius: R * 0.79,
-        twin: R * 0.06,
       };
     }
     case 'dots': {
@@ -359,7 +356,6 @@ function indexDesign(style: string, R: number): IndexDesign | null {
             40,
           ),
         radius: R * 0.84,
-        twin: R * 0.06,
       };
     }
     case 'triangles': {
@@ -380,7 +376,7 @@ function indexDesign(style: string, R: number): IndexDesign | null {
       };
     }
     case 'baguettes':
-      return { geometry: () => bar(R * 0.22, R * 0.03, 0.3), radius: R * 0.77, twin: R * 0.03 };
+      return { geometry: () => bar(R * 0.22, R * 0.03, 0.3), radius: R * 0.77 };
     case 'drops': {
       const L = R * 0.15;
       const W = R * 0.08;
@@ -392,7 +388,7 @@ function indexDesign(style: string, R: number): IndexDesign | null {
           (W / 2) * Math.pow(Math.sin(Math.PI * t), 0.55) * Math.pow(t, 0.7),
         ]);
       }
-      return { geometry: () => profile(samples, 0.22, 0.14 * k), radius: R * 0.8, twin: R * 0.055 };
+      return { geometry: () => profile(samples, 0.22, 0.14 * k), radius: R * 0.8 };
     }
     default:
       return null;
@@ -404,6 +400,40 @@ function indexDesign(style: string, R: number): IndexDesign | null {
  * de la minuterie (0,985 R), presque au réhaut.
  */
 export const INDEX_REACH = 0.995;
+
+function pairedIndexPlacement(
+  bounds: THREE.Box3,
+  size: number,
+  radius: number,
+  angle: number,
+  d: WatchDimensions,
+) {
+  const halfWidth = Math.max(-bounds.min.x, bounds.max.x) * size;
+  const halfGap = d.dialSafeRadius * 0.009;
+  // Keep even wide pairs within the sector of the selected hour.
+  const sector = (radius + bounds.min.y * size) * Math.tan(Math.PI / 12) * 0.9;
+  const widthScale = Math.min(1, Math.max(0.1, (sector - halfGap) / (2 * halfWidth)));
+  const offset = halfWidth * widthScale + halfGap;
+  const side = offset + halfWidth * widthScale;
+  const fits = (center: number) => {
+    const front = center + bounds.max.y * size;
+    return [-side, 0, side].every(
+      (x) =>
+        Math.hypot(x, front) <=
+        dialRadiusAt(d, Math.PI / 2 - angle - Math.atan2(x, front)) * INDEX_REACH,
+    );
+  };
+  if (fits(radius)) return { widthScale, offset, radius };
+  // A pair reaches farther towards the outline than a single index, especially at corners.
+  let low = 0;
+  let high = radius;
+  for (let i = 0; i < 10; i++) {
+    const center = (low + high) / 2;
+    if (fits(center)) low = center;
+    else high = center;
+  }
+  return { widthScale, offset, radius: low };
+}
 
 export function buildIndices(
   config: WatchConfig,
@@ -429,10 +459,7 @@ export function buildIndices(
     return group;
   }
   // Each composition resolves to existing geometries, shared across its hours.
-  const skip = new Set([
-    ...numeralHours(config.dial.indices.numerals, config.details?.hourMarkers),
-    ...complicationHours(config),
-  ]);
+  const skip = new Set(complicationHours(config));
   // Longueur dans l'axe du rayon (Y de la forme), largeur en travers (X).
   const { indexLength: length, indexWidth: width, indexRadius: factor } = config.dial.indices;
   const luminous = hasLume(config.dial.indices);
@@ -450,11 +477,8 @@ export function buildIndices(
   const inserts: THREE.BufferGeometry[] = [];
   for (let hour = 0; hour < 12; hour++) {
     if (hours && !hours.includes(hour)) continue;
-    if (skip.has(hour) || hourMarkerAt(config, hour) === 'none') continue;
-    const style =
-      config.dial.indices.style === 'none' && hourMarkerAt(config, hour) === 'index'
-        ? 'baton'
-        : config.dial.indices.style;
+    if (skip.has(hour) || hourMarkerAt(config, hour) !== 'index') continue;
+    const style = config.dial.indices.style === 'none' ? 'baton' : config.dial.indices.style;
     const resolved =
       style === 'dive'
         ? hour === 0
@@ -499,23 +523,27 @@ export function buildIndices(
     }
     const { design, unit, insert, radius: baseRadius } = prepared;
     const angle = (hour / 12) * Math.PI * 2;
-    const twelve = hour === 0;
-    // Le doublé de 12 h s'écarte avec la largeur, pour que les deux index ne se chevauchent pas.
-    const offsets = twelve && design.twin ? [-design.twin * width, design.twin * width] : [0];
+    const size = hour === 0 ? (design.big ?? 1) : 1;
+    const radius =
+      d.dialShape === 'round'
+        ? baseRadius
+        : (baseRadius / d.dialSafeRadius) * dialRadiusAt(d, Math.PI / 2 - angle);
+    const pair = isDoubleIndex(config, hour)
+      ? pairedIndexPlacement(unit.boundingBox!, size, radius, angle, d)
+      : null;
+    const placement = pair?.radius ?? radius;
+    const offsets = pair ? [-pair.offset, pair.offset] : [0];
+    const elevation = ringLift(config, d.dialSafeRadius, placement);
     for (const dx of offsets) {
-      const radius =
-        d.dialShape === 'round'
-          ? baseRadius
-          : (baseRadius / d.dialSafeRadius) * dialRadiusAt(d, Math.PI / 2 - angle);
       for (const [source, destination] of [
         [unit, parts],
         [insert, inserts],
       ] as const) {
         if (!source) continue;
         const g = source.clone();
-        if (twelve && design.big) g.scale(design.big, design.big, 1);
+        if (pair || size !== 1) g.scale(size * (pair?.widthScale ?? 1), size, 1);
         // Sur un anneau en relief, l'index repose sur sa surface.
-        g.translate(dx, radius, ringLift(config, d.dialSafeRadius, radius));
+        g.translate(dx, placement, elevation);
         g.rotateZ(-angle);
         destination.push(g.index ? g.toNonIndexed() : g);
         if (g.index) g.dispose();
