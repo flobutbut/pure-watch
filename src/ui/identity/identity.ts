@@ -21,7 +21,7 @@ import { subdialAppearance, reserveAppearance, ringAppearance } from '../../core
 import { dialRing } from '../../core/config/dial-ring';
 import { subdialStyle } from '../../core/config/subdial-style';
 import { SUBDIAL_HAND_LABELS } from '../colors/subdial-hand-labels';
-import { numeralHours, numeralSystem } from '../../core/config/numerals';
+import { indexHours, numeralHours, numeralSystem } from '../../core/config/numerals';
 import { metalTint, numeralMaterial } from '../../core/config/material';
 import {
   chapterRingColor,
@@ -250,7 +250,7 @@ export function identitySections(
           ? effectiveRehautProfile(config) !== 'classic'
           : id === 'numeral-font'
             ? numeralHours(config.dial.indices.numerals, config.details?.hourMarkers).length > 0
-            : numeralHours(config.dial.indices.numerals, config.details?.hourMarkers).length < 12),
+            : indexHours(config).length > 0),
     );
     return [
       row,

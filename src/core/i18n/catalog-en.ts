@@ -199,6 +199,7 @@ export const CATALOG_EN: Record<string, RowNames> = {
       twelve: '12 only',
       'six-twelve': '6 and 12',
       even: 'Even hours',
+      empty: 'Empty',
       all: 'All numerals',
     },
   },

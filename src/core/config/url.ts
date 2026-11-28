@@ -220,6 +220,7 @@ const FIELDS_V1: Readonly<Record<string, Field>> = {
     explorer: 6,
     roman: 7,
     even: 8,
+    empty: 9,
   }),
   E: field('dial.indices.numeralFont', id, {
     sans: 1,

@@ -139,9 +139,17 @@ export interface DialConfig {
     color: HexColor;
     lumeColor: HexColor;
     lumeEmission: HexColor;
-    /** Jeu de chiffres : quelles heures portent un chiffre (les index y sont retirés). */
+    /** Disposition des repères, y compris le cadran sans repères. */
     numerals: Open<
-      'none' | 'all' | 'cardinal' | 'twelve' | 'six-twelve' | 'explorer' | 'even' | 'roman'
+      | 'none'
+      | 'all'
+      | 'cardinal'
+      | 'twelve'
+      | 'six-twelve'
+      | 'explorer'
+      | 'even'
+      | 'roman'
+      | 'empty'
     >;
     /** Independent of the hour positions. `numerals: roman` is a legacy alias only. */
     numeralSystem: 'arabic' | 'roman';

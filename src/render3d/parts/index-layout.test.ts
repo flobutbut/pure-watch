@@ -4,6 +4,7 @@ import { INDEX_RADIUS_RANGE } from '../../core/config/colors';
 import { defaultConfig } from '../../core/config/defaults';
 import type { WatchConfig } from '../../core/config/types';
 import { watchDimensions } from '../../core/geometry/dimensions';
+import { DIAL_SHAPES, dialRadiusAt } from '../../core/geometry/dial-shape';
 import type { MaterialLibrary } from '../materials';
 import { INDEX_REACH, buildIndices } from './dial';
 
@@ -27,7 +28,7 @@ function indexExtent(config: WatchConfig) {
       v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
       const r = Math.hypot(v.x, v.y);
       inner = Math.min(inner, r);
-      // Radial reach of the cardinal indices (the twin 12 o'clock bars sit side by side).
+      // Radial reach of the cardinal indices.
       outer = Math.max(outer, Math.abs(v.x), Math.abs(v.y));
       // A narrow sector around 3 h: wide enough for a widened index, clear of 2 h and 4 h.
       if (v.x > 0 && Math.abs(v.y) < v.x * 0.25) {
@@ -147,3 +148,61 @@ it('rend seulement les index demandés, y compris dans un cadran entièrement ch
   });
   expect([...hours]).toEqual([1]);
 });
+
+it('rend douze index simples par défaut et double uniquement les heures sélectionnées', () => {
+  const config = defaultConfig();
+  const counts = () => {
+    const counts = Array<number>(12).fill(0);
+    const group = buildIndices(config, watchDimensions(config), lib);
+    group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const positions = object.geometry.getAttribute('position');
+      for (let i = 0; i < positions.count; i++) {
+        const angle = Math.atan2(positions.getX(i), positions.getY(i));
+        const hour = (Math.round((angle * 6) / Math.PI) + 12) % 12;
+        counts[hour]!++;
+      }
+      object.geometry.dispose();
+    });
+    return counts;
+  };
+  const ordinary = counts();
+  expect(ordinary[0]).toBeGreaterThan(0);
+  expect(ordinary).toEqual(Array(12).fill(ordinary[0]));
+  config.details = { doubleIndices: { '5': true, '12': true } };
+  expect(counts()).toEqual(ordinary.map((count, h) => (h === 0 || h === 5 ? 2 * count : count)));
+  config.dial.indices.numerals = 'empty';
+  expect(counts()).toEqual(Array(12).fill(0));
+  config.details.hourMarkers = { '5': 'index', '12': 'numeral' };
+  expect(counts()).toEqual(ordinary.map((count, h) => (h === 5 ? 2 * count : 0)));
+});
+
+it.each(DIAL_SHAPES)(
+  'garde les index doubles sur le cadran %s aux dimensions maximales',
+  (shape) => {
+    const config = defaultConfig();
+    config.dial.shape = shape;
+    Object.assign(config.dial.indices, {
+      style: 'triangles',
+      indexLength: 1.6,
+      indexWidth: 1.8,
+      indexRadius: INDEX_RADIUS_RANGE.max,
+    });
+    config.details = { doubleIndices: { '2': true, '5': true, '12': true } };
+    const d = watchDimensions(config);
+    const group = buildIndices(config, d, lib);
+    group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const positions = object.geometry.getAttribute('position');
+      for (let i = 0; i < positions.count; i++) {
+        const x = positions.getX(i);
+        const y = positions.getY(i);
+        const angle = Math.atan2(y, x);
+        const hour = (Math.round((Math.atan2(x, y) * 6) / Math.PI) + 12) % 12;
+        if (![0, 2, 5].includes(hour)) continue;
+        expect(Math.hypot(x, y)).toBeLessThan(dialRadiusAt(d, angle));
+      }
+      object.geometry.dispose();
+    });
+  },
+);

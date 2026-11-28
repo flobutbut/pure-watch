@@ -1400,6 +1400,14 @@
           }
         },
         {
+          "id": "empty",
+          "value": "empty",
+          "preview": "numerals/empty.svg",
+          "i18n": {
+            "name": "Vide"
+          }
+        },
+        {
           "id": "all",
           "value": "all",
           "preview": "numerals/all.svg",
@@ -1422,7 +1430,7 @@
       },
       "visibleWhen": {
         "path": "dial.indices.numerals",
-        "notEquals": "none"
+        "notIn": ["none", "empty"]
       },
       "variants": [
         {
@@ -1560,7 +1568,7 @@
       },
       "visibleWhen": {
         "path": "dial.indices.numerals",
-        "notIn": ["all", "roman"]
+        "notIn": ["all", "roman", "empty"]
       },
       "variants": [
         {

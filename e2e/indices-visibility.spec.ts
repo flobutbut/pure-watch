@@ -157,3 +157,35 @@ test('les anciens index par heure restent modifiables et peuvent céder leur pla
     },
   });
 });
+
+test('vide le cadran et permet de remettre un index double à une seule heure', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#boot')).toBeHidden({ timeout: 20_000 });
+  await markersRow(page);
+  const grid = page.getByRole('grid');
+  await grid.press('End');
+  await grid.press('ArrowLeft');
+  await expect(grid).toHaveAttribute('aria-activedescendant', 'cell-numerals-empty');
+  expect(linkPayload(page.url())).toMatchObject({ D: 9 });
+  await open(page);
+  await page.getByText('Personnaliser les heures', { exact: true }).click();
+  await expect(page.getByRole('button', { name: '12 h · Aucun', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '5 h · Aucun', exact: true }).click();
+  await page
+    .getByRole('radiogroup', { name: 'Repère à cette heure' })
+    .getByRole('radio', { name: 'Index', exact: true })
+    .click();
+  const count = page.getByRole('radiogroup', { name: 'Nombre d’index', exact: true });
+  await expect(count.getByRole('radio', { name: 'Simple' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  );
+  await count.getByRole('radio', { name: 'Double' }).click();
+  await expect(page.getByRole('button', { name: '5 h · Index double', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '12 h · Aucun', exact: true })).toBeVisible();
+  await close(page);
+  expect(linkPayload(page.url())).toMatchObject({
+    D: 9,
+    bf: { hourMarkers: { '5': 'index' }, doubleIndices: { '5': true } },
+  });
+});

@@ -1,6 +1,7 @@
 import { smallSeconds } from '../../core/config/small-seconds';
 import { chronograph } from '../../core/config/chronograph';
 import { powerReserve } from '../../core/config/power-reserve';
+import { complicationHours } from '../../core/config/complications';
 import type { WatchConfig } from '../../core/config/types';
 import {
   chapterMarkDetails,
@@ -9,9 +10,11 @@ import {
   indexAt,
 } from '../../core/config/details';
 import { indexColor } from '../../core/config/colors';
+import { indexHours, isDoubleIndex } from '../../core/config/numerals';
 import { hasIntrinsicColor } from '../../core/config/dial';
 import { isDialPatternFinish } from '../../render3d/dial-patterns';
 import { SCALE_LABELS } from '../colors/scale-labels';
+import { MARKER_LABELS } from '../colors/marker-labels';
 import { DETAIL_SETTINGS } from '../colors/detail-settings';
 import type { Locale } from '../../core/i18n/locale';
 import type { Trait } from './identity';
@@ -120,6 +123,17 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
         swatch: indexColor(part),
       });
     }
+  }
+  if (row === 'indices' && d.doubleIndices) {
+    const blocked = complicationHours(config);
+    const doubles = indexHours(config).filter(
+      (hour) => !blocked.includes(hour) && isDoubleIndex(config, hour),
+    );
+    if (doubles.length)
+      traits.push({
+        label: MARKER_LABELS[locale].doubleIndex,
+        value: doubles.map((hour) => `${hour || 12} h`).join(', '),
+      });
   }
   if (row === 'power-reserve' && powerReserve(config) && d.reserve) {
     if (d.reserve.size !== undefined)
