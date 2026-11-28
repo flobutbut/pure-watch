@@ -10,6 +10,7 @@ import {
   indexAt,
 } from '../../core/config/details';
 import { indexColor } from '../../core/config/colors';
+import { chapterMarkSpan, chapterTrackPosition } from '../../core/config/chapter-ring';
 import { indexHours, isDoubleIndex } from '../../core/config/numerals';
 import { hasIntrinsicColor } from '../../core/config/dial';
 import { isDialPatternFinish } from '../../render3d/dial-patterns';
@@ -42,13 +43,19 @@ export function detailTraits(row: string, config: WatchConfig, locale: Locale): 
     for (const group of chapterMarkGroups(style)) {
       const mark = chapterMarkDetails(d.chapterRing, group);
       for (const key of keys) {
-        const value = mark[key];
+        const value =
+          key === 'length' && (mark.span !== undefined || mark.length !== undefined)
+            ? chapterMarkSpan(style, group, mark)
+            : mark[key];
         if (value !== undefined)
           traits.push({ label: labels.marks[group][key], value: percent(value) });
       }
     }
-    if (d.chapterRing.radius !== undefined)
-      traits.push({ label: labels.radius, value: percent(d.chapterRing.radius) });
+    if (d.chapterRing.position !== undefined || d.chapterRing.radius !== undefined)
+      traits.push({
+        label: labels.radius,
+        value: percent(chapterTrackPosition(style, d.chapterRing)),
+      });
     if (d.chapterRing.accentAt && d.chapterRing.accentAt !== 'none') {
       traits.push({
         label: labels.accents,

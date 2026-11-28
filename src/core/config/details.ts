@@ -21,15 +21,16 @@ const ink = z.union([hex, z.literal('auto')]);
 const factor = (min: number, max: number) => z.number().finite().min(min).max(max);
 const hourKey = z.string().regex(/^(?:[1-9]|1[0-2])$/);
 export const CHAPTER_DOT_SIZE_RANGE = { min: 0.05, max: 2.5 } as const;
-export const CHAPTER_TICK_LENGTH_RANGE = { min: 0.5, max: 1.6 } as const;
 export const CHAPTER_TICK_WIDTH_RANGE = { min: 0.5, max: 2 } as const;
 const chapterMarkSchema = z
   .object({
     dotSize: factor(CHAPTER_DOT_SIZE_RANGE.min, CHAPTER_DOT_SIZE_RANGE.max).optional(),
     lineWidth: factor(CHAPTER_TICK_WIDTH_RANGE.min, CHAPTER_TICK_WIDTH_RANGE.max).optional(),
-    length: factor(CHAPTER_TICK_LENGTH_RANGE.min, CHAPTER_TICK_LENGTH_RANGE.max).optional(),
+    // Les anciens liens expriment la longueur en multiples de la graduation d’origine.
+    length: factor(0.5, 1.6).optional(),
   })
   .strict();
+const chapterMarkGroupSchema = chapterMarkSchema.extend({ span: factor(0, 1).optional() });
 
 // Read links created with the retired graphic option without rejecting the configuration.
 const subdialStyleSchema = z.enum([...SUBDIAL_STYLES, 'azure', 'rail']);
@@ -92,9 +93,10 @@ export const detailsSchema = z
     dial: dialSurfaceSchema.optional(),
     chapterRing: chapterMarkSchema
       .extend({
-        minor: chapterMarkSchema.optional(),
-        major: chapterMarkSchema.optional(),
+        minor: chapterMarkGroupSchema.optional(),
+        major: chapterMarkGroupSchema.optional(),
         radius: factor(0.6, 1).optional(),
+        position: factor(0, 1).optional(),
         accent: ink.optional(),
         accentAt: z.enum(['none', 'zero', 'quarters']).optional(),
       })
@@ -202,7 +204,7 @@ export const detailsSchema = z
 
 export type WatchDetails = z.infer<typeof detailsSchema>;
 export type ChapterRingDetails = NonNullable<WatchDetails['chapterRing']>;
-export type ChapterMarkDetails = z.infer<typeof chapterMarkSchema>;
+export type ChapterMarkDetails = NonNullable<ChapterRingDetails['minor']>;
 export type ChapterMarkGroup = 'minor' | 'major';
 export type DialSurface = NonNullable<WatchDetails['dial']>;
 export type RehautPrint = NonNullable<WatchDetails['rehaut']>;
@@ -222,6 +224,7 @@ export function chapterMarkDetails(
     dotSize: track?.[group]?.dotSize ?? track?.dotSize,
     lineWidth: track?.[group]?.lineWidth ?? track?.lineWidth,
     length: track?.[group]?.length ?? track?.length,
+    span: track?.[group]?.span,
   };
 }
 export type ReserveAdjustment = NonNullable<WatchDetails['reserve']>;

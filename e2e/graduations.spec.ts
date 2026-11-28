@@ -41,11 +41,11 @@ test('la piste garde sa ligne, son style et ses réglages sans modifier le réha
     'true',
   );
   await page.getByRole('radio', { name: 'Bâtons', exact: true }).click();
-  await slider(page, 'Longueur des petites graduations', 0.65);
+  await slider(page, 'Longueur des petites graduations', 0.35);
   await slider(page, 'Épaisseur des petites graduations', 0.8);
-  await slider(page, 'Longueur des grandes graduations', 1.4);
+  await slider(page, 'Longueur des grandes graduations', 1);
   await slider(page, 'Épaisseur des grandes graduations', 1.6);
-  await slider(page, 'Position de la piste', 0.85);
+  await slider(page, 'Position de la piste', 1);
   await page.getByRole('radio', { name: 'Couleur libre', exact: true }).click();
   await (await hexField(page)).fill('#C92750');
   await page.getByRole('radio', { name: 'Les quatre quarts', exact: true }).click();
@@ -68,9 +68,9 @@ test('la piste garde sa ligne, son style et ses réglages sans modifier le réha
     af: 4,
     bf: {
       chapterRing: {
-        minor: { length: 0.65, lineWidth: 0.8 },
-        major: { length: 1.4, lineWidth: 1.6 },
-        radius: 0.85,
+        minor: { span: 0.35, lineWidth: 0.8 },
+        major: { span: 1, lineWidth: 1.6 },
+        position: 1,
         accentAt: 'quarters',
       },
       rehaut: { ink: '#C9A24A', lineWidth: 1.3 },
@@ -91,10 +91,10 @@ test('la piste garde sa ligne, son style et ses réglages sans modifier le réha
   );
   await expect(
     page.getByRole('slider', { name: 'Longueur des petites graduations', exact: true }),
-  ).toHaveValue('0.65');
+  ).toHaveValue('0.35');
   await expect(
     page.getByRole('slider', { name: 'Longueur des grandes graduations', exact: true }),
-  ).toHaveValue('1.4');
+  ).toHaveValue('1');
   await close(page);
   expect(page.url()).toBe(saved);
   await page.getByRole('grid').focus();
@@ -103,7 +103,7 @@ test('la piste garde sa ligne, son style et ses réglages sans modifier le réha
   expect(linkPayload(page.url())).toMatchObject({
     af: 4,
     be: '#C92750',
-    bf: { chapterRing: { major: { length: 1.4 } } },
+    bf: { chapterRing: { major: { span: 1 } } },
   });
   expect(errors).toEqual([]);
 });
@@ -224,10 +224,11 @@ test('changer le style depuis le panneau en aperçu synchronise la grille et le 
   await page.getByRole('radio', { name: 'Points', exact: true }).click();
   await slider(page, 'Taille des petits points', 0.25);
   await slider(page, 'Taille des grands points', 1.15);
+  await slider(page, 'Position de la piste', 0);
   await close(page);
   expect(linkPayload(page.url())).toMatchObject({
     z: 3,
-    bf: { chapterRing: { minor: { dotSize: 0.25 }, major: { dotSize: 1.15 } } },
+    bf: { chapterRing: { minor: { dotSize: 0.25 }, major: { dotSize: 1.15 }, position: 0 } },
   });
   await expect(page.getByRole('grid')).toHaveAttribute(
     'aria-activedescendant',

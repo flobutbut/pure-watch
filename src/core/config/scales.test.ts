@@ -26,9 +26,10 @@ it('règle le style, la géométrie et les accents de minuterie sans modifier le
       chapterRing: {
         lineWidth: 1.4,
         length: 1.3,
-        minor: { length: 0.7, dotSize: 0.5 },
-        major: { lineWidth: 1.8, dotSize: 1.2 },
+        minor: { length: 0.7, dotSize: 0.5, span: 0 },
+        major: { lineWidth: 1.8, dotSize: 1.2, span: 1 },
         radius: 0.85,
+        position: 1,
         accentAt: 'quarters',
         accent: '#D7262E',
       },
@@ -71,11 +72,16 @@ it('ouvrir puis fermer les deux panneaux préserve le lien par défaut et les an
 });
 it('valide les bornes des réglages sans modifier les anciennes données', () => {
   expect(detailsSchema.safeParse({ chapterRing: { dotSize: 1.3 } }).success).toBe(true);
+  expect(
+    detailsSchema.safeParse({ chapterRing: { position: 0, major: { span: 1 } } }).success,
+  ).toBe(true);
   for (const value of [
     { chapterRing: { radius: 1.5 } },
     { chapterRing: { lineWidth: 0 } },
     { chapterRing: { minor: { length: 2 } } },
     { chapterRing: { major: { dotSize: 0 } } },
+    { chapterRing: { minor: { span: 1.01 } } },
+    { chapterRing: { position: -0.01 } },
     { chapterRing: { accentAt: 'hours' } },
     { rehaut: { tickLength: 3 } },
   ])
