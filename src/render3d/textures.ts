@@ -253,35 +253,6 @@ export function forgedCarbonTexture(size = 512): THREE.CanvasTexture {
   return texture;
 }
 
-/** Patine : métal d'origine et teinte vieillie mêlés en taches irrégulières. */
-export function patinaTexture(base: string, tint: string, size = 512): THREE.CanvasTexture {
-  const field = swirlTexture(5, 2.3, size);
-  const source = field.image as HTMLCanvasElement;
-  const data = source.getContext('2d')!.getImageData(0, 0, size, size).data;
-  field.dispose();
-  const [canvas, ctx] = canvas2d(size);
-  const out = ctx.createImageData(size, size);
-  // Mélange directement en sRGB (les valeurs écrites dans la texture sont sRGB).
-  const rgb = (hex: string) => {
-    const n = Number.parseInt(hex.slice(1, 7), 16);
-    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  };
-  const a = rgb(base);
-  const b = rgb(tint);
-  for (let i = 0; i < size * size; i++) {
-    const v = data[i * 4]! / 255;
-    const t = Math.min(1, Math.max(0, (v - 0.35) * 1.6)) * 0.85;
-    for (let k = 0; k < 3; k++) out.data[i * 4 + k] = Math.round(a[k]! + (b[k]! - a[k]!) * t);
-    out.data[i * 4 + 3] = 255;
-  }
-  ctx.putImageData(out, 0, 0);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(2, 2);
-  return texture;
-}
-
 /** Ombre portée douce et diffuse : dégradé radial du noir vers le transparent. */
 export function softShadowTexture(size = 256): THREE.CanvasTexture {
   const [canvas, ctx] = canvas2d(size);

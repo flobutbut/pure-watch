@@ -239,7 +239,7 @@ export function hornGeometry(h: HornSpec): THREE.BufferGeometry {
   const push = (...vs: THREE.Vector3[]) => {
     for (const v of vs) {
       buckets[materialIndex]!.positions.push(v.x * h.sx, v.y * h.sy, v.z);
-      // Coordonnées de texture simples (carbone forgé, patine).
+      // Coordonnées de texture simples pour le carbone forgé.
       buckets[materialIndex]!.uvs.push(v.x * 0.06, (v.y + v.z) * 0.06);
     }
   };

@@ -20,11 +20,11 @@ import { lumeChoice, lumePigment } from '../core/config/lume';
 import type { WatchConfig } from '../core/config/types';
 import type { ResolvedMaterial } from '../core/config/material';
 import { rehautColor, rehautSettings } from '../core/config/rehaut';
+import { applyPatina, patinaVolume } from './patina';
 import {
   forgedCarbonTexture,
   grainTextures,
   dialPatternTextures,
-  patinaTexture,
   radialAnisotropyTexture,
   radialGradientTexture,
   radialOcclusionTexture,
@@ -50,16 +50,6 @@ const METALS: Record<string, MetalSpec> = {
   carbon: { color: '#ffffff', roughness: 0.42, metalness: 0.25, clearcoat: 0.8 },
 };
 
-/** Teinte de patine par matière : vert-de-gris du bronze, brun du laiton, gris fumé de l'acier. */
-const PATINA: Record<string, string> = {
-  bronze: '#5E7A62',
-  brass: '#6E5B2C',
-  'gold-yellow': '#A8873E',
-  'gold-rose': '#9C6F5E',
-  steel: '#6F747B',
-  titanium: '#5F646B',
-};
-
 /** Matières à surface propre (céramique, carbone) : la ligne Finition ne s'y applique pas. */
 export const INTRINSIC_CASE_MATERIALS = ['ceramic', 'carbon'];
 
@@ -71,6 +61,14 @@ export const INTRINSIC_CASE_MATERIALS = ['ceramic', 'carbon'];
  * - jewel : couronne et collerette, polies sauf finitions mates.
  */
 export type MetalSurface = 'brushed' | 'polished' | 'satin' | 'jewel';
+
+/** Oxydation plus légère sur les arêtes et la couronne exposées aux frottements. */
+const PATINA_WEAR: Record<MetalSurface, number> = {
+  brushed: 0,
+  satin: 0,
+  polished: 0.055,
+  jewel: 0.09,
+};
 
 /** Aspect final d'une surface, une fois la finition appliquée. */
 type Look = 'brushed' | 'polished' | 'satin' | 'matte';
@@ -123,6 +121,7 @@ export class MaterialLibrary {
   ) {}
   private readonly cache = new Map<string, THREE.Material>();
   private readonly textures: THREE.Texture[] = [];
+  private patinaNoise: THREE.Data3DTexture | null = null;
 
   private cached<T extends THREE.Material>(key: string, create: () => T): T {
     let material = this.cache.get(key) as T | undefined;
@@ -144,8 +143,9 @@ export class MaterialLibrary {
     const intrinsic = INTRINSIC_CASE_MATERIALS.includes(material);
     const finish = intrinsic ? 'mixed' : config.case.finish;
     const look = lookFor(finish, surface);
+    const wear = finish === 'patina' ? PATINA_WEAR[surface] : 0;
     const instrument = this.refined && isBlackTonneau(config);
-    const key = `case:${material}:${finish}:${look}:${occlusion}:${instrument}`;
+    const key = `case:${material}:${finish}:${look}:${occlusion}:${instrument}:${wear}`;
     return this.cached(key, () => {
       const spec = METALS[material]!;
       const params: THREE.MeshPhysicalMaterialParameters = {
@@ -156,6 +156,17 @@ export class MaterialLibrary {
         clearcoatRoughness: 0.05,
         vertexColors: occlusion,
       };
+
+      if (finish === 'patina') {
+        this.patinaNoise ??= this.keep(patinaVolume());
+        return applyPatina(
+          new THREE.MeshPhysicalMaterial(params),
+          this.patinaNoise,
+          material,
+          spec.color,
+          wear,
+        );
+      }
 
       // Noir PVD / DLC : revêtement sombre sur le métal.
       if (finish === 'pvd-black') {
@@ -178,11 +189,6 @@ export class MaterialLibrary {
         params.map = this.carbon();
         params.roughness = 0.38;
         params.metalness = 0.35;
-      } else if (finish === 'patina') {
-        params.color = '#ffffff';
-        params.map = this.patina(material);
-        params.roughness = 0.55;
-        params.metalness = 0.85;
       } else {
         switch (look) {
           case 'polished':
@@ -259,17 +265,6 @@ export class MaterialLibrary {
   private carbon(): THREE.Texture {
     this.carbonTexture ??= this.keep(forgedCarbonTexture());
     return this.carbonTexture;
-  }
-
-  private patinaTextures = new Map<string, THREE.Texture>();
-  private patina(material: string): THREE.Texture {
-    let texture = this.patinaTextures.get(material);
-    if (!texture) {
-      const base = METALS[material]?.color ?? '#C9CED6';
-      texture = this.keep(patinaTexture(base, PATINA[material] ?? '#6F747B'));
-      this.patinaTextures.set(material, texture);
-    }
-    return texture;
   }
 
   /** Acier poli des aiguilles et index appliqués : un peu moins miroir, pour rester lisible. */
@@ -715,5 +710,6 @@ export class MaterialLibrary {
     for (const texture of this.textures) texture.dispose();
     this.cache.clear();
     this.textures.length = 0;
+    this.patinaNoise = null;
   }
 }

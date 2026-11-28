@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dialPrintSvg, NUMERAL_REACH } from './dial-print';
+import { dialPrintSvg, NUMERAL_REACH, type DialPrintOptions } from './dial-print';
 import { NUMERAL_RADIUS_RANGE } from '../core/config/colors';
 import { FONTS } from './fonts';
 
@@ -248,4 +248,35 @@ it('accentue un point de départ sans colorer les autres points ni les chiffres'
   expect(svg.match(/<circle cx=/g)).toHaveLength(60);
   expect(svg).toContain('r="0.080"');
   expect(labels(svg)).toEqual(['12', '3', '6', '9']);
+});
+
+it.each(['railroad', 'ticks', 'five-minute'])(
+  'applique les dimensions du groupe ciblé pour la piste %s',
+  (chapterRing) => {
+    const options = { ...base, chapterRing };
+    const shared = { length: 1.2, lineWidth: 1.3 };
+    const lines = (chapterRingDetails: DialPrintOptions['chapterRingDetails']) =>
+      dialPrintSvg({ ...options, chapterRingDetails }).match(/<line [^>]*\/>/g)!;
+    const original = lines(shared);
+    const longer = lines({ ...shared, major: { length: 1.5 } });
+    const thinner = lines({ ...shared, minor: { lineWidth: 0.5 } });
+    for (let i = 0; i < original.length; i++) {
+      const major = chapterRing === 'five-minute' || i % 5 === 0;
+      expect(longer[i] === original[i]).toBe(!major);
+      expect(thinner[i] === original[i]).toBe(major);
+    }
+  },
+);
+
+it('dimensionne séparément les deux tailles de points en gardant la taille commune en référence', () => {
+  const options = { ...base, chapterRing: 'dots' };
+  const dots = (chapterRingDetails: DialPrintOptions['chapterRingDetails']) =>
+    dialPrintSvg({ ...options, chapterRingDetails }).match(/<circle cx=[^>]*\/>/g)!;
+  const original = dots({ dotSize: 0.8 });
+  const changed = dots({ dotSize: 0.8, minor: { dotSize: 0.5 }, major: { dotSize: 1.2 } });
+  expect(changed[0]).toBe(dots({ dotSize: 1.2 })[0]);
+  expect(changed[1]).toBe(dots({ dotSize: 0.5 })[1]);
+  const onlyMajor = dots({ dotSize: 0.8, major: { dotSize: 1.2 } });
+  expect(onlyMajor[0]).toBe(changed[0]);
+  expect(onlyMajor[1]).toBe(original[1]);
 });
